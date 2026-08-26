@@ -274,6 +274,26 @@
               <span class="lbl">px</span>
               <span class="well" id="stroke-well"></span>
             </div>
+            <div class="row fill">
+              <label class="field"><span>Cap</span>
+                <select class="ctrl" id="stroke-cap" aria-label="Stroke cap">
+                  <option value="butt">Butt</option>
+                  <option value="round">Round</option>
+                  <option value="square">Square</option>
+                </select>
+              </label>
+              <label class="field"><span>Join</span>
+                <select class="ctrl" id="stroke-join" aria-label="Stroke join">
+                  <option value="miter">Miter</option>
+                  <option value="round">Round</option>
+                  <option value="bevel">Bevel</option>
+                </select>
+              </label>
+            </div>
+            <div class="row fill">
+              <span class="lbl">Dash</span>
+              <input class="ctrl grow" id="stroke-dash" inputmode="numeric" placeholder="e.g. 12 6 — empty is solid" aria-label="Stroke dash pattern" />
+            </div>
           </div>
           <div class="pane" data-pane="character" hidden>
             <div class="row">

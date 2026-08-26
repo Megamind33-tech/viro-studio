@@ -31,6 +31,8 @@ const SCRIPTS = [
   "projects.spec.mjs",
   // layer effects - drop shadow actually renders (pixel diff)
   "effects.spec.mjs",
+  // vector stroke styling - dash/cap/join actually render (pixel diff) + v5 round-trip
+  "stroke-style.spec.mjs",
 ];
 
 function run(script) {

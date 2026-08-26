@@ -1,4 +1,4 @@
-import type { Canvas, CanvasKit, Font, Image as SkImage, Paint, Surface, Typeface } from "canvaskit-wasm";
+import type { Canvas, CanvasKit, Font, Image as SkImage, Paint, PathEffect, Surface, Typeface } from "canvaskit-wasm";
 import type {
   AdjustmentLayer,
   DropShadowEffect,
@@ -10,7 +10,9 @@ import type {
   PressDocument,
   ResampleAlgo,
   Rgba,
+  StrokeCap,
   StrokeEffect,
+  StrokeJoin,
   ToolId,
   Transform,
   VectorLayer,
@@ -45,6 +47,20 @@ function strokeEffectOf(layer: Layer): StrokeEffect | null {
   if (!fx) return null;
   for (const e of fx) if (e.type === "stroke" && e.enabled && e.width > 0) return e;
   return null;
+}
+
+/** Map a document stroke cap to its CanvasKit enum. Default is butt. */
+function strokeCap(ck: CanvasKit, cap: StrokeCap) {
+  if (cap === "round") return ck.StrokeCap.Round;
+  if (cap === "square") return ck.StrokeCap.Square;
+  return ck.StrokeCap.Butt;
+}
+
+/** Map a document stroke join to its CanvasKit enum. Default is miter. */
+function strokeJoin(ck: CanvasKit, join: StrokeJoin) {
+  if (join === "round") return ck.StrokeJoin.Round;
+  if (join === "bevel") return ck.StrokeJoin.Bevel;
+  return ck.StrokeJoin.Miter;
 }
 
 /** The layer's enabled outer glow, if any. */
@@ -1843,10 +1859,26 @@ export class Compositor {
       sk.drawPath(path, paint);
     }
     if (layer.stroke) {
+      const s = layer.stroke;
       paint.setStyle(ck.PaintStyle.Stroke);
-      paint.setStrokeWidth(layer.stroke.width);
-      paint.setColor(color(ck, layer.stroke.color, layer.stroke.color.a * layer.opacity));
+      paint.setStrokeWidth(s.width);
+      paint.setColor(color(ck, s.color, s.color.a * layer.opacity));
+      if (s.cap) paint.setStrokeCap(strokeCap(ck, s.cap));
+      if (s.join) paint.setStrokeJoin(strokeJoin(ck, s.join));
+      // A dash is a path effect on the stroked geometry. Skia needs an even
+      // interval count; a stray odd/empty array falls back to a solid stroke.
+      let dashEffect: PathEffect | null = null;
+      if (s.dash && s.dash.length >= 2 && s.dash.length % 2 === 0 && s.dash.some((n) => n > 0)) {
+        dashEffect = ck.PathEffect.MakeDash(s.dash, s.dashPhase ?? 0);
+        paint.setPathEffect(dashEffect);
+      }
       sk.drawPath(path, paint);
+      // The paint is per-layer and about to be deleted, but the PathEffect is a
+      // separate WASM object the compositor treats as churn to be freed.
+      if (dashEffect) {
+        paint.setPathEffect(null);
+        dashEffect.delete();
+      }
     }
     path.delete();
   }
@@ -2286,6 +2318,13 @@ export class Compositor {
         h = hashRgba(h, layer.fill);
         h = hashRgba(h, layer.stroke ? layer.stroke.color : null);
         h = hashNum(h, layer.stroke ? layer.stroke.width : -1);
+        if (layer.stroke) {
+          h = hashStr(h, layer.stroke.cap ?? "butt");
+          h = hashStr(h, layer.stroke.join ?? "miter");
+          h = hashNum(h, layer.stroke.dashPhase ?? 0);
+          for (const d of layer.stroke.dash ?? []) h = hashNum(h, d);
+          if (!layer.stroke.dash?.length) h = mixHash(h, 0x50_11d);
+        }
         for (const n of layer.nodes) {
           h = hashNum(hashNum(hashNum(hashNum(hashNum(hashNum(h, n.x), n.y), n.inX), n.inY), n.outX), n.outY);
         }

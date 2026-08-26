@@ -189,12 +189,35 @@ export interface PathNode {
   outY: number;
 }
 
+/** How a stroke terminates at an open end. Skia default is "butt". */
+export type StrokeCap = "butt" | "round" | "square";
+/** How a stroke turns a corner. Skia default is "miter". */
+export type StrokeJoin = "miter" | "round" | "bevel";
+
+/**
+ * A vector layer's outline. `dash`/`cap`/`join` are optional and were added in
+ * document v5; a v1–v4 stroke that omits them renders solid, butt-capped and
+ * miter-joined exactly as before (the v5 migration is a widening version stamp).
+ */
+export interface VectorStroke {
+  color: Rgba;
+  width: number;
+  /**
+   * On/off dash intervals in page px. Skia requires an even count (≥2); an
+   * absent or empty array is a solid stroke. `dashPhase` shifts the pattern.
+   */
+  dash?: number[];
+  dashPhase?: number;
+  cap?: StrokeCap;
+  join?: StrokeJoin;
+}
+
 export interface VectorLayer extends LayerBase {
   kind: "vector";
   closed: boolean;
   nodes: PathNode[];
   fill: Rgba | null;
-  stroke: { color: Rgba; width: number } | null;
+  stroke: VectorStroke | null;
 }
 
 export interface GroupLayer extends LayerBase {
@@ -373,8 +396,10 @@ export interface PressDocument {
    * 1 = absolute transforms (pre-hierarchy). 2 = local transforms.
    * 3 = ImageFit "fill" collapsed into "stretch".
    * 4 = versioned rich-text ranges, style registries and text-frame semantics.
+   * 5 = vector stroke styling (dash/cap/join) — a widening stamp; v1–v4 strokes
+   *     stay valid and render identically (solid, butt cap, miter join).
    */
-  version: 1 | 2 | 3 | 4;
+  version: 1 | 2 | 3 | 4 | 5;
   name: string;
   ppi: number;
   color: {

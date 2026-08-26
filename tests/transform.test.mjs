@@ -240,3 +240,53 @@ test("migration keeps a layer with a dangling parentId visible and reports it", 
   assert.match(r.notes.join(" "), /missing parent/);
   assert.equal(doc.pages[0].layers[0].transform.x, 42);
 });
+
+function vectorWithStroke(stroke) {
+  return {
+    id: "r",
+    kind: "vector",
+    name: "r",
+    visible: true,
+    locked: false,
+    opacity: 1,
+    blend: "srcOver",
+    transform: { x: 0, y: 0, w: 10, h: 10, rotation: 0 },
+    parentId: null,
+    closed: true,
+    nodes: [],
+    fill: null,
+    stroke,
+  };
+}
+
+test("MIGRATION INVARIANT v4 -> v5: stroke-styling stamp leaves existing strokes byte-identical", () => {
+  const doc = {
+    version: 4,
+    pages: [{ id: "p", layers: [vectorWithStroke({ color: { r: 0, g: 0, b: 0, a: 1 }, width: 2 })] }],
+  };
+  const before = JSON.parse(JSON.stringify(doc.pages[0].layers[0].stroke));
+  assert.equal(needsMigration(doc), true);
+  const r = migrateDocument(doc);
+  assert.equal(r.from, 4);
+  assert.equal(r.to, 5);
+  assert.equal(r.to, DOC_VERSION);
+  assert.equal(r.strokeStylesStamped, 1);
+  assert.equal(doc.version, 5);
+  // A v4 stroke is already a valid v5 stroke and renders solid/butt/miter.
+  assert.deepEqual(doc.pages[0].layers[0].stroke, before);
+});
+
+test("a v5 dashed/styled stroke round-trips through JSON save/open unchanged", () => {
+  const stroke = {
+    color: { r: 0.9, g: 0.1, b: 0.1, a: 1 },
+    width: 4,
+    dash: [12, 6],
+    dashPhase: 2,
+    cap: "round",
+    join: "bevel",
+  };
+  const doc = { version: 5, pages: [{ id: "p", layers: [vectorWithStroke(stroke)] }] };
+  assert.equal(needsMigration(doc), false);
+  const round = JSON.parse(JSON.stringify(doc));
+  assert.deepEqual(round.pages[0].layers[0].stroke, stroke);
+});

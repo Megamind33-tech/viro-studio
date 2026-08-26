@@ -1021,6 +1021,9 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
     el("para-first").addEventListener("change", () => patchParagraph());
     el("para-after").addEventListener("change", () => patchParagraph());
     el("stroke-w").addEventListener("change", () => patchStroke());
+    el("stroke-cap").addEventListener("change", () => patchStroke());
+    el("stroke-join").addEventListener("change", () => patchStroke());
+    el("stroke-dash").addEventListener("change", () => patchStroke());
 
     el<HTMLInputElement>("nav-zoom").addEventListener("input", (e) => {
       setZoom(Number((e.target as HTMLInputElement).value) / 100);
@@ -1046,7 +1049,32 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
   function patchStroke(): void {
     const w = parseNum(el<HTMLInputElement>("stroke-w").value);
     if (w == null) return;
-    app.run({ type: "vector.strokeWidth", params: { width: w, fallbackColor: state.fg } });
+    const cap = el<HTMLSelectElement>("stroke-cap").value;
+    const join = el<HTMLSelectElement>("stroke-join").value;
+    const dash = parseDash(el<HTMLInputElement>("stroke-dash").value);
+    const params: Record<string, unknown> = { width: w, fallbackColor: state.fg, cap, join };
+    // Undefined means "leave the dash as-is" (unparseable input); an explicit
+    // [] clears back to solid. Only send a parsed value so a typo never clobbers.
+    if (dash !== undefined) params.dash = dash;
+    app.run({ type: "vector.strokeWidth", params });
+  }
+
+  /**
+   * Parse a dash field ("12 6", "12,6", "8") into Skia's even on/off intervals.
+   * Empty is solid ([]); a single value repeats as an equal on/off; an odd list
+   * is doubled (SVG's rule) so the control can never emit an invalid pattern.
+   * Returns undefined for non-numeric input, meaning "do not touch the dash".
+   */
+  function parseDash(raw: string): number[] | undefined {
+    const text = raw.trim();
+    if (!text) return [];
+    const parts = text.split(/[\s,]+/).filter(Boolean).map(Number);
+    if (!parts.length || parts.some((n) => !Number.isFinite(n) || n < 0)) return undefined;
+    let arr = parts;
+    if (arr.length === 1) arr = [arr[0]!, arr[0]!];
+    else if (arr.length % 2 !== 0) arr = [...arr, ...arr];
+    if (arr.every((n) => n === 0)) return [];
+    return arr;
   }
 
   function bindDialogs(): void {
@@ -1642,6 +1670,9 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
     setDisabled(LAYER_FIELDS, !sel);
     setDisabled(STORY_FIELDS, !story);
     setDisabled(["stroke-w"], sel?.kind !== "vector");
+    // Cap/join/dash only apply once a vector actually carries a stroke.
+    const hasStroke = sel?.kind === "vector" && !!sel.stroke;
+    setDisabled(["stroke-cap", "stroke-join", "stroke-dash"], !hasStroke);
     setDisabled(["duplicate-btn", "delete-btn"], !sel);
     document.querySelectorAll<HTMLButtonElement>("#para-align [data-align]").forEach((b) => {
       b.disabled = !story;
@@ -1656,6 +1687,9 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
     if (sel?.kind === "vector") {
       fillIfIdle("stroke-w", sel.stroke ? fmt(sel.stroke.width, 1) : "0");
       el("stroke-well").style.background = sel.stroke ? rgbaCss(sel.stroke.color) : "transparent";
+      el<HTMLSelectElement>("stroke-cap").value = sel.stroke?.cap ?? "butt";
+      el<HTMLSelectElement>("stroke-join").value = sel.stroke?.join ?? "miter";
+      fillIfIdle("stroke-dash", sel.stroke?.dash?.length ? sel.stroke.dash.join(" ") : "");
     }
 
     // Effects — drop shadow of the selected layer.

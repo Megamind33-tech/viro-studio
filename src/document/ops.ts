@@ -12,10 +12,11 @@ import type {
   Rgba,
   StrokeEffect,
   Transform,
+  VectorStroke,
 } from "./types";
 import { replaceStoryRange } from "./text-model";
 import { applyPt, decompose, localMatrix, mul, worldBounds } from "./transform";
-import { activePage, cloneDoc, findLayer, selectedLayers, uid } from "./factory";
+import { activePage, cloneDoc, cloneStroke, findLayer, selectedLayers, uid } from "./factory";
 
 export function setActiveLayers(doc: PressDocument, ids: string[]): PressDocument {
   const next = cloneDoc(doc);
@@ -176,6 +177,47 @@ export function setLayerOuterGlow(
   const effects: LayerEffect[] = (layer.effects ?? []).filter((e) => e.type !== "outer-glow");
   if (glow) effects.push(glow);
   layer.effects = effects;
+  return next;
+}
+
+/**
+ * Merge a stroke patch onto an existing stroke (or a fresh one born from
+ * `fallbackColor`), preserving fields the patch does not name. An empty
+ * `dash: []` clears the dash back to a solid stroke. Used by the vector-stroke
+ * UI command and Anchor so width, colour, cap, join and dash edit independently.
+ */
+export function mergeStroke(
+  prev: VectorStroke | null,
+  patch: Partial<VectorStroke>,
+  fallbackColor: Rgba,
+): VectorStroke {
+  const base: VectorStroke = cloneStroke(prev) ?? { color: { ...fallbackColor }, width: 1 };
+  if (patch.color) base.color = { ...patch.color };
+  if (patch.width !== undefined) base.width = patch.width;
+  if (patch.cap !== undefined) base.cap = patch.cap;
+  if (patch.join !== undefined) base.join = patch.join;
+  if (patch.dash !== undefined) {
+    if (patch.dash && patch.dash.length) base.dash = [...patch.dash];
+    else delete base.dash;
+  }
+  if (patch.dashPhase !== undefined) base.dashPhase = patch.dashPhase;
+  return base;
+}
+
+/**
+ * Set or patch the stroke of one vector layer. Skips non-vectors and locked
+ * layers. `patch` merges onto any existing stroke via `mergeStroke`.
+ */
+export function setVectorStroke(
+  doc: PressDocument,
+  id: string,
+  patch: Partial<VectorStroke>,
+  fallbackColor: Rgba,
+): PressDocument {
+  const next = cloneDoc(doc);
+  const layer = findLayer(activePage(next), id);
+  if (!layer || layer.kind !== "vector" || layer.locked) return next;
+  layer.stroke = mergeStroke(layer.stroke, patch, fallbackColor);
   return next;
 }
 
