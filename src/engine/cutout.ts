@@ -38,7 +38,7 @@ async function loadOrt(): Promise<typeof import("onnxruntime-web/wasm")> {
   // CPU "wasm" execution provider, so the /wasm entry pulls the smaller non-JSEP
   // ort-wasm-simd-threaded.wasm (~13.5 MiB) and never references the jsep binary.
   const ort = await import("onnxruntime-web/wasm");
-  ort.env.wasm.wasmPaths = WASM_PATHS;
+  ort.env.wasm.wasmPaths = { wasm: `${WASM_PATHS}ort-wasm-simd-threaded.wasm` };
   ort.env.wasm.numThreads = 1;
   return ort;
 }
