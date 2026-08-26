@@ -234,9 +234,14 @@ export class PressApp {
     return () => this.listeners.delete(fn);
   }
 
-  private emit(): void {
+  private emit(forceChrome = false): void {
     this.trackRevision();
     this.compositor?.draw(this.doc);
+    // During a pointer gesture the canvas must repaint every frame, but rebuilding
+    // every panel (layer rows, navigator page thumb, history, …) on each coalesced
+    // move does N layerThumb + pageThumb composites plus a full innerHTML rewrite.
+    // That work is deferred to pointer-up so drag/resize stays on the hot path only.
+    if (!forceChrome && this.drag) return;
     for (const fn of this.listeners) fn();
   }
 
@@ -1083,15 +1088,19 @@ export class PressApp {
       if (this.drag.mode === "marquee" && this.compositor.view.marquee) {
         this.doc = selectIntersecting(this.doc, this.compositor.view.marquee);
         this.compositor.view.marquee = null;
-        this.emit();
+        this.compositor.view.smartGuides = null;
+        this.drag = null;
+        this.emit(true);
+        return;
       }
-      const wasTransform = this.drag.mode === "resize" || this.drag.mode === "move";
+      const ended = this.drag.mode;
       this.drag = null;
       // Smart guides are a mid-drag affordance only; drop them on release.
       if (this.compositor.view.smartGuides) this.compositor.view.smartGuides = null;
       // The drag repaints through a frame-coalesced path, so the last pointer
-      // position may still be unpainted when the button comes up.
-      if (wasTransform) this.emit();
+      // position may still be unpainted when the button comes up. Refresh panels
+      // once the gesture ends — they were skipped during the drag for perf.
+      if (ended === "resize" || ended === "move" || ended === "crop") this.emit(true);
     });
     canvas.addEventListener("dblclick", (e) => {
       if (!this.compositor) return;
@@ -1112,7 +1121,7 @@ export class PressApp {
       e.preventDefault();
       const factor = e.deltaY < 0 ? 1.08 : 1 / 1.08;
       this.compositor.view.zoom = Math.min(16, Math.max(0.05, this.compositor.view.zoom * factor));
-      this.emit();
+      this.emitSoon();
     }, { passive: false });
   }
 
