@@ -33,6 +33,8 @@ const SCRIPTS = [
   "effects.spec.mjs",
   // vector stroke styling - dash/cap/join actually render (pixel diff) + v5 round-trip
   "stroke-style.spec.mjs",
+  // RFC-6 - multi-select group transform (move/scale, one undo) + smart guides
+  "multi-transform.spec.mjs",
 ];
 
 function run(script) {
