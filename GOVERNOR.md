@@ -111,6 +111,9 @@ Hosted platform (approved 2026-08-26 via **ADR 0004**, phased + flag-gated):
 | Background removal (U²-Netp) | PROVEN_WORKING (gated) | `cutout.ts`, availability-gated UI |
 | Font registry (bundled/user/system) | PROVEN_WORKING | `font-registry.ts`, slice E2E |
 | Autosave + crash recovery | PROVEN_WORKING (new) | `tests/recovery.spec.mjs` 13/13 + demo video |
+| Feature flags (platform.enabled/cloud/billing) | PROVEN_WORKING (new) | `tests/flags.test.mjs` 3/3 |
+| Local Projects library (dashboard: save/list/open/rename/delete) | PROVEN_WORKING (new) | `tests/projects.spec.mjs` 11/11 + demo video |
+| Project thumbnails (rendered from real page) | PROVEN_WORKING (new) | `compositor.thumbnailDataUrl`; projects E2E asserts real PNG |
 | Anchor op API (preview/apply/audit) | PROVEN_WORKING | `tests/anchor-bus.spec.mjs` |
 | Templates/presets + procedural marks | PARTIALLY_IMPLEMENTED | real generators; catalog breadth limited |
 | Accounts / auth / sessions | ABSENT | no code |
@@ -165,11 +168,18 @@ Editor pointer feedback immediate; move/resize local (no network — trivially s
 re-render for localized edits (compositor already coalesces repaints per frame). Autosave is
 debounced (1200 ms) and off the interaction path.
 
-## Current Sprint — Sprint 0 (Forensic Audit) → transitioning to Sprint 3 (Editor Core hardening)
+## Current Sprint — Sprint 0 done; platform P1/P2 (local-first) delivered
 
-Objectives met: forensic audit; GOVERNOR.md; environment productionized (build-tested);
-P0 desk-mount and doc-reopen fixes; autosave/recovery implemented + tested.
-Measurable targets hit: `npm test` green; build green; recovery E2E 13/13.
+Objectives met: forensic audit; GOVERNOR.md + terminology lock; environment productionized
+(build-tested); P0 desk-mount and doc-reopen fixes; autosave/recovery; ADR 0004 platform
+architecture accepted; **P1 foundation** (feature flags + local project store + PlatformClient
+seam) and **P2 local shell/dashboard** (multi-project persistence, Projects dialog, real
+page-rendered thumbnails) built and tested locally while cloud/payment provisioning is pending.
+Measurable targets: `npm test` green (245 unit, 5 chrome, 8/8 slices incl. projects 11/11 &
+recovery 13/13); build green; `tsc` clean.
+
+Next (unblocks on owner provisioning per ADR 0004): P1 cloud (Supabase Auth + RLS +
+authorization/tenant tests), P2 cloud sync of the same project model, P3 Lenco entitlements.
 
 ## Active Risks
 
@@ -244,3 +254,9 @@ the relevant hard-stop flag.)
   local editor is unaffected. Owner. Migration impact: additive (new Supabase schema, expand-only);
   no change to the existing editor or document schema. Remaining blockers are provisioning + legal
   (see Blockers), not direction.
+- 2026-08-26 — Delivered ADR 0004 **P1/P2 local-first** while provisioning is pending: feature-flag
+  system (`platform.enabled` on; `platform.cloud`/`platform.billing` off), local project library
+  (IndexedDB `documents` store, DB v4), a `ProjectProvider` seam the Supabase provider will
+  implement unchanged, and real page-rendered thumbnails (GOVERNOR.md §15/§61). The app is now a
+  multi-project local editor; the cloud layer becomes a sync provider behind the same seam. Owner.
+  Migration impact: additive IndexedDB store; no destructive change; editor untouched.
