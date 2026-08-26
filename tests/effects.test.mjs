@@ -13,6 +13,7 @@ import {
   setLayerOuterGlow,
   setLayerStrokeEffect,
 } from "../src/document/ops.ts";
+import { longShadowSteps } from "../src/engine/long-shadow.ts";
 import { documentFromPreset, PRESETS } from "../src/document/presets.ts";
 
 function docWithRect() {
@@ -220,4 +221,12 @@ test("inner and long shadows coexist with drop shadow and survive JSON", () => {
   assert.equal(fx.length, 3);
   const round = JSON.parse(JSON.stringify(doc));
   assert.deepEqual(round.pages[0].layers[0].effects, fx);
+});
+
+test("longShadowSteps caps extrusion so a 400px length does not issue 400 saveLayers", () => {
+  assert.equal(longShadowSteps(0), 0);
+  assert.equal(longShadowSteps(-8), 0);
+  assert.equal(longShadowSteps(4), 1);
+  assert.equal(longShadowSteps(80), 12);
+  assert.equal(longShadowSteps(400), 12);
 });

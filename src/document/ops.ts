@@ -18,7 +18,7 @@ import type {
   VectorStroke,
 } from "./types";
 import { replaceStoryRange } from "./text-model";
-import { applyPt, decompose, localMatrix, mul, worldBounds } from "./transform";
+import { applyPt, decompose, localMatrix, mul, scaleXOf, scaleYOf, worldBounds } from "./transform";
 import { activePage, cloneDoc, cloneStroke, findLayer, selectedLayers, uid } from "./factory";
 
 export function setActiveLayers(doc: PressDocument, ids: string[]): PressDocument {
@@ -311,11 +311,39 @@ export function setStoryText(doc: PressDocument, layerId: string, text: string):
   return next;
 }
 
-export function setCharacter(
-  doc: PressDocument,
-  layerId: string,
-  patch: { size?: number; leading?: number; tracking?: number; fill?: Rgba; fontId?: string },
-): PressDocument {
+/**
+ * Mirror selected unlocked layers about their own centre by negating local
+ * scale. Scale already rotates about the box centre (`transform.ts`), so a
+ * sign flip is a true reflection — not a translate. No-op with nothing
+ * eligible.
+ */
+export function flipLayers(doc: PressDocument, ids: string[], axis: "h" | "v"): PressDocument {
+  const next = cloneDoc(doc);
+  const page = activePage(next);
+  let changed = false;
+  for (const id of ids) {
+    const layer = findLayer(page, id);
+    if (!layer || layer.locked) continue;
+    if (axis === "h") layer.transform.scaleX = -scaleXOf(layer.transform);
+    else layer.transform.scaleY = -scaleYOf(layer.transform);
+    changed = true;
+  }
+  return changed ? next : doc;
+}
+
+/** Character-panel patch. Only defined fields are written. */
+export type CharacterPatch = {
+  size?: number;
+  leading?: number;
+  tracking?: number;
+  fill?: Rgba;
+  fontId?: string;
+  underline?: boolean;
+  strikethrough?: boolean;
+  baselineShift?: number;
+};
+
+export function setCharacter(doc: PressDocument, layerId: string, patch: CharacterPatch): PressDocument {
   const next = cloneDoc(doc);
   const layer = findLayer(activePage(next), layerId);
   if (!layer || layer.kind !== "type-frame") return next;
@@ -326,6 +354,9 @@ export function setCharacter(
   if (patch.tracking != null) story.character.tracking = patch.tracking;
   if (patch.fill) story.character.fill = patch.fill;
   if (patch.fontId) story.character.fontId = patch.fontId;
+  if (patch.underline !== undefined) story.character.underline = patch.underline;
+  if (patch.strikethrough !== undefined) story.character.strikethrough = patch.strikethrough;
+  if (patch.baselineShift !== undefined) story.character.baselineShift = patch.baselineShift;
   return next;
 }
 

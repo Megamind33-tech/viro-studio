@@ -596,6 +596,47 @@ export function addVectorPolygon(
 }
 
 /**
+ * Star inscribed in a w×h box. `points` tips (3–16); `inner` is the valley
+ * radius as a fraction of the tip radius (0.12–0.85, default 0.4). First tip
+ * sits at 12 o'clock. Editable nodes — not a baked icon.
+ */
+export function starNodes(w: number, h: number, points: number, inner = 0.4): PathNode[] {
+  const n = Math.max(3, Math.min(16, Math.round(points)));
+  const ratio = Math.max(0.12, Math.min(0.85, inner));
+  const cx = w / 2;
+  const cy = h / 2;
+  const rx = w / 2;
+  const ry = h / 2;
+  const nodes: PathNode[] = [];
+  for (let i = 0; i < n * 2; i++) {
+    const a = -Math.PI / 2 + (i * Math.PI) / n;
+    const k = i % 2 === 0 ? 1 : ratio;
+    const x = cx + rx * k * Math.cos(a);
+    const y = cy + ry * k * Math.sin(a);
+    nodes.push({ x, y, inX: x, inY: y, outX: x, outY: y });
+  }
+  return nodes;
+}
+
+export function addVectorStar(
+  doc: PressDocument,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  fill: Rgba,
+  points: number,
+  inner = 0.4,
+): PressDocument {
+  const n = Math.max(3, Math.min(16, Math.round(points)));
+  return addVectorLayer(doc, `${n}-point star`, x, y, w, h, starNodes(w, h, n, inner), {
+    closed: true,
+    fill,
+    stroke: null,
+  });
+}
+
+/**
  * Straight rule between two page points. A line has no fill, so the stroke is
  * what paints — mirrors the requirement `press.add_line` enforces.
  */

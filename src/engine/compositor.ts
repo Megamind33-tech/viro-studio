@@ -26,6 +26,7 @@ import { destWindow, sourceWindow } from "../document/image-fit";
 import { activePage } from "../document/factory";
 import { composeFrame, drawTypeFrame, nearestCaretOffset, type CaretStop, type FacePack } from "./type";
 import type { FontRegistry } from "./font-registry";
+import { longShadowSteps } from "./long-shadow";
 
 /** The layer's enabled drop shadow, if any. */
 function dropShadowOf(layer: Layer): DropShadowEffect | null {
@@ -411,13 +412,14 @@ class PressView implements ViewState {
    * without this a shape drag gives no feedback at all until pointerup.
    */
   shapePreview: {
-    kind: "rect" | "ellipse" | "line" | "roundrect" | "polygon";
+    kind: "rect" | "ellipse" | "line" | "roundrect" | "polygon" | "star";
     x: number;
     y: number;
     w: number;
     h: number;
     radius?: number;
     sides?: number;
+    points?: number;
   } | null = null;
   textEdit: { layerId: string; anchor: number; focus: number } | null = null;
   smartGuides: { xs: Float64Array; xn: number; ys: Float64Array; yn: number } | null = null;
@@ -1228,19 +1230,31 @@ export class Compositor {
       else if (s.kind === "roundrect") {
         const rr = Math.max(0, Math.min(s.radius ?? 24, Math.abs(r - l) / 2, Math.abs(b - t) / 2));
         sk.drawRRect(ck.RRectXY(ck.LTRBRect(l + h / 2, t + h / 2, r + h / 2, b + h / 2), rr, rr), ink);
-      } else if (s.kind === "polygon") {
-        const sides = Math.max(3, Math.min(24, Math.round(s.sides ?? 6)));
+      } else if (s.kind === "polygon" || s.kind === "star") {
         const cx = (l + r) / 2;
         const cy = (t + b) / 2;
         const rx = (r - l) / 2;
         const ry = (b - t) / 2;
         const path = new ck.PathBuilder();
-        for (let i = 0; i < sides; i++) {
-          const a = -Math.PI / 2 + (i * 2 * Math.PI) / sides;
-          const x = cx + rx * Math.cos(a);
-          const y = cy + ry * Math.sin(a);
-          if (i === 0) path.moveTo(x, y);
-          else path.lineTo(x, y);
+        if (s.kind === "star") {
+          const pts = Math.max(3, Math.min(16, Math.round(s.points ?? 5)));
+          for (let i = 0; i < pts * 2; i++) {
+            const a = -Math.PI / 2 + (i * Math.PI) / pts;
+            const k = i % 2 === 0 ? 1 : 0.4;
+            const x = cx + rx * k * Math.cos(a);
+            const y = cy + ry * k * Math.sin(a);
+            if (i === 0) path.moveTo(x, y);
+            else path.lineTo(x, y);
+          }
+        } else {
+          const sides = Math.max(3, Math.min(24, Math.round(s.sides ?? 6)));
+          for (let i = 0; i < sides; i++) {
+            const a = -Math.PI / 2 + (i * 2 * Math.PI) / sides;
+            const x = cx + rx * Math.cos(a);
+            const y = cy + ry * Math.sin(a);
+            if (i === 0) path.moveTo(x, y);
+            else path.lineTo(x, y);
+          }
         }
         path.close();
         const drawn = path.detach();
@@ -1800,7 +1814,7 @@ export class Compositor {
     if (fx && fx.enabled && fx.length > 0) {
       const a = Math.min(1, Math.max(0, fx.color.a * fx.opacity));
       const rad = (fx.angle * Math.PI) / 180;
-      const steps = Math.max(1, Math.min(32, Math.round(fx.length)));
+      const steps = longShadowSteps(fx.length);
       const step = fx.length / steps;
       const c = ck.Color4f(fx.color.r, fx.color.g, fx.color.b, a);
       for (let i = steps; i >= 1; i--) {
@@ -2590,6 +2604,9 @@ export class Compositor {
     h = hashStr(h, c.fontId);
     h = hashNum(hashNum(hashNum(h, c.size), c.leading), c.tracking);
     h = hashRgba(h, c.fill);
+    h = mixHash(h, c.underline ? 1 : 2);
+    h = mixHash(h, c.strikethrough ? 1 : 2);
+    h = hashNum(h, c.baselineShift ?? 0);
     for (const f of c.otFeatures) h = hashStr(h, f);
     const p = story.paragraph;
     h = hashStr(h, p.align);

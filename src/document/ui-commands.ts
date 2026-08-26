@@ -34,6 +34,7 @@ import {
   addVectorPolygon,
   addVectorRect,
   addVectorRoundRect,
+  addVectorStar,
   applyImageSize,
   cloneDoc,
   findLayer,
@@ -50,11 +51,13 @@ import {
   closePath,
   deleteSelected,
   duplicateSelected,
+  flipLayers,
   groupSelected,
   mergeStroke,
   reorderLayer,
   replaceAssetData,
   setCharacter,
+  type CharacterPatch,
   setLayerBlend,
   setLayerLocked,
   setLayerOpacity,
@@ -421,6 +424,22 @@ const DEFS: CommandDef<never>[] = [
     apply: (p, doc) => addVectorPolygon(doc, p.x, p.y, p.w, p.h, p.fill, p.sides),
   }),
   define({
+    type: "vector.addStar",
+    label: "Star",
+    validate: (raw) => {
+      const o = v.obj(raw, "vector.addStar");
+      return {
+        x: reqNum(o, "x", "vector.addStar"),
+        y: reqNum(o, "y", "vector.addStar"),
+        w: reqNum(o, "w", "vector.addStar", SIZE),
+        h: reqNum(o, "h", "vector.addStar", SIZE),
+        fill: rgba(o.fill, "vector.addStar", "fill"),
+        points: reqNum(o, "points", "vector.addStar", { min: 3, max: 16 }),
+      };
+    },
+    apply: (p, doc) => addVectorStar(doc, p.x, p.y, p.w, p.h, p.fill, p.points),
+  }),
+  define({
     type: "vector.addLine",
     label: "Line",
     validate: (raw) => {
@@ -563,6 +582,14 @@ const DEFS: CommandDef<never>[] = [
       if (baselineShift !== undefined) overrides.baselineShift = baselineShift;
       if (o.fontId !== undefined) overrides.fontId = v.str(o, "fontId", "type.characterRange");
       if (o.fill !== undefined) overrides.fill = rgba(o.fill, "type.characterRange", "fill");
+      if (o.underline !== undefined) {
+        if (typeof o.underline !== "boolean") throw new CommandError(`type.characterRange: "underline" must be true or false`);
+        overrides.underline = o.underline;
+      }
+      if (o.strikethrough !== undefined) {
+        if (typeof o.strikethrough !== "boolean") throw new CommandError(`type.characterRange: "strikethrough" must be true or false`);
+        overrides.strikethrough = o.strikethrough;
+      }
       if (!Object.keys(overrides).length) {
         throw new CommandError(`type.characterRange: give at least one character property`);
       }
@@ -607,21 +634,49 @@ const DEFS: CommandDef<never>[] = [
       const o = v.obj(raw, "type.character");
       const layerId = v.str(o, "layerId", "type.character");
       v.requireLayer(doc, layerId, "type.character", { kind: "type-frame" });
-      const patch: { size?: number; leading?: number; tracking?: number; fill?: Rgba; fontId?: string } = {};
+      const patch: CharacterPatch = {};
       const size = v.num(o, "size", "type.character", SIZE);
       const leading = v.num(o, "leading", "type.character", SIZE);
       const tracking = v.num(o, "tracking", "type.character", { min: -1000, max: 1000 });
+      const baselineShift = v.num(o, "baselineShift", "type.character", COORD);
       if (size !== undefined) patch.size = size;
       if (leading !== undefined) patch.leading = leading;
       if (tracking !== undefined) patch.tracking = tracking;
+      if (baselineShift !== undefined) patch.baselineShift = baselineShift;
       if (o.fill !== undefined) patch.fill = rgba(o.fill, "type.character", "fill");
       if (o.fontId !== undefined) patch.fontId = v.str(o, "fontId", "type.character");
+      if (o.underline !== undefined) {
+        if (typeof o.underline !== "boolean") throw new CommandError(`type.character: "underline" must be true or false`);
+        patch.underline = o.underline;
+      }
+      if (o.strikethrough !== undefined) {
+        if (typeof o.strikethrough !== "boolean") throw new CommandError(`type.character: "strikethrough" must be true or false`);
+        patch.strikethrough = o.strikethrough;
+      }
       if (!Object.keys(patch).length) {
-        throw new CommandError(`type.character: give at least one of "size", "leading", "tracking", "fill", "fontId"`);
+        throw new CommandError(`type.character: give at least one of "size", "leading", "tracking", "fill", "fontId", "underline", "strikethrough", "baselineShift"`);
       }
       return { layerId, patch };
     },
     apply: (p, doc) => setCharacter(doc, p.layerId, p.patch),
+  }),
+  define({
+    type: "layer.flip",
+    label: (p: { axis: "h" | "v" }) => (p.axis === "h" ? "Flip Horizontal" : "Flip Vertical"),
+    validate: (raw) => {
+      const o = v.obj(raw, "layer.flip");
+      if (o.axis !== "h" && o.axis !== "v") {
+        throw new CommandError(`layer.flip: "axis" must be h or v, got ${JSON.stringify(o.axis)}`);
+      }
+      return { axis: o.axis as "h" | "v" };
+    },
+    apply: (p, doc) => {
+      const next = flipLayers(doc, doc.activeLayerIds, p.axis);
+      if (next === doc) {
+        throw new CommandError(`layer.flip: select at least one unlocked layer`);
+      }
+      return next;
+    },
   }),
   define({
     type: "type.paragraphAlign",

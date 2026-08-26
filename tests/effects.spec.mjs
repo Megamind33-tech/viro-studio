@@ -214,6 +214,26 @@ check("3D long shadow is stored on the layer", longS.stored === true);
 check("3D long shadow actually renders (not decorative)", longS.changed === true, `before=${longS.beforeLen}B after=${longS.afterLen}B`);
 check("undo removes the 3D long shadow", longS.undoCleared === true);
 
+const under = await page.evaluate(async () => {
+  const P = window.__press;
+  window.viroAnchor.applyDetailed([
+    { op: "press.add_type_frame", params: { x: 200, y: 400, w: 1400, h: 280, text: "UNDERLINE", size: 96, leading: 110 }, reason: "underline fixture" },
+  ]);
+  const layers = P.doc.pages[0].layers;
+  const id = layers[layers.length - 1].id;
+  const before = P.compositor.thumbnailDataUrl(P.doc, 256);
+  P.setCharacter({ underline: true });
+  const stored = P.doc.stories.find((s) => s.id === P.doc.pages[0].layers.find((l) => l.id === id)?.storyId)?.character.underline;
+  const after = P.compositor.thumbnailDataUrl(P.doc, 256);
+  P.undo();
+  const undoCleared = !P.doc.stories.find((s) => s.id === P.doc.pages[0].layers.find((l) => l.id === id)?.storyId)?.character.underline;
+  return { stored: !!stored, changed: typeof before === "string" && before !== after, undoCleared, beforeLen: (before || "").length, afterLen: (after || "").length };
+});
+
+check("underline is stored on the story", under.stored === true);
+check("underline actually renders (not decorative)", under.changed === true, `before=${under.beforeLen}B after=${under.afterLen}B`);
+check("undo removes the underline", under.undoCleared === true);
+
 check("no page errors", pageErrors.length === 0, pageErrors.join(" | "));
 
 console.log(`\n${results.length - failed}/${results.length} checks passed`);

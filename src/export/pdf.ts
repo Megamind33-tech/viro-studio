@@ -732,6 +732,28 @@ function emitType(
     ops.push(endText());
   }
 
+  const underline = !!story.character.underline;
+  const strike = !!story.character.strikethrough;
+  if ((underline || strike) && composed.lines.length) {
+    const size = story.character.size > 0 ? story.character.size : 1;
+    const fill = story.character.fill;
+    ops.push(setGraphicsState(gsName(fill.a * alpha, fill.a * alpha, layer.blend)));
+    ops.push(setStrokingRgbColor(clamp01(fill.r), clamp01(fill.g), clamp01(fill.b)));
+    ops.push(setLineWidth(Math.max(1, size * 0.055)));
+    for (const line of composed.lines) {
+      if (underline) {
+        const y = line.baseline + size * 0.12;
+        ops.push(moveTo(round(line.x), round(y)), lineTo(round(line.x + line.width), round(y)), strokeOp());
+        report.vectorPaths += 1;
+      }
+      if (strike) {
+        const y = line.baseline - size * 0.28;
+        ops.push(moveTo(round(line.x), round(y)), lineTo(round(line.x + line.width), round(y)), strokeOp());
+        report.vectorPaths += 1;
+      }
+    }
+  }
+
   if (composed.overflow) {
     // Parity with the canvas, which paints a red overset marker into the page
     // composite itself (not into overlay chrome).

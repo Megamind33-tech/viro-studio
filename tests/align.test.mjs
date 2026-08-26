@@ -5,7 +5,7 @@
  */
 import test from "node:test";
 import assert from "node:assert/strict";
-import { alignLayers, distributeLayers } from "../src/document/ops.ts";
+import { alignLayers, distributeLayers, flipLayers } from "../src/document/ops.ts";
 import { documentFromPreset, PRESETS } from "../src/document/presets.ts";
 
 function rect(id, x, y, w, h) {
@@ -67,4 +67,24 @@ test("align is immutable and a no-op below two layers", () => {
 
 test("distribute is a no-op below three layers", () => {
   assert.deepEqual(xs(distributeLayers(doc3(), ["A", "B"], "h")), [0, 200, 400]);
+});
+
+test("flip horizontal negates scaleX about the layer centre", () => {
+  const d = flipLayers(doc3(), ["A"], "h");
+  assert.equal(d.pages[0].layers.find((l) => l.id === "A").transform.scaleX, -1);
+  assert.equal(d.pages[0].layers.find((l) => l.id === "B").transform.scaleX, undefined);
+});
+
+test("flip vertical twice restores identity scale", () => {
+  const once = flipLayers(doc3(), ["A"], "v");
+  const twice = flipLayers(once, ["A"], "v");
+  assert.equal(twice.pages[0].layers.find((l) => l.id === "A").transform.scaleY, 1);
+});
+
+test("flip skips locked layers", () => {
+  const d = doc3();
+  d.pages[0].layers.find((l) => l.id === "A").locked = true;
+  const next = flipLayers(d, ["A", "B"], "h");
+  assert.equal(next.pages[0].layers.find((l) => l.id === "A").transform.scaleX, undefined);
+  assert.equal(next.pages[0].layers.find((l) => l.id === "B").transform.scaleX, -1);
 });

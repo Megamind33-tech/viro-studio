@@ -5,7 +5,7 @@
  */
 import test from "node:test";
 import assert from "node:assert/strict";
-import { addVectorPolygon, addVectorRoundRect, polygonNodes, roundRectNodes } from "../src/document/factory.ts";
+import { addVectorPolygon, addVectorRoundRect, addVectorStar, polygonNodes, roundRectNodes, starNodes } from "../src/document/factory.ts";
 import { documentFromPreset, PRESETS } from "../src/document/presets.ts";
 
 const FILL = { r: 0.88, g: 0.48, b: 0.18, a: 1 };
@@ -50,4 +50,20 @@ test("addVectorPolygon names a triangle and a hexagon honestly", () => {
   doc = addVectorPolygon(doc, 90, 0, 80, 80, FILL, 6);
   assert.equal(doc.pages[0].layers.at(-1).name, "6-gon");
   assert.equal(doc.pages[0].layers.at(-1).nodes.length, 6);
+});
+
+test("starNodes(5) has 10 vertices and a tip at 12 o'clock", () => {
+  const nodes = starNodes(100, 100, 5);
+  assert.equal(nodes.length, 10);
+  assert.ok(Math.abs(nodes[0].x - 50) < 1e-6);
+  assert.ok(Math.abs(nodes[0].y - 0) < 1e-6);
+});
+
+test("addVectorStar commits a closed 5-point star", () => {
+  const doc = addVectorStar(documentFromPreset(PRESETS[0]), 10, 20, 120, 120, FILL, 5);
+  const layer = doc.pages[0].layers.at(-1);
+  assert.equal(layer.kind, "vector");
+  assert.equal(layer.name, "5-point star");
+  assert.equal(layer.closed, true);
+  assert.equal(layer.nodes.length, 10);
 });

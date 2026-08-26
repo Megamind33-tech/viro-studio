@@ -203,6 +203,14 @@ export interface CaretStop {
   height: number;
 }
 
+/** One composed line, for underlines / strikethroughs that follow the glyphs. */
+export interface ComposeLine {
+  x: number;
+  /** Baseline y, frame-local px. */
+  baseline: number;
+  width: number;
+}
+
 export interface ComposeResult {
   glyphs: ShapedGlyph[];
   /** True when a line had to be dropped because it fell past the frame's foot. */
@@ -213,6 +221,7 @@ export interface ComposeResult {
   /** px from the frame top to the first baseline. The frame's optical top edge. */
   firstBaselinePx: number;
   caretStops: CaretStop[];
+  lines: ComposeLine[];
 }
 
 export function nearestCaretOffset(stops: CaretStop[], x: number, y: number): number {
@@ -357,6 +366,8 @@ export function composeFrame(face: FacePack, story: Story, frameW: number, frame
 
   const glyphs: ShapedGlyph[] = [];
   const caretStops: CaretStop[] = [];
+  const decoLines: ComposeLine[] = [];
+  const shift = Number.isFinite(story.character.baselineShift) ? (story.character.baselineShift as number) : 0;
   let y = m.ascent;
   let overflow = false;
   let lineCount = 0;
@@ -369,8 +380,9 @@ export function composeFrame(face: FacePack, story: Story, frameW: number, frame
       return;
     }
     const run = shapeRun(face, text, m.key);
-    const { pen: startPen, gap } = linePen(face, text, x0, last, m, measure, align);
+    const { pen: startPen, gap, lineW } = linePen(face, text, x0, last, m, measure, align);
     let pen = startPen;
+    const baseline = y - shift;
 
     for (const g of run.glyphs) {
       const path = outlineOf(face, g.gid);
@@ -378,7 +390,7 @@ export function composeFrame(face: FacePack, story: Story, frameW: number, frame
         glyphs.push({
           gid: g.gid,
           x: pen + g.dx * m.scale,
-          y: y - g.dy * m.scale,
+          y: baseline - g.dy * m.scale,
           path,
         });
       }
@@ -386,7 +398,8 @@ export function composeFrame(face: FacePack, story: Story, frameW: number, frame
       if (gap && g.gid === face.spaceGid) pen += gap;
     }
 
-    lastBaseline = y;
+    if (lineW > 0.5) decoLines.push({ x: startPen, baseline, width: lineW });
+    lastBaseline = baseline;
     y += m.leading;
     lineCount += 1;
   };
@@ -420,7 +433,7 @@ export function composeFrame(face: FacePack, story: Story, frameW: number, frame
       const last = i === lines.length - 1;
       let lineStart = line.length ? para.indexOf(line, searchFrom) : searchFrom;
       if (lineStart < 0) lineStart = searchFrom;
-      emitStops(line, paraStart + lineStart, x0, last, y);
+      emitStops(line, paraStart + lineStart, x0, last, y - shift);
       setLine(line, x0, last);
       searchFrom = lineStart + line.length;
       if (overflow) break;
@@ -431,7 +444,7 @@ export function composeFrame(face: FacePack, story: Story, frameW: number, frame
   }
 
   if (!caretStops.length) {
-    caretStops.push({ offset: 0, x: indent, y: m.ascent, height: m.leading });
+    caretStops.push({ offset: 0, x: indent, y: m.ascent - shift, height: m.leading });
   }
 
   return {
@@ -439,8 +452,9 @@ export function composeFrame(face: FacePack, story: Story, frameW: number, frame
     overflow,
     lineCount,
     heightPx: lineCount ? lastBaseline + m.descent : 0,
-    firstBaselinePx: m.ascent,
+    firstBaselinePx: m.ascent - shift,
     caretStops,
+    lines: decoLines,
   };
 }
 
@@ -500,6 +514,29 @@ export function drawTypeFrame(
     canvas.drawPath(path, paint);
     canvas.restore();
   }
+
+  const underline = !!story.character.underline;
+  const strike = !!story.character.strikethrough;
+  if ((underline || strike) && composed.lines.length) {
+    const deco = new ck.Paint();
+    deco.setAntiAlias(true);
+    deco.setStyle(ck.PaintStyle.Stroke);
+    deco.setStrokeCap(ck.StrokeCap.Butt);
+    deco.setColor(ck.Color4f(fill.r, fill.g, fill.b, fill.a * layer.opacity));
+    deco.setStrokeWidth(Math.max(1, size * 0.055));
+    for (const line of composed.lines) {
+      if (underline) {
+        const y = line.baseline + size * 0.12;
+        canvas.drawLine(line.x, y, line.x + line.width, y, deco);
+      }
+      if (strike) {
+        const y = line.baseline - size * 0.28;
+        canvas.drawLine(line.x, y, line.x + line.width, y, deco);
+      }
+    }
+    deco.delete();
+  }
+
   paint.delete();
   return composed;
 }

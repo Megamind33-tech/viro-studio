@@ -39,6 +39,9 @@
             <button type="button" data-cmd="undo">Undo<span class="kbd">Ctrl+Z</span></button>
             <button type="button" data-cmd="redo">Redo<span class="kbd">Ctrl+Y</span></button>
             <div class="sep"></div>
+            <button type="button" data-cmd="flip-h">Flip Horizontal</button>
+            <button type="button" data-cmd="flip-v">Flip Vertical</button>
+            <div class="sep"></div>
             <button type="button" data-cmd="duplicate">Duplicate<span class="kbd">Ctrl+J</span></button>
             <button type="button" data-cmd="delete">Delete<span class="kbd">Del</span></button>
           </div>
@@ -82,6 +85,9 @@
             <button type="button" data-cmd="type-center">Align Center</button>
             <button type="button" data-cmd="type-right">Align Right</button>
             <button type="button" data-cmd="type-justify">Justify</button>
+            <div class="sep"></div>
+            <button type="button" data-cmd="type-underline">Underline<span class="kbd">Ctrl+U</span></button>
+            <button type="button" data-cmd="type-strike">Strikethrough</button>
             <div class="sep"></div>
             <button type="button" data-cmd="font-upload">Upload Font…</button>
             <div class="sep"></div>
@@ -133,6 +139,12 @@
             <button type="button" data-cmd="win-anchor"><span class="check" data-check="g-anchor"></span>Anchor</button>
           </div>
         </div>
+        <div class="menu">
+          <button type="button" class="menu-btn" data-menu="help">Help</button>
+          <div class="flyout" data-flyout="help" hidden>
+            <button type="button" data-cmd="help-shortcuts">Keyboard Shortcuts…</button>
+          </div>
+        </div>
       </nav>
 
       <div class="optionsbar" id="optionsbar" aria-label="Options">
@@ -165,6 +177,8 @@
           <button type="button" class="btn" data-cmd="type-size-up" title="Larger (Ctrl+Shift+.)">+</button>
           <label class="field"><span>Leading</span><input class="num w3" id="opt-lead" inputmode="decimal" /></label>
           <label class="field"><span>Tracking</span><input class="num w3" id="opt-track" inputmode="decimal" /></label>
+          <label class="check"><input type="checkbox" id="opt-underline" />U</label>
+          <label class="check"><input type="checkbox" id="opt-strike" />S</label>
         </div>
         <div class="opt-strip" data-for="marquee" hidden>
           <label class="field"><span>Feather</span><input class="num w3" id="opt-feather" value="0" inputmode="decimal" /></label>
@@ -204,6 +218,11 @@
           <span class="lbl">Polygon</span>
           <label class="field"><span>Sides</span><input class="num w3" id="opt-poly-sides" inputmode="numeric" /></label>
           <span class="lbl">3–24 · Fill from foreground</span>
+        </div>
+        <div class="opt-strip" data-for="star" hidden>
+          <span class="lbl">Star</span>
+          <label class="field"><span>Points</span><input class="num w3" id="opt-star-points" inputmode="numeric" /></label>
+          <span class="lbl">3–16 · Fill from foreground</span>
         </div>
         <div class="opt-strip" data-for="hand" hidden>
           <span class="lbl">Drag pasteboard · Space also pans</span>
@@ -248,6 +267,9 @@
         </button>
         <button type="button" class="tool" data-tool="polygon" title="Polygon (Shift+U)" aria-label="Polygon" aria-pressed="false">
           <svg viewBox="0 0 16 16"><path d="M8 1.5 14.5 6.2 12 14.5H4L1.5 6.2z"/></svg>
+        </button>
+        <button type="button" class="tool" data-tool="star" title="Star (Shift+U)" aria-label="Star" aria-pressed="false">
+          <svg viewBox="0 0 16 16"><path d="M8 1.4 9.7 6.2h5L10.7 9.1l1.6 4.9L8 11.2 3.7 14l1.6-4.9L1.3 6.2h5z"/></svg>
         </button>
         <div class="tool-sep" role="separator"></div>
         <button type="button" class="tool" data-tool="hand" title="Hand (H)" aria-label="Hand" aria-pressed="false">
@@ -349,6 +371,11 @@
               <label class="field"><span>Lead</span><input class="num w3" id="ch-lead" /></label>
               <label class="field"><span>Track</span><input class="num w3" id="ch-track" /></label>
             </div>
+            <div class="row fill">
+              <label class="check"><input type="checkbox" id="ch-underline" />Underline</label>
+              <label class="check"><input type="checkbox" id="ch-strike" />Strike</label>
+              <label class="field"><span>Shift</span><input class="num w3" id="ch-shift" inputmode="decimal" aria-label="Baseline shift" /></label>
+            </div>
             <div class="row">
               <span class="lbl">Color</span>
               <span class="well" id="ch-well"></span>
@@ -389,6 +416,8 @@
             <div class="row">
               <label class="field"><span>°</span><input class="num w3" id="tr-r" /></label>
               <span class="grow"></span>
+              <button type="button" class="align-btn" data-cmd="flip-h" title="Flip horizontal" aria-label="Flip horizontal">↔</button>
+              <button type="button" class="align-btn" data-cmd="flip-v" title="Flip vertical" aria-label="Flip vertical">↕</button>
               <label class="check"><input type="checkbox" id="tr-constrain" checked />Constrain</label>
             </div>
             <div class="row align-row" id="align-row" role="group" aria-label="Align and distribute">
@@ -498,6 +527,17 @@
               <label class="field"><span>Opacity</span><input class="num w3" id="opacity" /></label>
               <button type="button" class="lock-btn" id="lock-btn" title="Lock layer" aria-label="Lock layer"><svg class="icon" viewBox="0 0 12 12" aria-hidden="true"><path d="M3.5 5.5V4a2.5 2.5 0 0 1 5 0v1.5"/><rect x="2.5" y="5.5" width="7" height="5"/></svg></button>
             </div>
+            <div class="row">
+              <select class="ctrl grow" id="layer-kind-filter" aria-label="Filter layers by kind">
+                <option value="all">All kinds</option>
+                <option value="vector">Vectors</option>
+                <option value="type-frame">Type</option>
+                <option value="image-frame">Images</option>
+                <option value="raster">Rasters</option>
+                <option value="group">Groups</option>
+                <option value="adjustment">Adjustments</option>
+              </select>
+            </div>
             <div class="layer-list" id="layer-list"></div>
             <div class="layer-foot">
               <button type="button" data-cmd="group" title="New group" aria-label="New group"><svg class="icon" viewBox="0 0 12 12" aria-hidden="true"><path d="M1.5 10.5v-8h3l1.2 1.6h4.8v6.4z"/></svg></button>
@@ -552,6 +592,7 @@
           <div class="tabs" data-tabs="library">
             <button type="button" class="is-on" data-tab="assets">Assets</button>
             <button type="button" data-tab="fonts">Fonts</button>
+            <button type="button" data-tab="workflows">Workflows</button>
           </div>
           <div class="pane" data-pane="assets">
             <div class="row">
@@ -568,6 +609,10 @@
             <input class="ctrl" id="lib-font-search" type="search" placeholder="Search 1,900+ Google Fonts…" aria-label="Search font catalog" />
             <p class="hint" id="lib-font-hint">Bundled, imported, system, and on-demand Google Fonts. A face is registered only after its TTF loads.</p>
             <div class="lib-fonts" id="lib-fonts"></div>
+          </div>
+          <div class="pane" data-pane="workflows" hidden>
+            <p class="hint">Named Anchor batches. Each one creates real editable layers in one undo step — not a flattened picture.</p>
+            <div class="lib-fonts" id="lib-workflows"></div>
           </div>
         </section>
 
@@ -818,6 +863,22 @@
           <button type="button" class="btn" data-dlg="auth-cancel">Cancel</button>
           <button type="button" class="btn" data-dlg="auth-up">Create account</button>
           <button type="button" class="btn default" data-dlg="auth-in">Sign in</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="dialog-back" id="dlg-help" hidden>
+      <div class="dialog" role="dialog" aria-labelledby="dlg-help-title">
+        <div class="dialog-title" id="dlg-help-title">Keyboard shortcuts</div>
+        <div class="dialog-body">
+          <p class="hint">Tools: V move · M marquee · T type · P pen · U shapes (Shift+U cycles) · C crop · I eyedropper · H hand · Z zoom</p>
+          <p class="hint">Type: Ctrl+Shift+, / . size · Ctrl+U underline</p>
+          <p class="hint">Edit: Ctrl+Z/Y undo/redo · Ctrl+J duplicate · Ctrl+G group · Del delete</p>
+          <p class="hint">File: Ctrl+N new · Ctrl+O projects · Ctrl+S save · Shift+Ctrl+P place</p>
+          <p class="hint">View: Ctrl+R rulers · Ctrl+= / − zoom · Ctrl+0 fit · Ctrl+1 100%</p>
+        </div>
+        <div class="dialog-foot">
+          <button type="button" class="btn default" data-dlg="help-close">Close</button>
         </div>
       </div>
     </div>

@@ -157,6 +157,7 @@ const OVERRIDES = {
   "press.boolean": { op: "union", layerIds: ["ly_rect", "ly_bool_b"] },
   "press.add_round_rect": { fill: "#E07A2F", radius: 16 },
   "press.add_polygon": { fill: "#1B5BE0", sides: 6 },
+  "press.add_star": { fill: "#E07A2F", points: 5 },
 };
 
 /** Synthesise a valid op envelope for a tool from its schema. */

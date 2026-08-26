@@ -42,6 +42,7 @@ import {
   lineNodes,
   polygonNodes,
   roundRectNodes,
+  starNodes,
 } from "../document/factory";
 import {
   addAdjustment,
@@ -1174,6 +1175,9 @@ const OPS: Record<string, AnchorOpDef> = {
         { min: -2000, max: 2000 },
       ),
       fill: pRgba("Glyph colour."),
+      underline: pBool("Draw a rule under each composed line at the type colour."),
+      strikethrough: pBool("Draw a rule through each composed line at the type colour."),
+      baselineShift: pNumber("Raise (positive) or lower the glyphs relative to the baseline, in page px.", { min: -2000, max: 2000 }),
     },
     required: [],
     run: (doc, p) => {
@@ -1185,9 +1189,12 @@ const OPS: Record<string, AnchorOpDef> = {
         leading: readNum(p, "leading", { gt: 0, max: 20000 }),
         tracking: readNum(p, "tracking", { min: -2000, max: 2000 }),
         fill: readRgba(p, "fill"),
+        underline: readBool(p, "underline"),
+        strikethrough: readBool(p, "strikethrough"),
+        baselineShift: readNum(p, "baselineShift", { min: -2000, max: 2000 }),
       };
       const given = Object.entries(patch).filter(([, v]) => v !== undefined);
-      if (!given.length) fail('give at least one of "size", "leading", "tracking", "fill"');
+      if (!given.length) fail('give at least one of "size", "leading", "tracking", "fill", "underline", "strikethrough", "baselineShift"');
       return {
         doc: setCharacter(doc, id, patch),
         summary: `${name(layer)} ${given.map(([k, v]) => `${k}=${typeof v === "number" ? round(v) : "colour"}`).join(" ")}`,
@@ -1336,6 +1343,36 @@ const OPS: Record<string, AnchorOpDef> = {
       const label = readStr(p, "name", { minLength: 1, maxLength: 120 }) ?? (sides === 3 ? "Triangle" : `${sides}-gon`);
       const next = addVectorLayer(doc, label, x, y, w, h, polygonNodes(w, h, sides), { closed: true, fill, stroke });
       return { doc: next, summary: `${sides}-gon ${newestLayerId(next)} ${round(w)}×${round(h)}` };
+    },
+  },
+
+  "press.add_star": {
+    description:
+      "Create a star inscribed in the given box as an editable closed vector path. points is the tip count (3–16, default 5). " +
+      "First tip sits at 12 o'clock. The path is real nodes, not a baked icon.",
+    params: {
+      x: pNumber("Bounding box left edge in page px.", GEOMETRY),
+      y: pNumber("Bounding box top edge in page px.", GEOMETRY),
+      w: pNumber("Bounding box width in page px.", SIZE),
+      h: pNumber("Bounding box height in page px.", SIZE),
+      points: pNumber("Number of tips (3–16). Default 5.", { min: 3, max: 16 }),
+      fill: pRgba("Fill colour. Omit for an unfilled (outline-only) star."),
+      stroke: pStroke(),
+      name: pString('Layer name. Defaults to "n-point star".', { minLength: 1, maxLength: 120 }),
+    },
+    required: ["x", "y", "w", "h"],
+    run: (doc, p) => {
+      const x = reqNum(p, "x", GEOMETRY);
+      const y = reqNum(p, "y", GEOMETRY);
+      const w = reqNum(p, "w", SIZE);
+      const h = reqNum(p, "h", SIZE);
+      const points = Math.round(readNum(p, "points") ?? 5);
+      const fill = readRgba(p, "fill") ?? null;
+      const stroke = readStroke(p, "stroke") ?? null;
+      if (!fill && !stroke) fail('a star needs a "fill", a "stroke", or both — otherwise nothing paints');
+      const label = readStr(p, "name", { minLength: 1, maxLength: 120 }) ?? `${points}-point star`;
+      const next = addVectorLayer(doc, label, x, y, w, h, starNodes(w, h, points), { closed: true, fill, stroke });
+      return { doc: next, summary: `${points}-point star ${newestLayerId(next)} ${round(w)}×${round(h)}` };
     },
   },
 

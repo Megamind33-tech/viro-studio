@@ -10,6 +10,7 @@ import {
 } from "../document/factory";
 import { setLayerLocked, setLayerVisible } from "../document/ops";
 import { listUserAssets, type UserAsset } from "../library/store";
+import { WORKFLOWS, workflowById } from "../library/workflows";
 import { authAvailable, currentUser, signIn, signUp } from "../platform/auth";
 import { loadFontCatalog, searchCatalog, type CatalogFamily } from "../engine/font-catalog";
 import type { Preset, PresetCategory, PresetMargin, PresetUnit } from "../document/presets";
@@ -77,6 +78,7 @@ const TOOLS: ToolId[] = [
   "line",
   "roundrect",
   "polygon",
+  "star",
   "hand",
   "zoom",
 ];
@@ -93,6 +95,8 @@ type DeskState = {
   nd: NewDocState;
   fg: Rgba;
   bg: Rgba;
+  helpOpen: boolean;
+  layerKind: "all" | Layer["kind"];
 };
 
 /**
@@ -137,6 +141,8 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
     nd: ndFromPreset(presetById(DEFAULT_PRESET_ID) ?? PRESETS[0]!),
     fg: { r: 0.12, g: 0.12, b: 0.12, a: 1 },
     bg: { r: 1, g: 1, b: 1, a: 1 },
+    helpOpen: false,
+    layerKind: "all",
   };
   let listedAssets: UserAsset[] = [];
   let fontCatalog: CatalogFamily[] | null = null;
@@ -620,6 +626,22 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
       case "type-size-down":
         app.bumpTypeSize(-2);
         return;
+      case "type-underline":
+        toggleTypeDeco("underline");
+        return;
+      case "type-strike":
+        toggleTypeDeco("strikethrough");
+        return;
+      case "flip-h":
+        app.flipSelected("h");
+        return;
+      case "flip-v":
+        app.flipSelected("v");
+        return;
+      case "help-shortcuts":
+        state.helpOpen = true;
+        el("dlg-help").hidden = false;
+        return;
       case "sign-in":
         if (currentUser()) {
           app.signOutSession();
@@ -963,6 +985,30 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
       const n = parseNum(sidesEl.value);
       if (n != null) app.polygonSides = Math.max(3, Math.min(24, Math.round(n)));
     });
+    const starEl = document.getElementById("opt-star-points") as HTMLInputElement | null;
+    starEl?.addEventListener("change", () => {
+      const n = parseNum(starEl.value);
+      if (n != null) app.starPoints = Math.max(3, Math.min(16, Math.round(n)));
+    });
+    for (const [id, key] of [
+      ["opt-underline", "underline"],
+      ["opt-strike", "strikethrough"],
+      ["ch-underline", "underline"],
+      ["ch-strike", "strikethrough"],
+    ] as const) {
+      const node = document.getElementById(id) as HTMLInputElement | null;
+      node?.addEventListener("change", () => applyType({ [key]: node.checked }));
+    }
+    el("ch-shift").addEventListener("change", () => {
+      const n = parseNum(el<HTMLInputElement>("ch-shift").value);
+      if (n != null) applyType({ baselineShift: n });
+    });
+    const kindFilter = document.getElementById("layer-kind-filter") as HTMLSelectElement | null;
+    kindFilter?.addEventListener("change", () => {
+      const v = kindFilter.value;
+      state.layerKind = v === "all" ? "all" : (v as Layer["kind"]);
+      render();
+    });
   }
 
   function applyTransform(src: "opt" | "tr"): void {
@@ -989,8 +1035,16 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
     });
   }
 
-  function applyType(patch: { size?: number; leading?: number; tracking?: number; fill?: Rgba }): void {
+  function applyType(patch: Parameters<PressApp["setCharacter"]>[0]): void {
     app.setCharacter(patch);
+  }
+
+  function toggleTypeDeco(key: "underline" | "strikethrough"): void {
+    const sel = selectedLayers(app.doc).find((l) => l.kind === "type-frame");
+    if (!sel || sel.kind !== "type-frame") return;
+    const story = app.doc.stories.find((s) => s.id === sel.storyId);
+    if (!story) return;
+    app.setCharacter({ [key]: !story.character[key] });
   }
 
   function bindColor(): void {
@@ -1059,6 +1113,11 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
           p.hidden = p.dataset.pane !== tab.dataset.tab;
         });
         if (tab.dataset.tab === "channels") app.refreshChannels();
+        return;
+      }
+      const wf = t.closest<HTMLElement>("[data-workflow]");
+      if (wf?.dataset.workflow) {
+        runWorkflow(wf.dataset.workflow);
         return;
       }
       const c = t.closest<HTMLElement>("[data-cmd]");
@@ -1241,6 +1300,10 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
       b.addEventListener("click", () => {
         const n = (b as HTMLElement).dataset.dlg;
         if (n === "image-cancel" || n === "new-cancel" || n === "bc-cancel" || n === "auth-cancel") app.closeDialog();
+        if (n === "help-close") {
+          state.helpOpen = false;
+          el("dlg-help").hidden = true;
+        }
         if (n === "image-ok") applyImageSizeDlg();
         if (n === "new-ok") createFromNewDialog();
         if (n === "bc-ok") {
@@ -1678,6 +1741,10 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
         e.preventDefault();
         cmd("new");
       }
+      if (k === "u" && !e.shiftKey) {
+        e.preventDefault();
+        cmd("type-underline");
+      }
       if (k === "o" && !e.shiftKey) {
         e.preventDefault();
         cmd("projects");
@@ -1753,6 +1820,7 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
     el("dlg-new").hidden = app.dialog !== "new";
     el("dlg-bc").hidden = app.dialog !== "brightness";
     el("dlg-auth").hidden = app.dialog !== "auth";
+    el("dlg-help").hidden = !state.helpOpen;
     const signBtn = document.querySelector<HTMLElement>('[data-cmd="sign-in"]');
     const who = currentUser();
     if (signBtn) signBtn.textContent = who ? `Sign out (${who.email || "session"})` : "Sign in / Create account…";
@@ -1813,6 +1881,16 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
     fillIfIdle("ch-size", story ? fmt(story.character.size, 1) : "");
     fillIfIdle("ch-lead", story ? fmt(story.character.leading, 1) : "");
     fillIfIdle("ch-track", story ? fmt(story.character.tracking, 1) : "");
+    fillIfIdle("ch-shift", story ? fmt(story.character.baselineShift ?? 0, 1) : "");
+    for (const [id, on] of [
+      ["opt-underline", !!story?.character.underline],
+      ["opt-strike", !!story?.character.strikethrough],
+      ["ch-underline", !!story?.character.underline],
+      ["ch-strike", !!story?.character.strikethrough],
+    ] as const) {
+      const box = document.getElementById(id) as HTMLInputElement | null;
+      if (box && document.activeElement !== box) box.checked = on;
+    }
     fillIfIdle("para-first", story ? fmt(story.paragraph.firstLineIndent, 1) : "");
     fillIfIdle("para-after", story ? fmt(story.paragraph.spaceAfter, 1) : "");
     document.querySelectorAll<HTMLElement>("#para-align [data-align]").forEach((b) => {
@@ -1822,6 +1900,7 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
     setDisabled(TRANSFORM_FIELDS, !sel);
     setDisabled(LAYER_FIELDS, !sel);
     setDisabled(STORY_FIELDS, !story);
+    setDisabled(["opt-underline", "opt-strike", "ch-underline", "ch-strike", "ch-shift"], !story);
     setDisabled(["stroke-w"], sel?.kind !== "vector");
     // Cap/join/dash only apply once a vector actually carries a stroke.
     const hasStroke = sel?.kind === "vector" && !!sel.stroke;
@@ -1908,6 +1987,7 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
 
     fillIfIdle("opt-rr-radius", fmt(app.roundRectRadius, 0));
     fillIfIdle("opt-poly-sides", String(app.polygonSides));
+    fillIfIdle("opt-star-points", String(app.starPoints));
 
     const fxEmpty = document.getElementById("fx-empty");
     if (fxEmpty) fxEmpty.hidden = !!sel;
@@ -1956,6 +2036,7 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
     renderNav(page, z);
     fillFontSelects(story?.character.fontId);
     renderFontList(story?.character.fontId);
+    renderWorkflows();
     void renderLibrary();
 
     document.querySelectorAll<HTMLElement>("[data-ch]").forEach((b) => {
@@ -2067,6 +2148,41 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
         : `<p class="empty">${q.trim() ? "No catalog matches." : "Catalog empty."}</p>`);
   }
 
+  function renderWorkflows(): void {
+    const host = document.getElementById("lib-workflows");
+    if (!host) return;
+    host.innerHTML = WORKFLOWS.map(
+      (w) =>
+        `<button type="button" class="lib-font" data-workflow="${esc(w.id)}">${esc(w.name)}<span>${esc(w.blurb)}</span></button>`,
+    ).join("");
+  }
+
+  function runWorkflow(id: string): void {
+    const wf = workflowById(id);
+    if (!wf) return;
+    const page = activePage(app.doc);
+    const ops = wf.build({ width: page.widthPx, height: page.heightPx, fg: state.fg });
+    try {
+      app.applyAnchorDetailed(ops);
+      if (wf.after === "long-shadow-type") {
+        const type = selectedLayers(app.doc).find((l) => l.kind === "type-frame");
+        if (type) {
+          app.setLongShadow(type.id, {
+            type: "long-shadow",
+            enabled: true,
+            color: { r: 0.08, g: 0.08, b: 0.1, a: 1 },
+            angle: 135,
+            length: 48,
+            opacity: 0.65,
+          });
+        }
+      }
+      app.status = `Workflow “${wf.name}” — ${ops.length} real Anchor op${ops.length === 1 ? "" : "s"}`;
+    } catch (err) {
+      app.status = err instanceof Error ? err.message : String(err);
+    }
+  }
+
   async function renderLibrary(): Promise<void> {
     const host = document.getElementById("lib-assets");
     if (!host) return;
@@ -2089,6 +2205,10 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
     const rows: string[] = [];
     const walk = (layers: Layer[], depth: number) => {
       for (const layer of [...layers].reverse()) {
+        if (state.layerKind !== "all" && layer.kind !== state.layerKind) {
+          if (layer.kind === "group") walk(childrenOf(page, layer.id), depth + 1);
+          continue;
+        }
         const on = app.doc.activeLayerIds.includes(layer.id);
         const fx =
           layer.kind === "adjustment"

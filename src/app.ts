@@ -38,6 +38,7 @@ import {
   setActiveLayers,
   setActivePage,
   setCharacter,
+  type CharacterPatch,
   setImageCrop,
   setImageFit,
   setLayerBlend,
@@ -182,8 +183,10 @@ export class PressApp {
   roundRectRadius = 24;
   /** Side count for the polygon tool (3–24). */
   polygonSides = 6;
+  /** Tip count for the star tool (3–16). */
+  starPoints = 5;
   drag: {
-    mode: "move" | "marquee" | "pan" | "rect" | "ellipse" | "line" | "roundrect" | "polygon" | "crop" | "resize" | "type";
+    mode: "move" | "marquee" | "pan" | "rect" | "ellipse" | "line" | "roundrect" | "polygon" | "star" | "crop" | "resize" | "type";
     x: number;
     y: number;
     lx: number;
@@ -659,7 +662,7 @@ export class PressApp {
       const key = e.key.toLowerCase();
       if (key === "u" && !e.ctrlKey && !e.metaKey) {
         // U picks the shape tool; Shift+U cycles the group, as Photoshop does.
-        const group: ToolId[] = ["rect", "ellipse", "line", "roundrect", "polygon"];
+        const group: ToolId[] = ["rect", "ellipse", "line", "roundrect", "polygon", "star"];
         const at = group.indexOf(this.compositor?.view.tool ?? "rect");
         this.setTool(e.shiftKey && at >= 0 ? group[(at + 1) % group.length]! : group[at >= 0 ? at : 0]!);
         return;
@@ -922,7 +925,7 @@ export class PressApp {
         this.emit();
         return;
       }
-      if (tool === "rect" || tool === "ellipse" || tool === "line" || tool === "roundrect" || tool === "polygon") {
+      if (tool === "rect" || tool === "ellipse" || tool === "line" || tool === "roundrect" || tool === "polygon" || tool === "star") {
         this.drag = { mode: tool, x: p.x, y: p.y, lx: p.x, ly: p.y };
         this.compositor.view.shapePreview = {
           kind: tool,
@@ -932,6 +935,7 @@ export class PressApp {
           h: 0,
           radius: this.roundRectRadius,
           sides: this.polygonSides,
+          points: this.starPoints,
         };
         return;
       }
@@ -1048,6 +1052,7 @@ export class PressApp {
         this.drag.mode === "line" ||
         this.drag.mode === "roundrect" ||
         this.drag.mode === "polygon" ||
+        this.drag.mode === "star" ||
         this.drag.mode === "type"
       ) {
         // A line keeps its true endpoints (w/h may be negative); a box shape is
@@ -1069,6 +1074,7 @@ export class PressApp {
             ...this.shapeBox(p.x, p.y, e.shiftKey),
             radius: this.roundRectRadius,
             sides: this.polygonSides,
+            points: this.starPoints,
           };
         }
         // Overlay-only: the document has not changed. A full emit() here would
@@ -1086,7 +1092,7 @@ export class PressApp {
         this.compositor.view.shapePreview = null;
         this.compositor.requestOverlayRepaint();
       }
-      if (this.drag.mode === "rect" || this.drag.mode === "ellipse" || this.drag.mode === "roundrect" || this.drag.mode === "polygon") {
+      if (this.drag.mode === "rect" || this.drag.mode === "ellipse" || this.drag.mode === "roundrect" || this.drag.mode === "polygon" || this.drag.mode === "star") {
         const b = this.shapeBox(p.x, p.y, e.shiftKey);
         // Below the minimum this was a stray click, not a drag. Photoshop opens
         // a size dialog here; we simply decline rather than drop a 4px artefact.
@@ -1101,6 +1107,11 @@ export class PressApp {
             this.run({
               type: "vector.addPolygon",
               params: { x: b.x, y: b.y, w: b.w, h: b.h, fill: fg, sides: this.polygonSides },
+            });
+          } else if (this.drag.mode === "star") {
+            this.run({
+              type: "vector.addStar",
+              params: { x: b.x, y: b.y, w: b.w, h: b.h, fill: fg, points: this.starPoints },
             });
           } else {
             this.run({
@@ -1395,6 +1406,10 @@ export class PressApp {
     this.commit(`Distribute ${axis}`, distributeLayers(this.doc, ids, axis));
   }
 
+  flipSelected(axis: "h" | "v"): void {
+    this.run({ type: "layer.flip", params: { axis } });
+  }
+
   /** Set or clear (null) the drop-shadow effect on a layer. One undo step. */
   setDropShadow(id: string, shadow: DropShadowEffect | null): void {
     this.commit("Drop shadow", setLayerDropShadow(this.doc, id, shadow));
@@ -1540,7 +1555,7 @@ export class PressApp {
     else this.emit();
   }
 
-  setCharacter(patch: { size?: number; leading?: number; tracking?: number; fill?: Rgba; fontId?: string }): void {
+  setCharacter(patch: CharacterPatch): void {
     const layer = selectedLayers(this.doc).find((l) => l.kind === "type-frame");
     if (!layer) return;
     if (patch.fontId) void this.fonts.ensureLoaded(patch.fontId);
