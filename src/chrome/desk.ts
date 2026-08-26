@@ -177,6 +177,7 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
   bindDialogs();
   bindKeys();
   bindRecovery();
+  bindProjects();
 
   app.onChange(() => render());
   render();
@@ -187,6 +188,81 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
     bar?.addEventListener("click", (e) => {
       const btn = (e.target as HTMLElement).closest<HTMLElement>("[data-cmd]");
       if (btn?.dataset.cmd) cmd(btn.dataset.cmd);
+    });
+  }
+
+  function openProjects(): void {
+    el("dlg-projects").hidden = false;
+    void renderProjects();
+  }
+
+  function closeProjects(): void {
+    el("dlg-projects").hidden = true;
+  }
+
+  async function renderProjects(): Promise<void> {
+    const grid = el("projects-grid");
+    const list = await app.listProjects();
+    if (!list.length) {
+      grid.innerHTML = `<p class="empty">No projects yet. Your saved work will appear here.</p>`;
+      return;
+    }
+    grid.innerHTML = list
+      .map((p) => {
+        const when = new Date(p.updatedAt).toLocaleString();
+        const thumb = p.thumbnail
+          ? `<img src="${esc(p.thumbnail)}" alt="">`
+          : `<span class="proj-noimg" aria-hidden="true"></span>`;
+        return `<div class="proj-card" data-proj="${esc(p.id)}">
+          <button type="button" class="proj-open" data-proj-open="${esc(p.id)}" title="Open ${esc(p.name)}">
+            <span class="proj-thumb">${thumb}</span>
+            <span class="proj-name">${esc(p.name)}</span>
+            <time class="proj-time">${esc(when)}</time>
+          </button>
+          <div class="proj-actions">
+            <button type="button" class="proj-btn" data-proj-rename="${esc(p.id)}">Rename</button>
+            <button type="button" class="proj-btn" data-proj-delete="${esc(p.id)}">Delete</button>
+          </div>
+        </div>`;
+      })
+      .join("");
+  }
+
+  function bindProjects(): void {
+    const dlg = el("dlg-projects");
+    dlg.addEventListener("click", (e) => {
+      const t = e.target as HTMLElement;
+      if (t.closest('[data-dlg="projects-close"]')) {
+        closeProjects();
+        return;
+      }
+      if (t.closest('[data-cmd="new"]')) {
+        closeProjects();
+        cmd("new");
+        return;
+      }
+      const openId = t.closest<HTMLElement>("[data-proj-open]")?.dataset.projOpen;
+      if (openId) {
+        void app.openProject(openId).then((ok) => {
+          if (ok) closeProjects();
+        });
+        return;
+      }
+      const renameId = t.closest<HTMLElement>("[data-proj-rename]")?.dataset.projRename;
+      if (renameId) {
+        const card = t.closest<HTMLElement>(".proj-card");
+        const current = card?.querySelector(".proj-name")?.textContent ?? "";
+        const name = window.prompt("Rename project", current);
+        if (name && name.trim()) void app.renameProject(renameId, name).then(() => renderProjects());
+        return;
+      }
+      const deleteId = t.closest<HTMLElement>("[data-proj-delete]")?.dataset.projDelete;
+      if (deleteId) {
+        if (window.confirm("Delete this project? This cannot be undone.")) {
+          void app.deleteProject(deleteId).then(() => renderProjects());
+        }
+        return;
+      }
     });
   }
 
@@ -360,6 +436,12 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
         return;
       case "recover-discard":
         app.discardRecovery();
+        return;
+      case "projects":
+        void openProjects();
+        return;
+      case "save-project":
+        void app.saveProjectNow();
         return;
       default:
         return;
@@ -1247,6 +1329,14 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
       if (k === "n") {
         e.preventDefault();
         cmd("new");
+      }
+      if (k === "o" && !e.shiftKey) {
+        e.preventDefault();
+        cmd("projects");
+      }
+      if (k === "s" && !e.shiftKey) {
+        e.preventDefault();
+        cmd("save-project");
       }
       if (k === "j") {
         e.preventDefault();

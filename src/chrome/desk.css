@@ -78,6 +78,130 @@
   resize: vertical;
 }
 
+/* Projects (local document library / dashboard). */
+.dialog-wide {
+  width: min(880px, 92vw);
+  max-height: 84vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.dialog-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 10px 14px;
+  border-top: 1px solid var(--hair);
+}
+
+.proj-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.proj-scope {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.projects-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+  overflow: auto;
+  padding: 2px;
+}
+
+.projects-grid .empty {
+  grid-column: 1 / -1;
+  color: var(--muted);
+  font-size: 12px;
+  padding: 24px 8px;
+  text-align: center;
+}
+
+.proj-card {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--hair);
+  background: var(--raised);
+}
+
+.proj-open {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.proj-thumb {
+  display: block;
+  aspect-ratio: 1 / 1.294;
+  background: #141414;
+  overflow: hidden;
+}
+
+.proj-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.proj-noimg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.proj-name {
+  padding: 6px 8px 0;
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.proj-time {
+  padding: 0 8px;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.proj-actions {
+  display: flex;
+  gap: 6px;
+  padding: 6px 8px 8px;
+}
+
+.proj-btn {
+  flex: 1;
+  padding: 3px 6px;
+  border: 1px solid var(--hair);
+  background: transparent;
+  color: var(--ink);
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.proj-btn:hover {
+  border-color: var(--accent);
+}
+
+.proj-open:focus-visible,
+.proj-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 /* Autosave recovery prompt — offered at boot when a previous session left
    unsaved work in the local recovery slot. */
 .recover-bar {

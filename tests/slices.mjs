@@ -27,6 +27,8 @@ const SCRIPTS = [
   "electron-bridge.spec.mjs",
   // data-loss P0 - autosave to IndexedDB and crash/reload recovery
   "recovery.spec.mjs",
+  // local-first platform (ADR 0004) - projects library + real thumbnails
+  "projects.spec.mjs",
 ];
 
 function run(script) {

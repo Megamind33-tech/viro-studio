@@ -70,6 +70,8 @@ import {
   putUserAsset,
   type RecoverySnapshot,
 } from "./library/store";
+import { flag } from "./platform/flags";
+import { projects, type ProjectRecord, type ProjectSummary } from "./platform/projects";
 
 /** Smallest edge a layer may be scaled to, in page px. */
 const MIN_SIZE = 4;
@@ -132,6 +134,17 @@ export class PressApp {
   pendingRecovery: RecoverySnapshot | null = null;
   /** Debounce for autosave writes, in ms. */
   private static AUTOSAVE_MS = 1200;
+  /**
+   * The project this session is editing. Once the user makes a real edit a
+   * project is created (or an opened one is reused), so work is always captured
+   * in the local library, not just the crash-recovery slot.
+   */
+  currentProjectId: string | null = null;
+  private projectCreatedAt = 0;
+  private lastThumbnail: string | null = null;
+  private lastThumbAt = 0;
+  /** Regenerate the page thumbnail at most this often during active editing. */
+  private static THUMB_MS = 4000;
   dialog: "image-size" | "new" | "brightness" | null = null;
   channelThumbs: { r: string; g: string; b: string; rgb: string } | null = null;
   /** Per-op audit trail from the last Anchor batch, for the queue surface. */
@@ -245,8 +258,14 @@ export class PressApp {
     if (this.autosaveTimer) return;
     this.autosaveTimer = setTimeout(() => {
       this.autosaveTimer = 0;
-      void this.writeRecovery();
+      void this.autosaveTick();
     }, PressApp.AUTOSAVE_MS);
+  }
+
+  /** One debounced autosave: crash-recovery slot + the persisted project. */
+  private async autosaveTick(): Promise<void> {
+    await this.writeRecovery();
+    if (flag("platform.enabled")) await this.persistCurrentProject();
   }
 
   /**
@@ -285,7 +304,132 @@ export class PressApp {
       clearTimeout(this.autosaveTimer);
       this.autosaveTimer = 0;
     }
-    void this.writeRecovery();
+    void this.autosaveTick();
+  }
+
+  // ── Projects (local library; cloud provider slots in behind this) ─────────
+
+  /**
+   * Render a page thumbnail from the ACTUAL document, throttled so active
+   * editing does not pay a full composite every autosave. Returns the last
+   * thumbnail when not due, or null if rendering is unavailable.
+   */
+  private maybeThumbnail(force = false): string | null {
+    if (!this.compositor) return this.lastThumbnail;
+    const now = Date.now();
+    if (!force && this.lastThumbnail && now - this.lastThumbAt < PressApp.THUMB_MS) {
+      return this.lastThumbnail;
+    }
+    try {
+      const url = this.compositor.thumbnailDataUrl(this.doc, 360);
+      if (url) {
+        this.lastThumbnail = url;
+        this.lastThumbAt = now;
+      }
+    } catch {
+      // A thumbnail failure must never break autosave or the edit path.
+    }
+    return this.lastThumbnail;
+  }
+
+  /** Upsert the working document into the local project library. */
+  async persistCurrentProject(force = false): Promise<void> {
+    if (!this.dirty && !force) return;
+    if (!this.currentProjectId) {
+      this.currentProjectId = uid("proj");
+      this.projectCreatedAt = Date.now();
+    }
+    const now = Date.now();
+    const record: ProjectRecord = {
+      id: this.currentProjectId,
+      name: this.doc.name || "Untitled",
+      doc: JSON.parse(JSON.stringify(this.doc)),
+      thumbnail: this.maybeThumbnail(force),
+      createdAt: this.projectCreatedAt || now,
+      updatedAt: now,
+    };
+    try {
+      await projects().save(record);
+    } catch {
+      // Non-durable environment: keep editing; local library is unavailable.
+    }
+  }
+
+  /** Save the current project immediately with a freshly rendered thumbnail. */
+  async saveProjectNow(): Promise<void> {
+    await this.persistCurrentProject(true);
+    this.status = `Saved “${this.doc.name || "Untitled"}” to Projects`;
+    this.emit();
+  }
+
+  listProjects(): Promise<ProjectSummary[]> {
+    return projects().list();
+  }
+
+  /** Load a saved project as the working document. */
+  async openProject(id: string): Promise<boolean> {
+    const record = await projects().get(id);
+    if (!record || !record.doc) {
+      this.status = "Project not found";
+      this.emit();
+      return false;
+    }
+    try {
+      const doc = JSON.parse(JSON.stringify(record.doc)) as PressDocument;
+      migrateDocument(doc);
+      this.commit("Open project", doc);
+      this.currentProjectId = record.id;
+      this.projectCreatedAt = record.createdAt;
+      this.lastThumbnail = record.thumbnail;
+      this.lastThumbAt = 0;
+      // The freshly opened state is the saved baseline, not unsaved work.
+      this.savedRev = this.bus.revision();
+      this.dirty = false;
+      this.status = `Opened “${doc.name || "Untitled"}”`;
+      this.emit();
+      return true;
+    } catch (err) {
+      this.status = `Could not open project — ${err instanceof Error ? err.message : String(err)}`;
+      this.emit();
+      return false;
+    }
+  }
+
+  /** Start a fresh project from a preset, capturing it in the library. */
+  async newProject(presetId?: string): Promise<void> {
+    const preset = presetId ? PRESETS.find((p) => p.id === presetId) ?? PRESETS[0]! : PRESETS[0]!;
+    this.commit("New project", documentFromPreset(preset));
+    this.currentProjectId = uid("proj");
+    this.projectCreatedAt = Date.now();
+    this.lastThumbnail = null;
+    this.lastThumbAt = 0;
+    await this.persistCurrentProject(true);
+    this.emit();
+  }
+
+  async renameProject(id: string, name: string): Promise<void> {
+    const clean = name.trim();
+    if (!clean) return;
+    const record = await projects().get(id);
+    if (!record) return;
+    record.name = clean;
+    record.updatedAt = Date.now();
+    if (record.doc && typeof record.doc === "object") {
+      (record.doc as { name?: string }).name = clean;
+    }
+    await projects().save(record);
+    if (id === this.currentProjectId) {
+      this.doc.name = clean;
+    }
+    this.emit();
+  }
+
+  async deleteProject(id: string): Promise<void> {
+    await projects().remove(id);
+    if (id === this.currentProjectId) {
+      this.currentProjectId = null;
+    }
+    this.emit();
   }
 
   /**

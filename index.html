@@ -19,11 +19,13 @@
           <button type="button" class="menu-btn" data-menu="file">File</button>
           <div class="flyout" data-flyout="file" hidden>
             <button type="button" data-cmd="new">New…<span class="kbd">Ctrl+N</span></button>
-            <button type="button" data-cmd="open">Open…</button>
+            <button type="button" data-cmd="projects">Projects…<span class="kbd">Ctrl+O</span></button>
+            <button type="button" data-cmd="open">Open File…</button>
             <button type="button" data-cmd="place">Place…<span class="kbd">Shift+Ctrl+P</span></button>
             <button type="button" data-cmd="import-fonts">Import Fonts…</button>
             <button type="button" data-cmd="import-assets">Import Assets…</button>
             <div class="sep"></div>
+            <button type="button" data-cmd="save-project">Save to Projects<span class="kbd">Ctrl+S</span></button>
             <button type="button" data-cmd="export-png">Export PNG…</button>
             <button type="button" data-cmd="export-pdf">Export PDF…</button>
             <button type="button" data-cmd="save-json">Save Press JSON…</button>
@@ -457,6 +459,22 @@
     <input type="file" id="file-assets" accept="image/png,image/jpeg,image/webp,image/gif,image/bmp,.png,.jpg,.jpeg,.webp,.gif,.bmp,.ttf,.otf,.woff,.woff2,.ttc,.psd,.vdj,.json" multiple hidden />
     <input type="file" id="file-open" accept=".psd,.vdj,.json,.png,.jpg,.jpeg,.webp,.gif,.bmp,.press.json,.ttf,.otf" hidden />
     <textarea id="type-input" class="type-input" tabindex="-1" autocomplete="off" spellcheck="false" aria-label="Type"></textarea>
+
+    <div class="dialog-back" id="dlg-projects" hidden>
+      <div class="dialog dialog-wide" role="dialog" aria-labelledby="dlg-projects-title" aria-modal="true">
+        <div class="dialog-title" id="dlg-projects-title">Projects</div>
+        <div class="dialog-body">
+          <div class="proj-toolbar">
+            <button type="button" class="ctrl" data-cmd="new">New document</button>
+            <span class="proj-scope" id="proj-scope">Stored on this device</span>
+          </div>
+          <div id="projects-grid" class="projects-grid" aria-live="polite"></div>
+        </div>
+        <div class="dialog-foot">
+          <button type="button" class="ctrl" data-dlg="projects-close">Close</button>
+        </div>
+      </div>
+    </div>
 
     <div id="recover-bar" class="recover-bar" role="region" aria-label="Recover unsaved work" hidden>
       <span class="recover-msg">Unsaved work from a previous session was found:&nbsp;<span id="recover-name" class="recover-name"></span></span>
