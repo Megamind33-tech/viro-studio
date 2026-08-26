@@ -5,6 +5,7 @@ import type {
   Align,
   BlendMode,
   ColorSpace,
+  Contour,
   ImageFit,
   Layer,
   LayerBase,
@@ -33,6 +34,16 @@ export function cloneStroke(stroke: VectorStroke | null | undefined): VectorStro
   if (stroke.cap) out.cap = stroke.cap;
   if (stroke.join) out.join = stroke.join;
   return out;
+}
+
+/**
+ * Deep-copy a v6 multi-contour list, or return undefined for the single-contour
+ * (legacy `nodes`/`closed`) case. Keeps History and clone paths honest without
+ * aliasing node arrays across document snapshots.
+ */
+export function cloneContours(contours: Contour[] | null | undefined): Contour[] | undefined {
+  if (!contours || !contours.length) return undefined;
+  return contours.map((c) => ({ closed: c.closed, nodes: c.nodes.map((p) => ({ ...p })) }));
 }
 
 export const ink: Rgba = { r: 0.12, g: 0.12, b: 0.12, a: 1 };
@@ -961,6 +972,42 @@ const STROKE_CAPS = new Set(["butt", "round", "square"]);
 const STROKE_JOINS = new Set(["miter", "round", "bevel"]);
 /** A dashed rule made of 64 on/off pairs is already excessive; cap the parser surface. */
 export const MAX_DASH_INTERVALS = 128;
+/** A compound path with thousands of subpaths is a corrupt/hostile file; cap it. */
+export const MAX_CONTOURS = 4096;
+/** Per-contour node cap — bounds the geometry a single subpath can carry. */
+export const MAX_CONTOUR_NODES = 200_000;
+
+/**
+ * Validate a v6 multi-contour list (a boolean-op result). Each contour needs ≥2
+ * finite nodes and a boolean `closed`; the counts are bounded to keep the parser
+ * surface small, mirroring `validateStroke`. Returns problems; empty = ok.
+ */
+export function validateContours(contours: Contour[], where: string): string[] {
+  const errs: string[] = [];
+  if (!Array.isArray(contours)) {
+    errs.push(`${where}: contours must be an array`);
+    return errs;
+  }
+  if (contours.length > MAX_CONTOURS) errs.push(`${where}: too many contours (max ${MAX_CONTOURS})`);
+  for (let i = 0; i < contours.length; i++) {
+    const c = contours[i]!;
+    const at = `${where}: contour ${i}`;
+    if (typeof c.closed !== "boolean") errs.push(`${at}: closed must be a boolean`);
+    if (!Array.isArray(c.nodes)) {
+      errs.push(`${at}: nodes must be an array`);
+      continue;
+    }
+    if (c.nodes.length < 2) errs.push(`${at}: needs at least 2 nodes`);
+    if (c.nodes.length > MAX_CONTOUR_NODES) errs.push(`${at}: too many nodes (max ${MAX_CONTOUR_NODES})`);
+    for (const n of c.nodes) {
+      if (![n.x, n.y, n.inX, n.inY, n.outX, n.outY].every((v) => Number.isFinite(v))) {
+        errs.push(`${at}: node coordinates must be finite`);
+        break;
+      }
+    }
+  }
+  return errs;
+}
 
 /** Validate a vector stroke's optional v5 styling. Returns problems; empty = ok. */
 export function validateStroke(stroke: VectorStroke, where: string): string[] {
@@ -998,8 +1045,8 @@ export function validateStroke(stroke: VectorStroke, where: string): string[] {
 /** Structural check against types.ts. Returns a list of problems; empty means valid. */
 export function validateDocument(doc: PressDocument): string[] {
   const errs: string[] = [];
-  if (doc.version !== 1 && doc.version !== 2 && doc.version !== 3 && doc.version !== 4 && doc.version !== 5) {
-    errs.push("version must be 1, 2, 3, 4 or 5");
+  if (![1, 2, 3, 4, 5, 6].includes(doc.version)) {
+    errs.push("version must be 1, 2, 3, 4, 5 or 6");
   }
   if (!doc.name) errs.push("name is empty");
   if (!(doc.ppi > 0)) errs.push(`ppi must be > 0 (got ${doc.ppi})`);
@@ -1061,12 +1108,25 @@ export function validateDocument(doc: PressDocument): string[] {
         errs.push(`${page.name}/${layer.name}: assetId has no asset`);
       }
       if (layer.kind === "vector") {
-        if (layer.fill && !layer.closed) {
-          errs.push(`${page.name}/${layer.name}: open path carries a fill the compositor will not draw`);
+        const where = `${page.name}/${layer.name}`;
+        // PRECEDENCE (v6): a non-empty `contours` list is authoritative; the
+        // legacy single `nodes`/`closed` is the one-contour case otherwise.
+        const multi = Array.isArray(layer.contours) && layer.contours.length > 0;
+        if (multi) {
+          const anyClosed = layer.contours!.some((c) => c.closed);
+          if (layer.fill && !anyClosed) {
+            errs.push(`${where}: filled compound path has no closed contour the compositor will draw`);
+          }
+          if (!layer.fill && !layer.stroke) errs.push(`${where}: vector has neither fill nor stroke`);
+          for (const e of validateContours(layer.contours!, where)) errs.push(e);
+        } else {
+          if (layer.fill && !layer.closed) {
+            errs.push(`${where}: open path carries a fill the compositor will not draw`);
+          }
+          if (!layer.fill && !layer.stroke) errs.push(`${where}: vector has neither fill nor stroke`);
+          if (layer.nodes.length < 2) errs.push(`${where}: vector needs at least 2 nodes`);
         }
-        if (!layer.fill && !layer.stroke) errs.push(`${page.name}/${layer.name}: vector has neither fill nor stroke`);
-        if (layer.nodes.length < 2) errs.push(`${page.name}/${layer.name}: vector needs at least 2 nodes`);
-        if (layer.stroke) for (const e of validateStroke(layer.stroke, `${page.name}/${layer.name}`)) errs.push(e);
+        if (layer.stroke) for (const e of validateStroke(layer.stroke, where)) errs.push(e);
       }
     }
   }

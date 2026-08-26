@@ -530,6 +530,9 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
       case "ungroup":
         app.ungroup();
         return;
+      case "subtract-vectors":
+        app.subtractSelected();
+        return;
       case "bring-forward":
         app.reorder(1);
         return;

@@ -1859,7 +1859,15 @@ export class Compositor {
   }
 
   private drawVector(ck: CanvasKit, sk: Canvas, layer: VectorLayer, paint: Paint): void {
-    if (layer.nodes.length < 2) {
+    // PRECEDENCE (v6): a non-empty `contours` list is the authoritative
+    // compound path; otherwise the legacy single `nodes`/`closed` is one contour.
+    const multi = Array.isArray(layer.contours) && layer.contours.length > 0;
+    const contours = multi
+      ? layer.contours!
+      : [{ nodes: layer.nodes, closed: layer.closed }];
+
+    // Single-node degenerate case (a just-started pen path) keeps its dot.
+    if (!multi && layer.nodes.length < 2) {
       if (layer.nodes.length === 1) {
         paint.setStyle(ck.PaintStyle.Fill);
         paint.setColor(ck.Color4f(0.878, 0.478, 0.184, 1));
@@ -1867,23 +1875,39 @@ export class Compositor {
       }
       return;
     }
+
     const builder = new ck.PathBuilder();
-    const n0 = layer.nodes[0];
-    builder.moveTo(n0.x, n0.y);
-    for (let i = 1; i < layer.nodes.length; i++) {
-      const a = layer.nodes[i - 1];
-      const b = layer.nodes[i];
-      builder.cubicTo(a.outX, a.outY, b.inX, b.inY, b.x, b.y);
+    let drawable = 0;
+    let anyClosed = false;
+    for (const c of contours) {
+      if (c.nodes.length < 2) continue;
+      drawable++;
+      if (c.closed) anyClosed = true;
+      const n0 = c.nodes[0];
+      builder.moveTo(n0.x, n0.y);
+      for (let i = 1; i < c.nodes.length; i++) {
+        const a = c.nodes[i - 1];
+        const b = c.nodes[i];
+        builder.cubicTo(a.outX, a.outY, b.inX, b.inY, b.x, b.y);
+      }
+      if (c.closed) {
+        const last = c.nodes[c.nodes.length - 1];
+        const first = c.nodes[0];
+        builder.cubicTo(last.outX, last.outY, first.inX, first.inY, first.x, first.y);
+        builder.close();
+      }
     }
-    if (layer.closed) {
-      const last = layer.nodes[layer.nodes.length - 1];
-      const first = layer.nodes[0];
-      builder.cubicTo(last.outX, last.outY, first.inX, first.inY, first.x, first.y);
-      builder.close();
+    if (drawable === 0) {
+      builder.delete();
+      return;
     }
     const path = builder.detach();
     builder.delete();
-    if (layer.fill && layer.closed) {
+    // A compound path needs an explicit fill rule so subtracted holes read as
+    // holes regardless of winding — even-odd. A single contour keeps Skia's
+    // default (winding) so existing vectors are byte-identical to v5.
+    if (multi && drawable > 1) path.setFillType(ck.FillType.EvenOdd);
+    if (layer.fill && anyClosed) {
       paint.setStyle(ck.PaintStyle.Fill);
       paint.setColor(color(ck, layer.fill, layer.fill.a * layer.opacity));
       sk.drawPath(path, paint);
@@ -2355,8 +2379,22 @@ export class Compositor {
           for (const d of layer.stroke.dash ?? []) h = hashNum(h, d);
           if (!layer.stroke.dash?.length) h = mixHash(h, 0x50_11d);
         }
-        for (const n of layer.nodes) {
-          h = hashNum(hashNum(hashNum(hashNum(hashNum(hashNum(h, n.x), n.y), n.inX), n.inY), n.outX), n.outY);
+        // v6 compound paths: fold every contour and the multi-contour fill rule
+        // so a boolean-op result invalidates thumbnails/repaints. The legacy
+        // single-contour case still hashes `nodes` exactly as before.
+        const multi = Array.isArray(layer.contours) && layer.contours.length > 0;
+        if (multi) {
+          h = mixHash(h, 0xc0_11d);
+          for (const c of layer.contours!) {
+            h = mixHash(h, c.closed ? 1 : 2);
+            for (const n of c.nodes) {
+              h = hashNum(hashNum(hashNum(hashNum(hashNum(hashNum(h, n.x), n.y), n.inX), n.inY), n.outX), n.outY);
+            }
+          }
+        } else {
+          for (const n of layer.nodes) {
+            h = hashNum(hashNum(hashNum(hashNum(hashNum(hashNum(h, n.x), n.y), n.inX), n.inY), n.outX), n.outY);
+          }
         }
         break;
       }

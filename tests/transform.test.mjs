@@ -259,7 +259,7 @@ function vectorWithStroke(stroke) {
   };
 }
 
-test("MIGRATION INVARIANT v4 -> v5: stroke-styling stamp leaves existing strokes byte-identical", () => {
+test("MIGRATION INVARIANT v4 -> v6: stroke-styling stamp leaves existing strokes byte-identical", () => {
   const doc = {
     version: 4,
     pages: [{ id: "p", layers: [vectorWithStroke({ color: { r: 0, g: 0, b: 0, a: 1 }, width: 2 })] }],
@@ -268,11 +268,10 @@ test("MIGRATION INVARIANT v4 -> v5: stroke-styling stamp leaves existing strokes
   assert.equal(needsMigration(doc), true);
   const r = migrateDocument(doc);
   assert.equal(r.from, 4);
-  assert.equal(r.to, 5);
   assert.equal(r.to, DOC_VERSION);
   assert.equal(r.strokeStylesStamped, 1);
-  assert.equal(doc.version, 5);
-  // A v4 stroke is already a valid v5 stroke and renders solid/butt/miter.
+  assert.equal(doc.version, DOC_VERSION);
+  // A v4 stroke is already a valid v6 stroke and renders solid/butt/miter.
   assert.deepEqual(doc.pages[0].layers[0].stroke, before);
 });
 
@@ -285,8 +284,90 @@ test("a v5 dashed/styled stroke round-trips through JSON save/open unchanged", (
     cap: "round",
     join: "bevel",
   };
+  // DOC_VERSION is now 6, so a v5 file needs the widening stamp on open.
   const doc = { version: 5, pages: [{ id: "p", layers: [vectorWithStroke(stroke)] }] };
-  assert.equal(needsMigration(doc), false);
+  assert.equal(needsMigration(doc), true);
   const round = JSON.parse(JSON.stringify(doc));
   assert.deepEqual(round.pages[0].layers[0].stroke, stroke);
+});
+
+// -- v5 -> v6 multi-contour widening (ADR 0005 Phase-0) ----------------------
+
+function rectContour(w, h) {
+  const p = (x, y) => ({ x, y, inX: x, inY: y, outX: x, outY: y });
+  return [p(0, 0), p(w, 0), p(w, h), p(0, h)];
+}
+
+test("MIGRATION INVARIANT v5 -> v6: a v5 vector reopens byte-identically as a v6 one-contour vector", () => {
+  const layer = {
+    id: "v",
+    kind: "vector",
+    name: "v",
+    visible: true,
+    locked: false,
+    opacity: 1,
+    blend: "srcOver",
+    transform: { x: 0, y: 0, w: 10, h: 10, rotation: 0 },
+    parentId: null,
+    closed: true,
+    nodes: rectContour(10, 10),
+    fill: { r: 0, g: 0, b: 0, a: 1 },
+    stroke: null,
+  };
+  const doc = { version: 5, pages: [{ id: "p", layers: [layer] }] };
+  const before = JSON.parse(JSON.stringify(doc));
+
+  assert.equal(needsMigration(doc), true);
+  const r = migrateDocument(doc);
+  assert.equal(r.from, 5);
+  assert.equal(r.to, 6);
+  assert.equal(r.to, DOC_VERSION);
+  // Every existing vector is counted, but NOTHING is rewritten.
+  assert.equal(r.contoursStamped, 1);
+  assert.equal(doc.version, 6);
+
+  const migratedVector = doc.pages[0].layers[0];
+  // The stamp adds no `contours` field and moves no node — pixel-identical.
+  assert.equal("contours" in migratedVector, false, "widening stamp must not add contours[]");
+  assert.deepEqual(migratedVector.nodes, before.pages[0].layers[0].nodes);
+  assert.equal(migratedVector.closed, true);
+
+  // Only the version differs between the v5 input and the v6 output.
+  before.version = 6;
+  assert.deepEqual(doc, before, "migrating v5 -> v6 must change only the version field");
+});
+
+test("a v6 multi-contour vector (rect with a rect hole) round-trips through JSON save/open unchanged", () => {
+  const inner = rectContour(4, 4).map((n) => ({
+    x: n.x + 3,
+    y: n.y + 3,
+    inX: n.inX + 3,
+    inY: n.inY + 3,
+    outX: n.outX + 3,
+    outY: n.outY + 3,
+  }));
+  const layer = {
+    id: "v",
+    kind: "vector",
+    name: "hole",
+    visible: true,
+    locked: false,
+    opacity: 1,
+    blend: "srcOver",
+    transform: { x: 0, y: 0, w: 10, h: 10, rotation: 0 },
+    parentId: null,
+    closed: true,
+    nodes: [],
+    fill: { r: 0, g: 0, b: 0, a: 1 },
+    stroke: null,
+    contours: [
+      { closed: true, nodes: rectContour(10, 10) },
+      { closed: true, nodes: inner },
+    ],
+  };
+  const doc = { version: 6, pages: [{ id: "p", layers: [layer] }] };
+  assert.equal(needsMigration(doc), false, "a v6 document is current — no migration");
+  const round = JSON.parse(JSON.stringify(doc));
+  assert.deepEqual(round.pages[0].layers[0].contours, layer.contours);
+  assert.equal(round.pages[0].layers[0].contours.length, 2);
 });
