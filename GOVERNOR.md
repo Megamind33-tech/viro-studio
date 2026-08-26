@@ -81,9 +81,21 @@ without an ADR. Electron features degrade gracefully in the web build (feature-d
 
 ## Approved Technology Decisions
 
-Vite 8 · TypeScript 7 · CanvasKit-wasm · harfbuzzjs · lcms-wasm · onnxruntime-web · idb ·
-Electron 43 · Playwright + node:test for tests. No new foundational dependency without an ADR
-(§71). Node ≥ 20.
+Editor (unchanged): Vite 8 · TypeScript 7 · CanvasKit-wasm · harfbuzzjs · lcms-wasm ·
+onnxruntime-web · idb · Electron 43 · Playwright + node:test. No new foundational dependency
+without an ADR (§71). Node ≥ 20.
+
+Hosted platform (approved 2026-08-26 via **ADR 0004**, phased + flag-gated):
+- Frontend host: **Cloudflare Pages** (static SPA, free, African edge).
+- Auth / DB / Storage / server functions: **Supabase** (Postgres + RLS + Auth + Storage +
+  Edge Functions), region **`eu-west-2` (London)** — closest strong-protection region to
+  Nigeria (`af-south-1` unavailable on Supabase).
+- Payments: **Lenco Pay** (Collections + signed webhooks; Virtual Accounts optional),
+  server-side only. Subscription/entitlement state machine is **owned by our backend** because
+  Lenco exposes discrete collections/transfers, not native recurring billing.
+- Card data never touches our systems (Lenco hosted/tokenized collection → SAQ-A-equivalent scope).
+- Budget: $0 to launch (free tiers); first paid step ≈ $25/mo (Supabase Pro) at scale, plus
+  Lenco per-transaction fees. See ADR 0004 for evidence and the phased plan.
 
 ## Feature Truth Ledger
 
@@ -139,9 +151,12 @@ distinct semantic icon, name, and shortcut. No demo-style descriptive prose in p
 
 Today's threat surface is a client-side app: sanitize imported/parsed files (PSD/VDJ/JSON/
 fonts/images) defensively; never `eval`; keep secrets out of the bundle (none exist).
-Any future server work adopts OWASP ASVS 5.0 L2 baseline, server-side authorization for every
-privileged op, tenant scoping on every tenant query, verified/idempotent payment webhooks —
-none of which may be stubbed as "done".
+Platform work (ADR 0004) adopts OWASP ASVS 5.0 L2 baseline: server-side authorization for every
+privileged op (Supabase RLS + Edge Functions), tenant scoping (`org_id`) on every tenant query,
+Lenco webhooks verified (HMAC-SHA512 `X-Lenco-Signature`), idempotent (`event_id`/`reference`
+unique) and replay-safe, entitlement derived only from provider-confirmed state (never a redirect).
+The Lenco secret token and Supabase service-role key live only in Edge Function env, never the
+client bundle. None of these may be stubbed as "done".
 
 ## Performance Budgets
 
@@ -159,25 +174,42 @@ Measurable targets hit: `npm test` green; build green; recovery E2E 13/13.
 ## Active Risks
 
 - **Appearance/reality gap (HIGH):** supplied screenshots imply a SaaS that does not exist.
-  Risk that stakeholders expect those features. Mitigation: this ledger; RFC-gated build-out.
+  Mitigation: this ledger; the platform is now RFC-approved (ADR 0004) and built phased + flag-gated,
+  not faked.
+- **Data residency / NDPA (HIGH, legal):** Nigerian PII stored cross-border (Supabase `eu-west-2`)
+  requires an NDPC-approved CBDTI (Supabase DPA + SCCs), a DPIA, and a ROPA entry. Owner/legal
+  actions; engineering will not flag compliance "done" without them.
+- **Subscription-on-collections (MED):** Lenco has no native recurring billing, so renewals use a
+  fresh collection (checkout link) or virtual-account top-ups. Do not present "auto-renew" unless
+  card tokenization is confirmed on the Lenco account (open question in ADR 0004).
 - Autosave stores full-document snapshots (incl. embedded image dataURLs) in IndexedDB — large
-  documents could hit quota. Mitigation: failures degrade to in-memory (no false success);
-  future work: delta snapshots / quota handling (P2).
-- Single recovery slot (no per-document identity) — acceptable for single-window local use;
-  revisit if multi-window/multi-doc lands.
+  documents could hit quota. Mitigation: failures degrade to in-memory (no false success). P2 cloud
+  persistence must store binary assets in Storage, not inline JSONB.
+- Single recovery slot (no per-document identity) — acceptable for single-window local use.
 
 ## Blockers
 
-- **Platform build-out (accounts/cloud/billing/admin/collaboration/template-marketplace/AI)**
-  requires OWNER DECISIONS: target hosting, backend stack, payment provider, data residency,
-  legal/PCI posture, budget. Cannot proceed without these (§46 carve-out). Not a code blocker;
-  a direction blocker. Do not fabricate.
+Direction is now decided (ADR 0004): Cloudflare Pages + Supabase (`eu-west-2`) + Lenco Pay,
+free-tier budget. Remaining blockers are **provisioning + legal**, not direction. Backend/payment
+code will not run end-to-end (and will not be merged as "working") until these are supplied by the
+owner — requested via the environment setup-actions channel:
+
+- Secrets: `LENCO_API_TOKEN` (server-side), `SUPABASE_URL`, `SUPABASE_ANON_KEY`,
+  `SUPABASE_SERVICE_ROLE_KEY`.
+- Accounts/config: create the Lenco Pay API key and register the webhook URL with `support@lenco.ng`;
+  create the Supabase project in `eu-west-2`; create the Cloudflare Pages project.
+- Legal: execute the Supabase DPA + SCCs; complete a DPIA and ROPA; publish a privacy policy;
+  NDPC registration / DPO as required. (Owner/legal — not engineering.)
+- Open question for owner: does the Lenco account support card tokenization for true auto-renewal?
 
 ## Research Decisions
 
 - ACCEPTED: autosave/crash-recovery (data-loss P0) — implemented this sprint.
-- DEFERRED (needs RFC + owner): hosted platform surfaces; expanded curated template families
-  (§57) with a real thumbnail-render pipeline (§61); OpenType/variable-font UI.
+- ACCEPTED (phased, flag-gated — ADR 0004): hosted platform on Cloudflare Pages + Supabase
+  (`eu-west-2`) + Lenco Pay. Owner direction received 2026-08-26. Build order P1 foundation →
+  P2 cloud documents → P3 entitlements/Lenco → P4 collaboration/admin/client portal.
+- DEFERRED (needs RFC + owner): expanded curated template families (§57) with a real
+  thumbnail-render pipeline (§61); OpenType/variable-font UI.
 - REJECTED: fabricating template counts, fonts, AI actions, or SaaS dashboards to match screenshots.
 
 ## Release Gates
@@ -204,3 +236,11 @@ the relevant hard-stop flag.)
 - 2026-08-26 — Implemented autosave + crash recovery (IndexedDB, DB v3, backward-compatible
   upgrade). Dirtiness driven by a new monotonic command-bus revision so all mutation paths are
   covered. Migration impact: additive object store; no destructive change.
+- 2026-08-26 — **Platform direction decided** by owner and recorded in **ADR 0004**: Cloudflare
+  Pages (frontend) + Supabase `eu-west-2` (auth/DB/storage/functions) + **Lenco Pay** (payments),
+  free-tier budget. Rationale grounded in verified vendor docs (Lenco API, Supabase/Cloudflare free
+  tiers) and NDPA 2023/GAID 2025 residency law. Subscription state machine owned by our backend
+  (Lenco has no recurring primitive). Build is phased and behind a `platform.enabled` flag; the
+  local editor is unaffected. Owner. Migration impact: additive (new Supabase schema, expand-only);
+  no change to the existing editor or document schema. Remaining blockers are provisioning + legal
+  (see Blockers), not direction.
