@@ -1,5 +1,5 @@
 import { migrateDocument } from "./document/migrate";
-import type { BlendMode, DropShadowEffect, GradientOverlayEffect, ImageFit, OuterGlowEffect, PressDocument, ResampleAlgo, Rgba, StrokeEffect, ToolId } from "./document/types";
+import type { BlendMode, DropShadowEffect, GradientOverlayEffect, ImageFit, Layer, OuterGlowEffect, PressDocument, ResampleAlgo, Rgba, StrokeEffect, ToolId } from "./document/types";
 import {
   addImageFrame,
   addTypeFrame,
@@ -69,7 +69,16 @@ import { mimeForImageFile, sniffBytes } from "./engine/sniff";
 import type { PdfExportReport } from "./export/pdf";
 import { documentFromPsd } from "./import/psd";
 import { documentFromVdj } from "./import/vdj";
-import { pageToLocal } from "./document/transform";
+import { pageToLocal, worldBounds } from "./document/transform";
+import {
+  movedLayerBox,
+  resolveMoveSnap,
+  rotatedLayerBox,
+  scaleFromHandle,
+  scaledLayerBox,
+  type Frame,
+  type ResizeHandle,
+} from "./document/multi-transform";
 import {
   deleteRecovery,
   getRecovery,
@@ -82,6 +91,11 @@ import { projects, type ProjectRecord, type ProjectSummary } from "./platform/pr
 
 /** Smallest edge a layer may be scaled to, in page px. */
 const MIN_SIZE = 4;
+
+/** Smart-guide snap tolerance, in screen (CSS) px, converted to page px per drag. */
+const SNAP_PX = 6;
+/** Fixed capacity of the reused smart-guide line arrays — a move can light at most a handful. */
+const GUIDE_CAP = 8;
 
 /** Cursor for each transform handle, so the affordance is visible before the drag. */
 const HANDLE_CURSOR: Record<HandleId, string> = {
@@ -179,7 +193,34 @@ export class PressApp {
      * cloning the whole document on pointerdown.
      */
     session?: string;
+    /**
+     * Smart-guide candidate lines, precomputed ONCE at pointer-down so the
+     * pointer-move loop never rebuilds them (RFC-6 perf constraint). `snapXs`
+     * are vertical-line X positions, `snapYs` horizontal-line Y positions, both
+     * in page px; `snapTol` is the tolerance in page px at the drag's zoom.
+     */
+    snapXs?: number[];
+    snapYs?: number[];
+    snapTol?: number;
   } | null = null;
+
+  /**
+   * Smart-guide snapping toggle (View ▸ Snap to Guides). On by default; holding
+   * Alt mid-drag suspends it for one gesture without changing the setting.
+   */
+  snapEnabled = true;
+
+  /**
+   * The smart-guide overlay lines, reused across every pointer event of a move
+   * so the hot path allocates nothing — only `xn`/`yn` and the slots change.
+   * The compositor reads this off the view during its overlay pass.
+   */
+  private guideLines = {
+    xs: new Float64Array(GUIDE_CAP),
+    xn: 0,
+    ys: new Float64Array(GUIDE_CAP),
+    yn: 0,
+  };
 
   constructor() {
     installUiCommands();
@@ -639,88 +680,131 @@ export class PressApp {
   private applyHandleDrag(px: number, py: number, shift: boolean): void {
     const d = this.drag;
     if (!d?.frame0 || !d.layers0 || !d.handle) return;
-    const f = d.frame0;
-    const cx = f.x + f.w / 2;
-    const cy = f.y + f.h / 2;
-    const rad = (-f.rotation * Math.PI) / 180;
-    const cos = Math.cos(rad);
-    const sin = Math.sin(rad);
-    const toLocal = (ax: number, ay: number) => {
-      const dx = ax - cx;
-      const dy = ay - cy;
-      return { x: cx + dx * cos - dy * sin, y: cy + dx * sin + dy * cos };
-    };
+    const f: Frame = d.frame0;
 
     if (d.handle === "rotate") {
+      const cx = f.x + f.w / 2;
+      const cy = f.y + f.h / 2;
       const base = Math.atan2(d.y - cy, d.x - cx);
       const now = Math.atan2(py - cy, px - cx);
       let deg = ((now - base) * 180) / Math.PI;
       // Photoshop snaps rotation to 15° increments with Shift held.
       if (shift) deg = Math.round(deg / 15) * 15;
       this.run(
-        d.layers0.map((l0) => ({
-          type: "layer.transform",
-          params: { layerId: l0.id, patch: { rotation: l0.rotation + deg }, session: d.session },
-        })),
+        d.layers0.map((l0) => {
+          const r = rotatedLayerBox(l0, f, deg);
+          return {
+            type: "layer.transform" as const,
+            params: { layerId: l0.id, patch: { x: r.x, y: r.y, rotation: r.rotation }, session: d.session },
+          };
+        }),
         { label: "Rotate", soon: true },
       );
       return;
     }
 
-    const l = toLocal(px, py);
-    const h = d.handle;
-    let left = f.x;
-    let top = f.y;
-    let right = f.x + f.w;
-    let bottom = f.y + f.h;
-    if (h.includes("w")) left = Math.min(l.x, right - MIN_SIZE);
-    if (h.includes("e")) right = Math.max(l.x, left + MIN_SIZE);
-    if (h.includes("n")) top = Math.min(l.y, bottom - MIN_SIZE);
-    if (h.includes("s")) bottom = Math.max(l.y, top + MIN_SIZE);
-
-    let w = right - left;
-    let hgt = bottom - top;
-    // Shift locks the original aspect on a corner handle.
-    const corner = h.length === 2;
-    if (shift && corner && f.w > 0 && f.h > 0) {
-      const k = Math.max(w / f.w, hgt / f.h);
-      w = f.w * k;
-      hgt = f.h * k;
-      if (h.includes("w")) left = right - w;
-      else right = left + w;
-      if (h.includes("n")) top = bottom - hgt;
-      else bottom = top + hgt;
-    }
-
-    // Rotate the new centre back out of local space so the anchored edge holds.
-    const lcx = (left + right) / 2;
-    const lcy = (top + bottom) / 2;
-    const back = (f.rotation * Math.PI) / 180;
-    const bc = Math.cos(back);
-    const bs = Math.sin(back);
-    const ddx = lcx - cx;
-    const ddy = lcy - cy;
-    const nx = cx + ddx * bc - ddy * bs - w / 2;
-    const ny = cy + ddx * bs + ddy * bc - hgt / 2;
-
-    const kx = f.w > 0 ? w / f.w : 1;
-    const ky = f.h > 0 ? hgt / f.h : 1;
+    const s = scaleFromHandle(f, d.handle as ResizeHandle, px, py, { shift, minSize: MIN_SIZE });
     this.run(
-      d.layers0.map((l0) => ({
-        type: "layer.transform",
-        params: {
-          layerId: l0.id,
-          patch: {
-            x: nx + (l0.x - f.x) * kx,
-            y: ny + (l0.y - f.y) * ky,
-            w: Math.max(MIN_SIZE, l0.w * kx),
-            h: Math.max(MIN_SIZE, l0.h * ky),
+      d.layers0.map((l0) => {
+        const box = scaledLayerBox(l0, f, s, MIN_SIZE);
+        return {
+          type: "layer.transform" as const,
+          params: {
+            layerId: l0.id,
+            patch: { x: box.x, y: box.y, w: box.w, h: box.h },
+            session: d.session,
           },
-          session: d.session,
-        },
-      })),
+        };
+      }),
       { label: "Scale", soon: true },
     );
+  }
+
+  /**
+   * Begin a move gesture for `picked`, capturing each member's pointer-down box
+   * and — when snapping is on and the frame is axis-aligned — the candidate
+   * guide lines ONCE, so the pointer-move loop rebuilds nothing (RFC-6 perf).
+   */
+  private beginMoveDrag(p: { x: number; y: number }, picked: Layer[]): void {
+    if (!this.compositor) return;
+    const frame = this.compositor.selectionFrame(this.doc);
+    const layers0 = picked.map((l) => ({ id: l.id, ...l.transform }));
+    const drag: NonNullable<PressApp["drag"]> = {
+      mode: "move",
+      session: uid("drag"),
+      x: p.x,
+      y: p.y,
+      lx: p.x,
+      ly: p.y,
+      layers0,
+      ...(frame ? { frame0: frame } : {}),
+    };
+    if (this.snapEnabled && frame && frame.rotation === 0) {
+      const exclude = new Set(picked.map((l) => l.id));
+      const cand = this.buildSnapCandidates(exclude);
+      drag.snapXs = cand.xs;
+      drag.snapYs = cand.ys;
+      drag.snapTol = SNAP_PX / this.compositor.view.zoom;
+      this.guideLines.xn = 0;
+      this.guideLines.yn = 0;
+      this.compositor.view.smartGuides = this.guideLines;
+    }
+    this.drag = drag;
+  }
+
+  /**
+   * Snap-target lines for a move, computed once at pointer-down: the page frame,
+   * its margins and centre, plus every OTHER top-level layer's edges and centre.
+   * Excludes the layers being moved so a selection never snaps to itself.
+   */
+  private buildSnapCandidates(exclude: Set<string>): { xs: number[]; ys: number[] } {
+    const page = activePage(this.doc);
+    const xs: number[] = [0, page.widthPx / 2, page.widthPx];
+    const ys: number[] = [0, page.heightPx / 2, page.heightPx];
+    const m = page.margin;
+    xs.push(m.left, page.widthPx - m.right);
+    ys.push(m.top, page.heightPx - m.bottom);
+    for (const l of page.layers) {
+      if (l.parentId || exclude.has(l.id) || l.kind === "adjustment") continue;
+      const b = worldBounds(page, l);
+      xs.push(b.x, b.x + b.w / 2, b.x + b.w);
+      ys.push(b.y, b.y + b.h / 2, b.y + b.h);
+    }
+    return { xs, ys };
+  }
+
+  /**
+   * One step of a move drag: raw delta from pointer-down, nudged onto the
+   * nearest smart guide (unless Alt suspends snapping), then applied to every
+   * member from its OWN pointer-down box so the set moves rigidly. The whole
+   * gesture coalesces to one undo entry via the shared `session` key.
+   *
+   * Allocation on this path is limited to the per-event command array the bus
+   * already requires; the snap candidates and guide-line arrays are reused.
+   */
+  private applyMoveDrag(px: number, py: number, alt: boolean): void {
+    const d = this.drag;
+    if (!d?.layers0) return;
+    let dx = px - d.x;
+    let dy = py - d.y;
+    const guides = this.guideLines;
+    guides.xn = 0;
+    guides.yn = 0;
+    if (!alt && this.snapEnabled && d.frame0 && d.snapXs && d.snapYs && d.snapTol) {
+      const snap = resolveMoveSnap(d.frame0, dx, dy, d.snapXs, d.snapYs, d.snapTol);
+      dx += snap.ox;
+      dy += snap.oy;
+      if (snap.guideX !== null && guides.xn < GUIDE_CAP) guides.xs[guides.xn++] = snap.guideX;
+      if (snap.guideY !== null && guides.yn < GUIDE_CAP) guides.ys[guides.yn++] = snap.guideY;
+    }
+    const cmds: Command[] = d.layers0.map((l0) => {
+      const mv = movedLayerBox(l0, dx, dy);
+      return {
+        type: "layer.transform",
+        params: { layerId: l0.id, patch: { x: mv.x, y: mv.y }, session: d.session },
+      };
+    });
+    if (cmds.length) this.run(cmds, { label: "Move", soon: true });
   }
 
   /** Line endpoint, snapped to the nearest 45° when Shift is held. */
@@ -772,12 +856,23 @@ export class PressApp {
             return;
           }
         }
+        // Group move: pressing INSIDE the union frame of a 2+ selection drags
+        // every member together, without collapsing the selection to the layer
+        // under the cursor. Shift falls through to additive single-hit select.
+        const selected = selectedLayers(this.doc);
+        if (selected.length > 1 && handle === "move" && !e.shiftKey) {
+          const picked = selected.filter((l) => !l.locked && l.parentId === null);
+          if (picked.length) {
+            this.beginMoveDrag(p, picked);
+            return;
+          }
+        }
         const hit = hitTest(this.doc, p.x, p.y);
         const next = cloneDoc(this.doc);
         next.activeLayerIds = hit ? [hit.id] : [];
         this.doc = next;
         if (hit && !hit.locked) {
-          this.drag = { mode: "move", x: p.x, y: p.y, lx: hit.transform.x, ly: hit.transform.y, session: uid("drag") };
+          this.beginMoveDrag(p, [hit]);
         }
         this.emit();
         return;
@@ -857,14 +952,7 @@ export class PressApp {
         return;
       }
       if (this.drag.mode === "move") {
-        const d = this.drag;
-        const cmds: Command[] = selectedLayers(this.doc)
-          .filter((l) => !l.locked)
-          .map((l) => ({
-            type: "layer.transform",
-            params: { layerId: l.id, patch: { x: d.lx + (p.x - d.x), y: d.ly + (p.y - d.y) }, session: d.session },
-          }));
-        if (cmds.length) this.run(cmds, { label: "Move", soon: true });
+        this.applyMoveDrag(p.x, p.y, e.altKey);
         return;
       }
       if (this.drag.mode === "crop") {
@@ -996,11 +1084,13 @@ export class PressApp {
         this.compositor.view.marquee = null;
         this.emit();
       }
-      const wasResize = this.drag.mode === "resize";
+      const wasTransform = this.drag.mode === "resize" || this.drag.mode === "move";
       this.drag = null;
+      // Smart guides are a mid-drag affordance only; drop them on release.
+      if (this.compositor.view.smartGuides) this.compositor.view.smartGuides = null;
       // The drag repaints through a frame-coalesced path, so the last pointer
       // position may still be unpainted when the button comes up.
-      if (wasResize) this.emit();
+      if (wasTransform) this.emit();
     });
     canvas.addEventListener("dblclick", (e) => {
       if (!this.compositor) return;
@@ -1577,6 +1667,15 @@ export class PressApp {
   toggleGuides(): void {
     if (!this.compositor) return;
     this.compositor.view.showGuides = !this.compositor.view.showGuides;
+    this.emit();
+  }
+
+  /** Toggle smart-guide snapping (edges/centres/page). Off suspends snap + guides. */
+  toggleSnap(): void {
+    this.snapEnabled = !this.snapEnabled;
+    if (!this.snapEnabled && this.compositor?.view.smartGuides) {
+      this.compositor.view.smartGuides = null;
+    }
     this.emit();
   }
 

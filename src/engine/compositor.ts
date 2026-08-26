@@ -388,6 +388,7 @@ class PressView implements ViewState {
    */
   shapePreview: { kind: "rect" | "ellipse" | "line"; x: number; y: number; w: number; h: number } | null = null;
   textEdit: { layerId: string; anchor: number; focus: number } | null = null;
+  smartGuides: { xs: Float64Array; xn: number; ys: Float64Array; yn: number } | null = null;
 
   constructor(private readonly owner: Compositor) {}
 
@@ -1132,6 +1133,7 @@ export class Compositor {
     }
 
     this.paintSelection(ck, sk, doc, g);
+    this.paintSmartGuides(ck, sk, g);
 
     if (this.view.marquee) {
       const m = this.view.marquee;
@@ -1305,6 +1307,34 @@ export class Compositor {
     sk.drawRect(ck.LTRBRect(cx - r * 2, cy, cx + r * 2 + h, cy + h), pivot);
     sk.drawRect(ck.LTRBRect(cx, cy - r * 2, cx + h, cy + r * 2 + h), pivot);
     pivot.delete();
+  }
+
+  /**
+   * Smart-guide alignment lines drawn during a move, in the copper accent.
+   *
+   * View-only chrome: the positions are resolved in the pointer-move handler
+   * (allocation-free) and stashed on the view, and this pass reads them off the
+   * SAME overlay repaint the move already triggers. Nothing here touches the
+   * page composite. Lines span the full canvas so the alignment reads at a
+   * glance, the way Figma/InDesign draw them.
+   */
+  private paintSmartGuides(ck: CanvasKit, sk: Canvas, g: Geom): void {
+    const sg = this.view.smartGuides;
+    if (!sg || (sg.xn === 0 && sg.yn === 0)) return;
+    const h = g.hair;
+    const paint = new ck.Paint();
+    paint.setColor(rgb(ck, TOKEN.accent, 0.9));
+    const top = g.sy(g.ruler);
+    const left = g.sx(g.ruler);
+    for (let i = 0; i < sg.xn; i++) {
+      const px = g.dx(sg.xs[i]!);
+      if (px >= left && px <= g.devW) sk.drawRect(ck.LTRBRect(px, top, px + h, g.devH), paint);
+    }
+    for (let i = 0; i < sg.yn; i++) {
+      const py = g.dy(sg.ys[i]!);
+      if (py >= top && py <= g.devH) sk.drawRect(ck.LTRBRect(left, py, g.devW, py + h), paint);
+    }
+    paint.delete();
   }
 
   /** One-device-pixel rectangle outline built from filled rects — never a 2px blur. */
