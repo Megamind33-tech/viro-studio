@@ -564,6 +564,9 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
       case "view-guides":
         app.toggleGuides();
         return;
+      case "view-snap":
+        app.toggleSnap();
+        return;
       case "view-bleed":
         app.toggleBleed();
         return;
@@ -1813,6 +1816,7 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
     const checks: Record<string, boolean> = {
       rulers: v?.showRulers ?? true,
       guides: v?.showGuides ?? true,
+      snap: app.snapEnabled,
       bleed: v?.showBleed ?? true,
       "g-color": !el("g-color").hidden,
       "g-type": !el("g-type").hidden,

@@ -453,6 +453,12 @@ export interface ViewState {
   shapePreview: { kind: "rect" | "ellipse" | "line"; x: number; y: number; w: number; h: number } | null;
   /** Live type-edit caret. Painted by the overlay; null when not editing. */
   textEdit: { layerId: string; anchor: number; focus: number } | null;
+  /**
+   * Live smart-guide alignment lines mid-move, in page px. Null when no guides
+   * are showing. The arrays are fixed-capacity and reused across pointer events
+   * (only `xn`/`yn` change), so the move hot path allocates nothing per frame.
+   */
+  smartGuides: { xs: Float64Array; xn: number; ys: Float64Array; yn: number } | null;
 }
 
 export const SKIA_BLEND: Record<BlendMode, string> = {
