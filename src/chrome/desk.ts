@@ -530,8 +530,17 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
       case "ungroup":
         app.ungroup();
         return;
-      case "subtract-vectors":
-        app.subtractSelected();
+      case "boolean-union":
+        app.booleanSelected("union");
+        return;
+      case "boolean-subtract":
+        app.booleanSelected("subtract");
+        return;
+      case "boolean-intersect":
+        app.booleanSelected("intersect");
+        return;
+      case "boolean-exclude":
+        app.booleanSelected("exclude");
         return;
       case "bring-forward":
         app.reorder(1);

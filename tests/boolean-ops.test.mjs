@@ -11,7 +11,7 @@ import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { subtractVectors } from "../src/document/boolean-ops.ts";
+import { subtractVectors, booleanCombineVectors } from "../src/document/boolean-ops.ts";
 import { validateContours } from "../src/document/factory.ts";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -87,6 +87,31 @@ test("subtract that removes everything returns null instead of an empty layer", 
   const big = vectorRect("big", 0, 0, 400, 400); // beneath, covers small entirely
   const page = { id: "p", layers: [small, big] };
   assert.equal(subtractVectors(ck, page, small, big), null);
+});
+
+test("union of two disjoint rectangles yields one layer with two contours", () => {
+  const left = vectorRect("left", 0, 0, 100, 100);
+  const right = vectorRect("right", 200, 0, 100, 100);
+  const page = { id: "p", layers: [left, right] };
+  const result = booleanCombineVectors(ck, page, [left, right], "union");
+  assert.ok(result, "union must produce a result layer");
+  assert.equal(result.contours.length, 2, "disjoint union yields two visible pieces");
+});
+
+test("intersect of non-overlapping rects returns null", () => {
+  const a = vectorRect("a", 0, 0, 100, 100);
+  const b = vectorRect("b", 200, 0, 100, 100);
+  const page = { id: "p", layers: [a, b] };
+  assert.equal(booleanCombineVectors(ck, page, [a, b], "intersect"), null);
+});
+
+test("exclude (XOR) of overlapping rects validates as a compound path", () => {
+  const outer = vectorRect("outer", 0, 0, 200, 200);
+  const inner = vectorRect("inner", 50, 50, 100, 100);
+  const page = { id: "p", layers: [outer, inner] };
+  const result = booleanCombineVectors(ck, page, [outer, inner], "exclude");
+  assert.ok(result);
+  assert.deepEqual(validateContours(result.contours, "result"), []);
 });
 
 test("validateContours rejects non-finite coordinates and short contours", () => {

@@ -17,10 +17,15 @@
  * there, which is why `stats().snapshotEntries` should be read as "document
  * replacements", not as migration debt.
  */
-import type { Align, BlendMode, CharacterStyle, ImageFit, ParagraphStyle, PressDocument, ResampleAlgo, Rgba, StrokeCap, StrokeJoin } from "./types";
+import type { Align, BlendMode, CharacterStyle, ImageFit, ParagraphStyle, PressDocument, ResampleAlgo, Rgba, StrokeCap, StrokeJoin, VectorLayer } from "./types";
 import { SKIA_BLEND } from "./types";
 import { applyCharacterRange, applyParagraphRange, assertTextRange, replaceStoryRange, type TextAffinity } from "./text-model";
 import { CommandError, deriveInverse, registerCommand, v, type CommandDef } from "./commands";
+import {
+  booleanCombineVectors,
+  requireBooleanEngine,
+  type BooleanOp,
+} from "./boolean-ops";
 import {
   addImageFrame,
   addTypeFrame,
@@ -30,11 +35,13 @@ import {
   applyImageSize,
   cloneDoc,
   MAX_DASH_INTERVALS,
+  findLayer,
   selectedLayers,
 } from "./factory";
 import {
   addAdjustment,
   addPage,
+  applyBooleanCombine,
   addVectorPath,
   appendPathNode,
   applyFill,
@@ -93,6 +100,18 @@ function reqNum(
 
 const STROKE_CAPS = ["butt", "round", "square"] as const;
 const STROKE_JOINS = ["miter", "round", "bevel"] as const;
+const BOOLEAN_OPS = ["union", "subtract", "intersect", "exclude"] as const;
+
+/** Resolve selected vector operands in draw order (last = topmost). */
+function booleanOperands(doc: PressDocument, layerIds?: string[]): VectorLayer[] {
+  const page = doc.pages.find((p) => p.id === doc.activePageId);
+  if (!page) return [];
+  const ids = layerIds ?? doc.activeLayerIds;
+  const idSet = new Set(ids);
+  return page.layers.filter(
+    (l): l is VectorLayer => l.kind === "vector" && idSet.has(l.id) && !l.locked,
+  );
+}
 
 /** Optional stroke cap enum; undefined when absent. */
 function strokeCap(raw: unknown, type: string): StrokeCap | undefined {
@@ -220,6 +239,45 @@ const DEFS: CommandDef<never>[] = [
   define({ type: "layer.group", label: "Group", validate: noParams("layer.group"), apply: (_p, doc) => groupSelected(doc) }),
   define({ type: "layer.ungroup", label: "Ungroup", validate: noParams("layer.ungroup"), apply: (_p, doc) => ungroupSelected(doc) }),
   define({ type: "layer.duplicate", label: "Duplicate", validate: noParams("layer.duplicate"), apply: (_p, doc) => duplicateSelected(doc) }),
+  define({
+    type: "vector.boolean",
+    label: (p: { op: BooleanOp; layerIds: string[] }) => `Pathfinder ${p.op}`,
+    validate: (raw, doc) => {
+      const o = v.obj(raw, "vector.boolean");
+      const opRaw = o.op;
+      if (typeof opRaw !== "string" || !(BOOLEAN_OPS as readonly string[]).includes(opRaw)) {
+        throw new CommandError(`vector.boolean: "op" must be one of ${BOOLEAN_OPS.join(", ")}`);
+      }
+      let layerIds: string[] | undefined;
+      if (o.layerIds !== undefined) {
+        if (!Array.isArray(o.layerIds) || !o.layerIds.every((id) => typeof id === "string")) {
+          throw new CommandError(`vector.boolean: "layerIds" must be an array of layer id strings`);
+        }
+        layerIds = o.layerIds as string[];
+        for (const id of layerIds) {
+          v.requireLayer(doc, id, "vector.boolean", { kind: "vector", unlocked: true });
+        }
+      }
+      const ordered = booleanOperands(doc, layerIds);
+      if (ordered.length < 2) {
+        throw new CommandError(
+          `vector.boolean: needs at least 2 unlocked vector layers on the active page, got ${ordered.length}`,
+        );
+      }
+      return { op: opRaw as BooleanOp, layerIds: ordered.map((l) => l.id) };
+    },
+    apply: (p, doc) => {
+      const page = doc.pages.find((candidate) => candidate.id === doc.activePageId)!;
+      const ordered = p.layerIds.map((id) => findLayer(page, id)!).filter(Boolean) as VectorLayer[];
+      const ck = requireBooleanEngine();
+      const result = booleanCombineVectors(ck, page, ordered, p.op);
+      if (!result) {
+        throw new CommandError(`vector.boolean: ${p.op} produced an empty shape — nothing changed`);
+      }
+      return applyBooleanCombine(doc, p.layerIds, result);
+    },
+    summary: (p: { op: BooleanOp; layerIds: string[] }) => `${p.op} ${p.layerIds.length} shape(s) → 1 compound path`,
+  }),
   define({ type: "page.add", label: "Add page", validate: noParams("page.add"), apply: (_p, doc) => addPage(doc) }),
 
   // ── layer properties ──

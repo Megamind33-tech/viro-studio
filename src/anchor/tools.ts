@@ -21,9 +21,15 @@ import type {
   PathNode,
   PressDocument,
   Rgba,
+  VectorLayer,
   VectorStroke,
 } from "../document/types";
 import { SKIA_BLEND } from "../document/types";
+import {
+  booleanCombineVectors,
+  requireBooleanEngine,
+  type BooleanOp,
+} from "../document/boolean-ops";
 import {
   activePage,
   addGuide,
@@ -38,6 +44,7 @@ import {
 import {
   addAdjustment,
   addPage,
+  applyBooleanCombine,
   appendPathNode,
   applyFill,
   closePath,
@@ -155,6 +162,7 @@ const LAYER_KINDS = ["raster", "image-frame", "type-frame", "vector", "group", "
 assertCovers<Exclude<Layer["kind"], (typeof LAYER_KINDS)[number]>>();
 
 const REORDER_DIRECTIONS = ["forward", "backward", "front", "back"] as const;
+const BOOLEAN_OPS = ["union", "subtract", "intersect", "exclude"] as const;
 
 /** Nothing sane in this document model is larger than this; beyond it the input is garbage. */
 const MAX_COORD = 1_000_000;
@@ -841,6 +849,47 @@ const OPS: Record<string, AnchorOpDef> = {
       }
       const next = ungroupSelected(sel.doc);
       return { doc: next, summary: `ungrouped ${groups.length} group(s), released ${next.activeLayerIds.length} layer(s)` };
+    },
+  },
+
+  "press.boolean": {
+    description:
+      "Combine 2+ vector layers with a Pathfinder boolean (union, subtract, intersect, exclude). " +
+      "Operands are consumed into ONE multi-contour result layer on the active page — destructive, like " +
+      "Illustrator's shape modes. Subtract = topmost minus the one beneath (or minus the union of all " +
+      "beneath when >2 are selected). Union of disjoint shapes yields one layer with multiple visible " +
+      "pieces. Undo restores all operands as one history step. Only unlocked vector layers count.",
+    params: {
+      op: pEnum("Pathfinder operation.", BOOLEAN_OPS),
+      layerIds: pLayerIds("vector operands — draw order is preserved; last id is topmost"),
+    },
+    required: ["op"],
+    run: (doc, p) => {
+      const sel = resolveSelection(doc, p);
+      const page = activePage(sel.doc);
+      const idSet = new Set(sel.layers.map((l) => l.id));
+      const ordered = page.layers.filter(
+        (l): l is VectorLayer => l.kind === "vector" && idSet.has(l.id) && !l.locked,
+      );
+      if (ordered.length < 2) {
+        fail(
+          `boolean needs at least 2 unlocked vector layers — got ${ordered.length} ` +
+            `(target was ${sel.layers.map((l) => `${l.kind} "${l.name}"`).join(", ")})`,
+        );
+      }
+      const op = reqEnum(p, "op", BOOLEAN_OPS) as BooleanOp;
+      const ck = requireBooleanEngine();
+      const result = booleanCombineVectors(ck, page, ordered, op);
+      if (!result) {
+        fail(`press.boolean ${op}: produced an empty shape — operands unchanged`);
+      }
+      const ids = ordered.map((l) => l.id);
+      const next = applyBooleanCombine(sel.doc, ids, result);
+      return {
+        doc: next,
+        summary: `${op} ${ordered.length} vector(s) → "${result.name}" (${result.contours?.length ?? 1} contour(s))`,
+        created: [result.id],
+      };
     },
   },
 

@@ -1,29 +1,42 @@
 /**
- * Boolean path operations (ADR 0005 — Phase-0 proof-of-model spike).
+ * Boolean path operations (ADR 0005 — Phase A destructive Pathfinder).
  *
- * ONE real destructive op is implemented here — `subtract` — to prove the
- * multi-contour (`contours[]`) model end-to-end: two vector layers are combined
- * with Skia's `Path.makeCombined(other, PathOp.Difference)` and the result is
- * stored as a v6 compound path whose subpaths render as an outer ring with the
- * subtracted region punched out as a hole.
+ * Pure module: no state, no DOM. Takes CanvasKit (the compositor's Skia engine)
+ * plus vector operands on a page and returns a new multi-contour `VectorLayer`, or
+ * null when the result is empty/degenerate. Every intermediate Skia `Path` is
+ * deleted before returning so repeated combines do not churn the WASM heap.
  *
- * PURE: this module holds no state and touches no DOM. It takes a CanvasKit
- * instance (already the compositor's engine) plus the operands and the page they
- * live on, and returns a new `VectorLayer` (or null when the result is empty).
- * Every intermediate Skia `Path` is deleted before returning, so repeated
- * combines do not churn the WASM heap (ADR 0005 perf note; compositor treats an
- * undeleted Skia object as an `Aborted()` risk).
- *
- * Operands are read in PAGE space (via `worldMatrix`, so a boolean is computed
- * where the shapes actually overlap on the page), combined, then the result is
- * re-localised to its own bounds and placed at page level with an axis-aligned,
- * unrotated, unscaled box — so `worldMatrix(result)` is exactly the translation
- * that maps its local geometry back to where it was computed.
+ * Operands are read in PAGE space via `worldMatrix`, combined with Skia's
+ * `Path.MakeFromOp`, converted back into editor-native `contours[]`, then
+ * re-localised to an axis-aligned result box.
  */
 import { cloneStroke, uid } from "./factory";
 import { applyPt, worldMatrix } from "./transform";
 import type { CanvasKit, Path } from "canvaskit-wasm";
 import type { Contour, Page, PathNode, VectorLayer } from "./types";
+
+export type BooleanOp = "union" | "subtract" | "intersect" | "exclude";
+
+const OP_LABEL: Record<BooleanOp, string> = {
+  union: "Union",
+  subtract: "Subtract",
+  intersect: "Intersect",
+  exclude: "Exclude",
+};
+
+let engineProvider: (() => CanvasKit | null) | null = null;
+
+/** App boot wires the live compositor's CanvasKit instance for command-bus paths. */
+export function setBooleanEngineProvider(fn: () => CanvasKit | null): void {
+  engineProvider = fn;
+}
+
+/** Used by UI commands and Anchor ops when the compositor is not ready. */
+export function requireBooleanEngine(): CanvasKit {
+  const ck = engineProvider?.() ?? null;
+  if (!ck) throw new Error("Boolean ops need the compositor to be ready");
+  return ck;
+}
 
 /** The contours a layer contributes: its v6 list, or its single legacy contour. */
 function layerContours(layer: VectorLayer): Contour[] {
@@ -68,16 +81,85 @@ function buildPageSpacePath(ck: CanvasKit, page: Page, layer: VectorLayer): Path
   return path;
 }
 
+function skiaPathOp(ck: CanvasKit, op: BooleanOp) {
+  switch (op) {
+    case "union":
+      return ck.PathOp.Union;
+    case "subtract":
+      return ck.PathOp.Difference;
+    case "intersect":
+      return ck.PathOp.Intersect;
+    case "exclude":
+      return ck.PathOp.XOR;
+  }
+}
+
+/** Fold operand paths in draw order (last = topmost). Caller owns the result. */
+function combinePagePaths(ck: CanvasKit, page: Page, layers: VectorLayer[], op: BooleanOp): Path | null {
+  if (layers.length < 2) return null;
+  const paths = layers.map((layer) => buildPageSpacePath(ck, page, layer));
+  const dropAll = () => {
+    for (const p of paths) p.delete();
+  };
+
+  try {
+    if (op === "subtract") {
+      const topIdx = paths.length - 1;
+      if (paths.length === 2) {
+        const result = ck.Path.MakeFromOp(paths[topIdx]!, paths[0]!, ck.PathOp.Difference);
+        dropAll();
+        return result;
+      }
+      let beneath = ck.Path.MakeFromOp(paths[0]!, paths[1]!, ck.PathOp.Union);
+      if (!beneath) {
+        dropAll();
+        return null;
+      }
+      for (let i = 2; i < topIdx; i++) {
+        const next = ck.Path.MakeFromOp(beneath, paths[i]!, ck.PathOp.Union);
+        beneath.delete();
+        if (!next) {
+          dropAll();
+          return null;
+        }
+        beneath = next;
+      }
+      const result = ck.Path.MakeFromOp(paths[topIdx]!, beneath, ck.PathOp.Difference);
+      beneath.delete();
+      dropAll();
+      return result;
+    }
+
+    const pathOp = skiaPathOp(ck, op);
+    let acc = ck.Path.MakeFromOp(paths[0]!, paths[1]!, pathOp);
+    if (!acc) {
+      dropAll();
+      return null;
+    }
+    for (let i = 2; i < paths.length; i++) {
+      const next = ck.Path.MakeFromOp(acc, paths[i]!, pathOp);
+      acc.delete();
+      if (!next) {
+        dropAll();
+        return null;
+      }
+      acc = next;
+    }
+    dropAll();
+    return acc;
+  } catch {
+    dropAll();
+    return null;
+  }
+}
+
 function straightNode(x: number, y: number): PathNode {
   return { x, y, inX: x, inY: y, outX: x, outY: y };
 }
 
 /**
  * Convert a combined Skia `Path` back into the editor's per-anchor bezier
- * contours by walking its verb stream (`toCmds`). Lines keep handles on the
- * anchor (a straight segment); quads are promoted to cubics; cubics carry their
- * two control handles onto the neighbouring anchors, matching how `drawVector`
- * reads out/in handles per segment.
+ * contours by walking its verb stream (`toCmds`).
  */
 function pathToContours(ck: CanvasKit, path: Path): Contour[] {
   const cmds = path.toCmds();
@@ -111,14 +193,11 @@ function pathToContours(ck: CanvasKit, path: Path): Contour[] {
       const y = cmds[i++]!;
       if (cur && cur.length) {
         const prev = cur[cur.length - 1]!;
-        // Quadratic → cubic: raise the single control point to two.
         prev.outX = prev.x + (2 / 3) * (cx - prev.x);
         prev.outY = prev.y + (2 / 3) * (cy - prev.y);
         cur.push({ x, y, inX: x + (2 / 3) * (cx - x), inY: y + (2 / 3) * (cy - y), outX: x, outY: y });
       }
     } else if (verb === ck.CONIC_VERB) {
-      // Conics do not arise from rectilinear booleans; approximate by the chord
-      // to the endpoint rather than invent handles. (cx,cy,x,y,weight)
       i += 2;
       const x = cmds[i++]!;
       const y = cmds[i++]!;
@@ -139,9 +218,6 @@ function pathToContours(ck: CanvasKit, path: Path): Contour[] {
       }
     } else if (verb === ck.CLOSE_VERB) {
       if (cur) {
-        // Skia may emit an explicit segment back to the start before CLOSE. Fold
-        // that segment's incoming handle onto the first anchor and drop the
-        // duplicate, so `drawVector`'s closing cubic reproduces it exactly.
         if (cur.length >= 2 && start) {
           const lastNode = cur[cur.length - 1]!;
           if (Math.abs(lastNode.x - start.x) < 1e-6 && Math.abs(lastNode.y - start.y) < 1e-6) {
@@ -156,7 +232,6 @@ function pathToContours(ck: CanvasKit, path: Path): Contour[] {
         start = null;
       }
     } else {
-      // Unknown verb — stop rather than misread the stream.
       break;
     }
   }
@@ -188,27 +263,32 @@ function contoursBounds(contours: Contour[]): { x: number; y: number; w: number;
   return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
 }
 
+function resultName(op: BooleanOp, layers: VectorLayer[]): string {
+  if (op === "subtract" && layers.length >= 2) {
+    const top = layers[layers.length - 1]!;
+    const bottom = layers[layers.length - 2]!;
+    return `${top.name} − ${bottom.name}`;
+  }
+  if (layers.length === 2) {
+    return `${layers[0]!.name} ${OP_LABEL[op]} ${layers[layers.length - 1]!.name}`;
+  }
+  return `${OP_LABEL[op]} (${layers.length} shapes)`;
+}
+
 /**
- * Subtract `bottomLayer` from `topLayer` (topmost minus the one beneath), the
- * proof boolean for the Phase-0 spike. Returns a new page-level `VectorLayer`
- * carrying the multi-contour result, or null when the difference is empty or
- * degenerate. The operands are left untouched — the caller consumes them into
- * this result as one history step.
+ * Combine 2+ vector layers with the given Pathfinder op. Operands must be in
+ * draw order (last = topmost). Returns a page-level compound-path layer, or
+ * null when the result is empty. Operands are left untouched — the caller
+ * consumes them as one history step.
  */
-export function subtractVectors(
+export function booleanCombineVectors(
   ck: CanvasKit,
   page: Page,
-  topLayer: VectorLayer,
-  bottomLayer: VectorLayer,
+  layers: VectorLayer[],
+  op: BooleanOp,
 ): VectorLayer | null {
-  const topPath = buildPageSpacePath(ck, page, topLayer);
-  const bottomPath = buildPageSpacePath(ck, page, bottomLayer);
-  // topmost minus beneath. `Path.MakeFromOp` is the static form of the boolean
-  // engine present in this CanvasKit build (the instance `makeCombined` is not
-  // exposed on a detached PathBuilder path).
-  const combined = ck.Path.MakeFromOp(topPath, bottomPath, ck.PathOp.Difference);
-  topPath.delete();
-  bottomPath.delete();
+  if (layers.length < 2) return null;
+  const combined = combinePagePaths(ck, page, layers, op);
   if (!combined) return null;
 
   const pageContours = pathToContours(ck, combined);
@@ -218,7 +298,7 @@ export function subtractVectors(
   const bounds = contoursBounds(pageContours);
   if (!bounds) return null;
 
-  // Re-localise page-space geometry to the result's own box origin.
+  const top = layers[layers.length - 1]!;
   const contours: Contour[] = pageContours.map((c) => ({
     closed: c.closed,
     nodes: c.nodes.map((n) => ({
@@ -233,20 +313,28 @@ export function subtractVectors(
 
   return {
     id: uid("vec"),
-    name: `${topLayer.name} - ${bottomLayer.name}`,
+    name: resultName(op, layers),
     kind: "vector",
     visible: true,
     locked: false,
-    opacity: topLayer.opacity,
-    blend: topLayer.blend,
+    opacity: top.opacity,
+    blend: top.blend,
     transform: { x: bounds.x, y: bounds.y, w: bounds.w, h: bounds.h, rotation: 0 },
     parentId: null,
-    // `contours` is authoritative for a v6 compound path; the legacy single
-    // contour is left empty (still a closed vector for fill/validation intent).
     closed: true,
     nodes: [],
-    fill: topLayer.fill ? { ...topLayer.fill } : null,
-    stroke: cloneStroke(topLayer.stroke),
+    fill: top.fill ? { ...top.fill } : null,
+    stroke: cloneStroke(top.stroke),
     contours,
   };
+}
+
+/** Phase-0 alias: topmost minus the one beneath. */
+export function subtractVectors(
+  ck: CanvasKit,
+  page: Page,
+  topLayer: VectorLayer,
+  bottomLayer: VectorLayer,
+): VectorLayer | null {
+  return booleanCombineVectors(ck, page, [bottomLayer, topLayer], "subtract");
 }
