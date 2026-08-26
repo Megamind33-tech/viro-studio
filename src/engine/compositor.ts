@@ -1516,35 +1516,43 @@ export class Compositor {
       return;
     }
     if (layer.kind === "group") {
-      const paint = new ck.Paint();
-      paint.setAlphaf(layer.opacity);
-      const blendName = SKIA_BLEND[layer.blend];
-      const modes = ck.BlendMode as unknown as Record<string, Parameters<Paint["setBlendMode"]>[0]>;
-      if (modes[blendName]) paint.setBlendMode(modes[blendName]);
-      sk.saveLayer(paint);
-      paint.delete();
-      // A group establishes a coordinate space for its children. Before v2 this
-      // line was missing, so moving a group changed the record and nothing on
-      // screen. Children carry transforms LOCAL to this space.
-      this.concatLocal(sk, layer.transform);
-      for (const child of page.layers) {
-        if (child.parentId === layer.id) this.drawTree(ck, sk, surf, doc, child);
-      }
-      sk.restore();
+      // Groups honour effects too — a drop shadow applies to the composited
+      // group silhouette, not each child. Renders on canvas, export and thumbs.
+      this.withDropShadow(ck, sk, dropShadowOf(layer), () =>
+        this.drawGroup(ck, sk, surf, doc, page, layer),
+      );
       return;
     }
     this.drawLayerWithEffects(ck, sk, doc, layer);
   }
 
+  /** Composite a group and its children (one save-layer for opacity + blend). */
+  private drawGroup(ck: CanvasKit, sk: Canvas, surf: Surface, doc: PressDocument, page: Page, layer: Layer): void {
+    const paint = new ck.Paint();
+    paint.setAlphaf(layer.opacity);
+    const blendName = SKIA_BLEND[layer.blend];
+    const modes = ck.BlendMode as unknown as Record<string, Parameters<Paint["setBlendMode"]>[0]>;
+    if (modes[blendName]) paint.setBlendMode(modes[blendName]);
+    sk.saveLayer(paint);
+    paint.delete();
+    // A group establishes a coordinate space for its children. Before v2 this
+    // line was missing, so moving a group changed the record and nothing on
+    // screen. Children carry transforms LOCAL to this space.
+    this.concatLocal(sk, layer.transform);
+    for (const child of page.layers) {
+      if (child.parentId === layer.id) this.drawTree(ck, sk, surf, doc, child);
+    }
+    sk.restore();
+  }
+
   /**
-   * Draw a leaf layer, applying any enabled non-destructive effects. A drop
-   * shadow is a Photoshop-style pre-pass: the layer is rendered once through a
-   * shadow-only image filter (so the shadow takes the layer's exact silhouette),
-   * then again normally on top. Absent effects cost nothing.
+   * Run `draw` once through a shadow-only image filter (Photoshop-style pre-pass
+   * that takes the exact silhouette), then again normally on top. Absent shadow
+   * costs nothing. Shared by leaf layers and groups so neither can silently
+   * ignore an enabled effect.
    */
-  private drawLayerWithEffects(ck: CanvasKit, sk: Canvas, doc: PressDocument, layer: Layer): void {
-    const shadow = dropShadowOf(layer);
-    if (shadow && shadow.blur >= 0) {
+  private withDropShadow(ck: CanvasKit, sk: Canvas, shadow: DropShadowEffect | null, draw: () => void): void {
+    if (shadow && shadow.enabled && shadow.blur >= 0) {
       const paint = new ck.Paint();
       const a = Math.min(1, Math.max(0, shadow.color.a * shadow.opacity));
       const c = ck.Color4f(shadow.color.r, shadow.color.g, shadow.color.b, a);
@@ -1552,12 +1560,17 @@ export class Compositor {
       const filter = ck.ImageFilter.MakeDropShadowOnly(shadow.offsetX, shadow.offsetY, sigma, sigma, c, null);
       paint.setImageFilter(filter);
       sk.saveLayer(paint);
-      this.drawLayer(ck, sk, doc, layer);
+      draw();
       sk.restore();
       filter.delete();
       paint.delete();
     }
-    this.drawLayer(ck, sk, doc, layer);
+    draw();
+  }
+
+  /** Draw a leaf layer, applying any enabled non-destructive effects. */
+  private drawLayerWithEffects(ck: CanvasKit, sk: Canvas, doc: PressDocument, layer: Layer): void {
+    this.withDropShadow(ck, sk, dropShadowOf(layer), () => this.drawLayer(ck, sk, doc, layer));
   }
 
   private applyAdjustment(ck: CanvasKit, sk: Canvas, surf: Surface, layer: AdjustmentLayer): void {

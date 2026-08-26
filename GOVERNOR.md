@@ -232,8 +232,22 @@ truthful editor release.
 
 ## Violations
 
-None recorded this sprint. (Any agent output breaching this constitution is logged here with
-the relevant hard-stop flag.)
+- 2026-08-26 — `DECORATIVE_FUNCTION_VIOLATION` (P1), found by the Principal Critic pod
+  (`docs/reviews/sprint-critic-01.md`): the Drop Shadow toggle was enabled for group layers but
+  the group render path ignored effects, so it stored + showed lit yet rendered nothing.
+  **RESOLVED** same day: groups now render effects via a shared `withDropShadow` wrapper; covered
+  by an E2E pixel-diff on a grouped selection. XSS probe on project names: PASS (`esc()` covers
+  `renderProjects`).
+
+## Open review findings (from `docs/reviews/sprint-critic-01.md`) — backlog
+
+- P2: shadow `saveLayer` is unbounded → up to a full-page offscreen + blur per shadowed layer per
+  composite; bound to the layer box + spread (perf on large/many-layer docs).
+- P2: two tabs on the same project last-write-wins; add a revision guard / advisory lock.
+- P2: autosave deep-clones the whole doc (embedded images) twice per tick; move to a worker or
+  diff. P3 papercuts: recovery-restore loses project identity; deleting the open project re-creates
+  it on next edit; no project name-length cap; per-field shadow undo entries; panel-thumb shadow
+  parity. Tracked for the next hardening pass; none are P0/P1.
 
 ## Decision Log
 

@@ -78,6 +78,30 @@ const out = await page.evaluate(async () => {
 check("drop shadow is stored on the layer", out.stored === true);
 check("drop shadow actually changes the rendered page (not decorative)", out.changed === true, `before=${out.beforeLen}B after=${out.afterLen}B`);
 check("undo removes the drop shadow", out.undoCleared === true);
+
+// Group case — the Critic found the effect was decorative on groups. Prove it renders.
+const grp = await page.evaluate(async () => {
+  const P = window.__press;
+  window.viroAnchor.applyDetailed([
+    { op: "press.add_rect", params: { x: 300, y: 300, w: 300, h: 300, fill: "#3388ff" }, reason: "group child a" },
+    { op: "press.add_rect", params: { x: 800, y: 800, w: 300, h: 300, fill: "#33cc88" }, reason: "group child b" },
+  ]);
+  const layers = P.doc.pages[0].layers;
+  const a = layers[layers.length - 2].id;
+  const b = layers[layers.length - 1].id;
+  P.doc.activeLayerIds = [a, b];
+  P.group();
+  const group = P.doc.pages[0].layers.find((l) => l.kind === "group");
+  if (!group) return { ok: false };
+  const before = P.compositor.thumbnailDataUrl(P.doc, 256);
+  P.setDropShadow(group.id, { type: "drop-shadow", enabled: true, color: { r: 0, g: 0, b: 0, a: 1 }, offsetX: 40, offsetY: 40, blur: 30, opacity: 0.85 });
+  const after = P.compositor.thumbnailDataUrl(P.doc, 256);
+  return { ok: true, changed: typeof before === "string" && before !== after, beforeLen: (before || "").length, afterLen: (after || "").length };
+});
+
+check("group can receive a drop shadow", grp.ok === true);
+check("group drop shadow actually renders (was decorative — now fixed)", grp.changed === true, `before=${grp.beforeLen}B after=${grp.afterLen}B`);
+
 check("no page errors", pageErrors.length === 0, pageErrors.join(" | "));
 
 console.log(`\n${results.length - failed}/${results.length} checks passed`);
