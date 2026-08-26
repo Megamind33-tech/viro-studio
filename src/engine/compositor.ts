@@ -2,6 +2,7 @@ import type { Canvas, CanvasKit, Font, Image as SkImage, Paint, Surface, Typefac
 import type {
   AdjustmentLayer,
   DropShadowEffect,
+  GradientOverlayEffect,
   Layer,
   Page,
   PressDocument,
@@ -24,6 +25,14 @@ function dropShadowOf(layer: Layer): DropShadowEffect | null {
   const fx = layer.effects;
   if (!fx) return null;
   for (const e of fx) if (e.type === "drop-shadow" && e.enabled) return e;
+  return null;
+}
+
+/** The layer's enabled gradient overlay, if any. */
+function gradientOverlayOf(layer: Layer): GradientOverlayEffect | null {
+  const fx = layer.effects;
+  if (!fx) return null;
+  for (const e of fx) if (e.type === "gradient-overlay" && e.enabled && e.stops.length >= 2) return e;
   return null;
 }
 
@@ -1617,8 +1626,42 @@ export class Compositor {
       this.drawImageLayer(ck, sk, doc, layer, paint);
     }
 
+    this.drawGradientOverlay(ck, sk, layer);
+
     sk.restore();
     paint.delete();
+  }
+
+  /**
+   * Paint a gradient over the layer's silhouette (SrcATop keeps it within the
+   * already-drawn content's alpha). Runs in the layer's local space, so the box
+   * is [0,0,w,h]. No effect when absent or under two stops.
+   */
+  private drawGradientOverlay(ck: CanvasKit, sk: Canvas, layer: Layer): void {
+    const g = gradientOverlayOf(layer);
+    if (!g) return;
+    const w = Math.max(1, layer.transform.w);
+    const h = Math.max(1, layer.transform.h);
+    const cx = w / 2;
+    const cy = h / 2;
+    const rad = (g.angle * Math.PI) / 180;
+    const dx = Math.cos(rad);
+    const dy = Math.sin(rad);
+    const half = (Math.abs(dx) * w + Math.abs(dy) * h) / 2;
+    const start = [cx - dx * half, cy - dy * half];
+    const end = [cx + dx * half, cy + dy * half];
+    const stops = [...g.stops].sort((a, b) => a.offset - b.offset);
+    const colors = stops.map((s) => ck.Color4f(s.color.r, s.color.g, s.color.b, s.color.a));
+    const positions = stops.map((s) => Math.min(1, Math.max(0, s.offset)));
+    const shader = ck.Shader.MakeLinearGradient(start, end, colors, positions, ck.TileMode.Clamp);
+    const paint = new ck.Paint();
+    paint.setShader(shader);
+    paint.setAlphaf(Math.min(1, Math.max(0, g.opacity)));
+    const modes = ck.BlendMode as unknown as Record<string, Parameters<Paint["setBlendMode"]>[0]>;
+    if (modes.SrcATop) paint.setBlendMode(modes.SrcATop);
+    sk.drawRect(ck.LTRBRect(0, 0, w, h), paint);
+    paint.delete();
+    shader.delete();
   }
 
   private drawImageLayer(ck: CanvasKit, sk: Canvas, doc: PressDocument, layer: Layer, paint: Paint): void {

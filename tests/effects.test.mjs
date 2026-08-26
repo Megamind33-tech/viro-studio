@@ -5,7 +5,7 @@
  */
 import test from "node:test";
 import assert from "node:assert/strict";
-import { setLayerDropShadow } from "../src/document/ops.ts";
+import { setLayerDropShadow, setLayerGradientOverlay } from "../src/document/ops.ts";
 import { documentFromPreset, PRESETS } from "../src/document/presets.ts";
 
 function docWithRect() {
@@ -65,4 +65,33 @@ test("effect survives a JSON round-trip (serializable)", () => {
   const doc = setLayerDropShadow(docWithRect(), "L1", SHADOW);
   const round = JSON.parse(JSON.stringify(doc));
   assert.deepEqual(round.pages[0].layers[0].effects, [SHADOW]);
+});
+
+const GRAD = {
+  type: "gradient-overlay",
+  enabled: true,
+  angle: 90,
+  stops: [
+    { offset: 0, color: { r: 1, g: 0, b: 0, a: 1 } },
+    { offset: 1, color: { r: 0, g: 0, b: 1, a: 1 } },
+  ],
+  opacity: 1,
+};
+
+test("drop shadow and gradient overlay coexist in the effects list", () => {
+  let doc = setLayerDropShadow(docWithRect(), "L1", SHADOW);
+  doc = setLayerGradientOverlay(doc, "L1", GRAD);
+  const fx = doc.pages[0].layers[0].effects;
+  assert.equal(fx.length, 2);
+  assert.ok(fx.find((e) => e.type === "drop-shadow"));
+  assert.ok(fx.find((e) => e.type === "gradient-overlay"));
+});
+
+test("clearing gradient overlay leaves the drop shadow intact", () => {
+  let doc = setLayerDropShadow(docWithRect(), "L1", SHADOW);
+  doc = setLayerGradientOverlay(doc, "L1", GRAD);
+  doc = setLayerGradientOverlay(doc, "L1", null);
+  const fx = doc.pages[0].layers[0].effects;
+  assert.equal(fx.length, 1);
+  assert.equal(fx[0].type, "drop-shadow");
 });

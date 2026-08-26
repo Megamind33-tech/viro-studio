@@ -237,6 +237,52 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
     for (const id of ["fx-shadow-x", "fx-shadow-y", "fx-shadow-blur", "fx-shadow-opacity", "fx-shadow-color"]) {
       el(id).addEventListener("change", commitShadow);
     }
+
+    const currentGrad = () => {
+      const sel = selectedLayers(app.doc)[0];
+      return sel?.effects?.find((e) => e.type === "gradient-overlay") ?? null;
+    };
+    const defaultGrad = () => ({
+      type: "gradient-overlay" as const,
+      enabled: true,
+      angle: 90,
+      stops: [
+        { offset: 0, color: { r: 0.88, g: 0.48, b: 0.18, a: 1 } },
+        { offset: 1, color: { r: 0.12, g: 0.12, b: 0.14, a: 1 } },
+      ],
+      opacity: 1,
+    });
+    el<HTMLInputElement>("fx-grad-on").addEventListener("change", () => {
+      const sel = selectedLayers(app.doc)[0];
+      if (!sel) {
+        render();
+        return;
+      }
+      const on = el<HTMLInputElement>("fx-grad-on").checked;
+      const cur = currentGrad();
+      if (on) app.setGradientOverlay(sel.id, cur ? { ...cur, enabled: true } : defaultGrad());
+      else if (cur) app.setGradientOverlay(sel.id, { ...cur, enabled: false });
+    });
+    const commitGrad = () => {
+      const sel = selectedLayers(app.doc)[0];
+      if (!sel) return;
+      const cur = currentGrad() ?? defaultGrad();
+      const a = hexToRgba(el<HTMLInputElement>("fx-grad-a").value);
+      const b = hexToRgba(el<HTMLInputElement>("fx-grad-b").value);
+      app.setGradientOverlay(sel.id, {
+        ...cur,
+        enabled: true,
+        angle: parseNum(el<HTMLInputElement>("fx-grad-angle").value) ?? cur.angle,
+        opacity: Math.min(1, Math.max(0, parseNum(el<HTMLInputElement>("fx-grad-opacity").value) ?? cur.opacity)),
+        stops: [
+          { offset: 0, color: a },
+          { offset: 1, color: b },
+        ],
+      });
+    };
+    for (const id of ["fx-grad-a", "fx-grad-b", "fx-grad-angle", "fx-grad-opacity"]) {
+      el(id).addEventListener("change", commitGrad);
+    }
   }
 
   function bindRecovery(): void {
@@ -1547,6 +1593,17 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
     if (shadow) el<HTMLInputElement>("fx-shadow-color").value = rgbaToHex(shadow.color);
     setDisabled(["fx-shadow-on"], !sel);
     setDisabled(["fx-shadow-x", "fx-shadow-y", "fx-shadow-blur", "fx-shadow-opacity", "fx-shadow-color"], !shadowOn);
+
+    const grad = sel?.effects?.find((e) => e.type === "gradient-overlay") ?? null;
+    const gradOn = !!grad && grad.enabled;
+    el<HTMLInputElement>("fx-grad-on").checked = gradOn;
+    fillIfIdle("fx-grad-angle", grad ? fmt(grad.angle, 0) : "90");
+    fillIfIdle("fx-grad-opacity", grad ? fmt(grad.opacity, 2) : "1");
+    if (grad && grad.stops[0]) el<HTMLInputElement>("fx-grad-a").value = rgbaToHex(grad.stops[0].color);
+    if (grad && grad.stops[1]) el<HTMLInputElement>("fx-grad-b").value = rgbaToHex(grad.stops[grad.stops.length - 1].color);
+    setDisabled(["fx-grad-on"], !sel);
+    setDisabled(["fx-grad-a", "fx-grad-b", "fx-grad-angle", "fx-grad-opacity"], !gradOn);
+
     const fxEmpty = document.getElementById("fx-empty");
     if (fxEmpty) fxEmpty.hidden = !!sel;
 

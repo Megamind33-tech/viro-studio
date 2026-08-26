@@ -3,6 +3,8 @@ import type {
   Align,
   BlendMode,
   DropShadowEffect,
+  GradientOverlayEffect,
+  LayerEffect,
   Layer,
   Page,
   PressDocument,
@@ -124,8 +126,23 @@ export function setLayerDropShadow(
   const next = cloneDoc(doc);
   const layer = findLayer(activePage(next), id);
   if (!layer) return next;
-  const effects = (layer.effects ?? []).filter((e) => e.type !== "drop-shadow");
+  const effects: LayerEffect[] = (layer.effects ?? []).filter((e) => e.type !== "drop-shadow");
   if (shadow) effects.push(shadow);
+  layer.effects = effects;
+  return next;
+}
+
+/** Set (or clear, with null) a layer's gradient-overlay effect. */
+export function setLayerGradientOverlay(
+  doc: PressDocument,
+  id: string,
+  overlay: GradientOverlayEffect | null,
+): PressDocument {
+  const next = cloneDoc(doc);
+  const layer = findLayer(activePage(next), id);
+  if (!layer) return next;
+  const effects: LayerEffect[] = (layer.effects ?? []).filter((e) => e.type !== "gradient-overlay");
+  if (overlay) effects.push(overlay);
   layer.effects = effects;
   return next;
 }

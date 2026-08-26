@@ -78,6 +78,12 @@
   resize: vertical;
 }
 
+.fx-sep {
+  height: 1px;
+  margin: 8px 0;
+  background: var(--hair);
+}
+
 /* Align & distribute row in the Transform studio. */
 .align-row {
   display: flex;

@@ -87,7 +87,28 @@ export interface DropShadowEffect {
   opacity: number;
 }
 
-export type LayerEffect = DropShadowEffect;
+export interface GradientStop {
+  /** 0..1 position along the gradient. */
+  offset: number;
+  color: Rgba;
+}
+
+/**
+ * A gradient painted over the layer's silhouette (Photoshop "Gradient Overlay").
+ * Clipped to the layer's existing alpha, so a rectangle, an image or glyph runs
+ * all take the gradient in their own shape. Additive effect — no schema bump.
+ */
+export interface GradientOverlayEffect {
+  type: "gradient-overlay";
+  enabled: boolean;
+  /** Degrees, clockwise from +x, across the layer box. */
+  angle: number;
+  stops: GradientStop[];
+  /** 0..1 overall overlay opacity. */
+  opacity: number;
+}
+
+export type LayerEffect = DropShadowEffect | GradientOverlayEffect;
 
 export interface LayerBase {
   id: string;

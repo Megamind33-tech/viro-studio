@@ -1,5 +1,5 @@
 import { migrateDocument } from "./document/migrate";
-import type { BlendMode, DropShadowEffect, ImageFit, PressDocument, ResampleAlgo, Rgba, ToolId } from "./document/types";
+import type { BlendMode, DropShadowEffect, GradientOverlayEffect, ImageFit, PressDocument, ResampleAlgo, Rgba, ToolId } from "./document/types";
 import {
   addImageFrame,
   addTypeFrame,
@@ -41,6 +41,7 @@ import {
   setImageFit,
   setLayerBlend,
   setLayerDropShadow,
+  setLayerGradientOverlay,
   setLayerLocked,
   setLayerOpacity,
   setLayerTransform,
@@ -1238,6 +1239,25 @@ export class PressApp {
   /** Set or clear (null) the drop-shadow effect on a layer. One undo step. */
   setDropShadow(id: string, shadow: DropShadowEffect | null): void {
     this.commit("Drop shadow", setLayerDropShadow(this.doc, id, shadow));
+  }
+
+  /** Set or clear (null) the gradient-overlay effect on a layer. One undo step. */
+  setGradientOverlay(id: string, overlay: GradientOverlayEffect | null): void {
+    this.commit("Gradient overlay", setLayerGradientOverlay(this.doc, id, overlay));
+  }
+
+  /** A sensible default gradient overlay used when the effect is first enabled. */
+  static defaultGradientOverlay(): GradientOverlayEffect {
+    return {
+      type: "gradient-overlay",
+      enabled: true,
+      angle: 90,
+      stops: [
+        { offset: 0, color: { r: 0.88, g: 0.48, b: 0.18, a: 1 } },
+        { offset: 1, color: { r: 0.12, g: 0.12, b: 0.14, a: 1 } },
+      ],
+      opacity: 1,
+    };
   }
 
   /** A sensible default drop shadow, used when the effect is first enabled. */

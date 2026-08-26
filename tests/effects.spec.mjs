@@ -102,6 +102,36 @@ const grp = await page.evaluate(async () => {
 check("group can receive a drop shadow", grp.ok === true);
 check("group drop shadow actually renders (was decorative — now fixed)", grp.changed === true, `before=${grp.beforeLen}B after=${grp.afterLen}B`);
 
+// Gradient overlay must actually render over the layer silhouette.
+const grad = await page.evaluate(async () => {
+  const P = window.__press;
+  window.viroAnchor.applyDetailed([
+    { op: "press.add_rect", params: { x: 200, y: 1400, w: 900, h: 500, fill: "#cccccc" }, reason: "gradient fixture" },
+  ]);
+  const layers = P.doc.pages[0].layers;
+  const id = layers[layers.length - 1].id;
+  const before = P.compositor.thumbnailDataUrl(P.doc, 256);
+  P.setGradientOverlay(id, {
+    type: "gradient-overlay",
+    enabled: true,
+    angle: 90,
+    stops: [
+      { offset: 0, color: { r: 0.9, g: 0.3, b: 0.1, a: 1 } },
+      { offset: 1, color: { r: 0.1, g: 0.1, b: 0.5, a: 1 } },
+    ],
+    opacity: 1,
+  });
+  const stored = P.doc.pages[0].layers.find((l) => l.id === id)?.effects?.some((e) => e.type === "gradient-overlay" && e.enabled);
+  const after = P.compositor.thumbnailDataUrl(P.doc, 256);
+  P.undo();
+  const undoCleared = !P.doc.pages[0].layers.find((l) => l.id === id)?.effects?.some((e) => e.type === "gradient-overlay" && e.enabled);
+  return { stored: !!stored, changed: typeof before === "string" && before !== after, undoCleared, beforeLen: (before || "").length, afterLen: (after || "").length };
+});
+
+check("gradient overlay is stored on the layer", grad.stored === true);
+check("gradient overlay actually renders (not decorative)", grad.changed === true, `before=${grad.beforeLen}B after=${grad.afterLen}B`);
+check("undo removes the gradient overlay", grad.undoCleared === true);
+
 check("no page errors", pageErrors.length === 0, pageErrors.join(" | "));
 
 console.log(`\n${results.length - failed}/${results.length} checks passed`);
