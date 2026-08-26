@@ -1674,6 +1674,40 @@ export class Compositor {
     return bytes;
   }
 
+  /**
+   * A small PNG data URL rendered from the ACTUAL active page — for project and
+   * dashboard previews (GOVERNOR.md §15/§61). Never stock art: this composites
+   * the real document and downscales it with the same Skia blit the exporter
+   * uses, preserving aspect ratio within `maxEdge`.
+   */
+  thumbnailDataUrl(doc: PressDocument, maxEdge = 320): string | null {
+    const ck = this.engines.ck;
+    const img = this.compositePage(ck, doc, false);
+    if (!img) return null;
+    const iw = Math.max(1, img.width());
+    const ih = Math.max(1, img.height());
+    const scale = Math.min(1, maxEdge / Math.max(iw, ih));
+    const tw = Math.max(1, Math.round(iw * scale));
+    const th = Math.max(1, Math.round(ih * scale));
+    const surf = ck.MakeSurface(tw, th);
+    if (!surf) {
+      img.delete();
+      return null;
+    }
+    const paint = new ck.Paint();
+    this.blit(ck, surf.getCanvas(), img, { x: 0, y: 0, w: iw, h: ih }, { x: 0, y: 0, w: tw, h: th }, paint, "bilinear");
+    paint.delete();
+    const out = surf.makeImageSnapshot();
+    const encoded = out.encodeToBytes(ck.ImageFormat.PNG, 90);
+    out.delete();
+    surf.delete();
+    img.delete();
+    if (!encoded) return null;
+    let bin = "";
+    for (let i = 0; i < encoded.length; i++) bin += String.fromCharCode(encoded[i]!);
+    return `data:image/png;base64,${btoa(bin)}`;
+  }
+
   /** Image Size resample: Skia FilterMode.Nearest / FilterMode.Linear / cubic Mitchell (B=C=1/3). */
   resampleDataUrl(dataUrl: string, nextW: number, nextH: number, algo: ResampleAlgo): string {
     const ck = this.engines.ck;
