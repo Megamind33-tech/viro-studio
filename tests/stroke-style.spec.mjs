@@ -131,7 +131,7 @@ const roundtrip = await page.evaluate(async () => {
   return { original, reopened, version: P.doc.version };
 });
 
-check("document is v5 after opening a styled-stroke file", roundtrip.version === 5, `version=${roundtrip.version}`);
+check("document is current-version (v6) after opening a styled-stroke file", roundtrip.version === 6, `version=${roundtrip.version}`);
 check("dashed/styled stroke round-trips through save/open unchanged", roundtrip.original === roundtrip.reopened, `${roundtrip.original} vs ${roundtrip.reopened}`);
 
 check("no page errors", pageErrors.length === 0, pageErrors.join(" | "));

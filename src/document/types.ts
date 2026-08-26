@@ -212,12 +212,38 @@ export interface VectorStroke {
   join?: StrokeJoin;
 }
 
+/**
+ * One subpath of a vector layer: a run of bezier nodes that is either open or
+ * closed, in the same local space as the layer's legacy `nodes`. Multiple
+ * contours make a compound path (an outer ring plus inner holes, or several
+ * disjoint pieces) — the shape a boolean op (subtract/union/…) produces.
+ * Added in document v6 (ADR 0005).
+ */
+export interface Contour {
+  nodes: PathNode[];
+  closed: boolean;
+}
+
+/**
+ * A vector layer.
+ *
+ * PRECEDENCE (v6, ADR 0005): a layer is EITHER a single contour carried by the
+ * legacy `nodes`/`closed` fields, OR a compound path carried by an optional
+ * `contours` list. When `contours` is present and non-empty it is AUTHORITATIVE:
+ * the compositor, validator, hash and hit-tests read `contours` and ignore
+ * `nodes`/`closed`. When `contours` is absent or empty the layer is the single
+ * contour `{ nodes, closed }`, exactly as in v1–v5 — so every existing vector is
+ * already a valid v6 one-contour vector and the v5→v6 migration moves no pixels.
+ * `nodes` is retained (never removed) so v6 stays structurally a superset of v5.
+ */
 export interface VectorLayer extends LayerBase {
   kind: "vector";
   closed: boolean;
   nodes: PathNode[];
   fill: Rgba | null;
   stroke: VectorStroke | null;
+  /** Optional multi-contour (compound-path) geometry. See PRECEDENCE above. */
+  contours?: Contour[];
 }
 
 export interface GroupLayer extends LayerBase {
@@ -398,8 +424,11 @@ export interface PressDocument {
    * 4 = versioned rich-text ranges, style registries and text-frame semantics.
    * 5 = vector stroke styling (dash/cap/join) — a widening stamp; v1–v4 strokes
    *     stay valid and render identically (solid, butt cap, miter join).
+   * 6 = multi-contour (compound-path) vectors for boolean ops (ADR 0005) — a
+   *     widening stamp; a v≤5 vector is already a valid v6 one-contour vector,
+   *     so nothing is rewritten and no pixels move.
    */
-  version: 1 | 2 | 3 | 4 | 5;
+  version: 1 | 2 | 3 | 4 | 5 | 6;
   name: string;
   ppi: number;
   color: {

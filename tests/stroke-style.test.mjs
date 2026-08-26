@@ -135,9 +135,10 @@ test("validateStroke rejects an unknown cap or join", () => {
   assert.ok(validateStroke({ color: RED, width: 2, join: "sharp" }, "x").some((e) => /join must be/.test(e)));
 });
 
-test("validateDocument passes for a v5 document carrying a dashed stroke", () => {
+test("validateDocument passes for a current-version document carrying a dashed stroke", () => {
   const doc = docWithStrokedRect({ color: RED, width: 3, dash: [12, 6], cap: "round" });
-  assert.equal(doc.version, 5);
+  // Factory documents are stamped at the current DOC_VERSION (now 6 after ADR 0005).
+  assert.equal(doc.version, 6);
   assert.deepEqual(validateDocument(doc), []);
 });
 

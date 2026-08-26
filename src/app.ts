@@ -1,5 +1,6 @@
 import { migrateDocument } from "./document/migrate";
-import type { BlendMode, DropShadowEffect, GradientOverlayEffect, ImageFit, Layer, OuterGlowEffect, PressDocument, ResampleAlgo, Rgba, StrokeEffect, ToolId } from "./document/types";
+import type { BlendMode, DropShadowEffect, GradientOverlayEffect, ImageFit, Layer, OuterGlowEffect, PressDocument, ResampleAlgo, Rgba, StrokeEffect, ToolId, VectorLayer } from "./document/types";
+import { subtractVectors } from "./document/boolean-ops";
 import {
   addImageFrame,
   addTypeFrame,
@@ -1445,6 +1446,50 @@ export class PressApp {
     this.run({ type: "layer.reorder", params: { layerId: id, dir } });
   }
 
+  /**
+   * ADR 0005 Phase-0 proof boolean. Subtract the vector beneath the topmost of
+   * the two selected vector layers, consuming both operands into ONE multi-
+   * contour result layer in a single history step (undo restores both operands).
+   * The full boolean UI (union/intersect/exclude, a Pathfinder cluster) is
+   * Phase A; this minimal command exists only to prove the model + render.
+   */
+  subtractSelected(): boolean {
+    const ck = this.compositor?.engines.ck;
+    if (!ck) {
+      this.status = "Subtract needs the compositor to be ready";
+      this.emit();
+      return false;
+    }
+    const page = activePage(this.doc);
+    const selected = new Set(this.doc.activeLayerIds);
+    // Operands in draw order: the last is topmost. Subtract = top minus beneath.
+    const vectors = page.layers.filter(
+      (l): l is VectorLayer => l.kind === "vector" && selected.has(l.id),
+    );
+    if (vectors.length < 2) {
+      this.status = "Subtract needs two selected vector layers";
+      this.emit();
+      return false;
+    }
+    const top = vectors[vectors.length - 1]!;
+    const bottom = vectors[vectors.length - 2]!;
+    const result = subtractVectors(ck, page, top, bottom);
+    if (!result) {
+      this.status = "Subtract produced an empty shape — nothing changed";
+      this.emit();
+      return false;
+    }
+    const next = cloneDoc(this.doc);
+    const nextPage = next.pages.find((p) => p.id === page.id)!;
+    const consumed = new Set([top.id, bottom.id]);
+    nextPage.layers = nextPage.layers.filter((l) => !consumed.has(l.id));
+    nextPage.layers.push(result);
+    next.activeLayerIds = [result.id];
+    this.status = `Subtracted "${bottom.name}" from "${top.name}" — ${result.contours?.length ?? 0} contour(s)`;
+    this.commit(`Subtract ${bottom.name} from ${top.name}`, next);
+    return true;
+  }
+
   selectLayer(id: string, additive: boolean): void {
     const ids = additive ? [...new Set([...this.doc.activeLayerIds, id])] : [id];
     this.doc = setActiveLayers(this.doc, ids);
@@ -1612,7 +1657,7 @@ export class PressApp {
     if (lower.endsWith(".vdj") || lower.endsWith(".json")) {
       const text = new TextDecoder().decode(bytes);
       const json = JSON.parse(text);
-      if (typeof json.version === "number" && json.version >= 1 && json.version <= 5 && json.pages && json.stories) {
+      if (typeof json.version === "number" && json.version >= 1 && json.version <= 6 && json.pages && json.stories) {
         // A v1 file holds ABSOLUTE child coordinates. v2 composes group
         // transforms, so it MUST be rebased on the way in or every grouped
         // document would open shifted by its own group origin.

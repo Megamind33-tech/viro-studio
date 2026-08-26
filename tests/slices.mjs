@@ -35,6 +35,8 @@ const SCRIPTS = [
   "stroke-style.spec.mjs",
   // RFC-6 - multi-select group transform (move/scale, one undo) + smart guides
   "multi-transform.spec.mjs",
+  // ADR-0005 Phase-0 - boolean subtract proof (multi-contour render + v6 round-trip)
+  "booleans.spec.mjs",
   // background removal - U²-Netp loads the non-jsep CPU wasm and produces a mask
   "cutout.spec.mjs",
 ];
