@@ -1,5 +1,5 @@
 import { migrateDocument } from "./document/migrate";
-import type { BlendMode, ImageFit, PressDocument, ResampleAlgo, Rgba, ToolId } from "./document/types";
+import type { BlendMode, DropShadowEffect, GradientOverlayEffect, ImageFit, OuterGlowEffect, PressDocument, ResampleAlgo, Rgba, StrokeEffect, ToolId } from "./document/types";
 import {
   addImageFrame,
   addTypeFrame,
@@ -21,6 +21,9 @@ import { documentFromPreset, PRESETS } from "./document/presets";
 import {
   addAdjustment,
   addPage,
+  alignLayers,
+  distributeLayers,
+  type AlignMode,
   addVectorPath,
   appendPathNode,
   applyFill,
@@ -37,6 +40,10 @@ import {
   setImageCrop,
   setImageFit,
   setLayerBlend,
+  setLayerDropShadow,
+  setLayerGradientOverlay,
+  setLayerOuterGlow,
+  setLayerStrokeEffect,
   setLayerLocked,
   setLayerOpacity,
   setLayerTransform,
@@ -63,7 +70,15 @@ import type { PdfExportReport } from "./export/pdf";
 import { documentFromPsd } from "./import/psd";
 import { documentFromVdj } from "./import/vdj";
 import { pageToLocal } from "./document/transform";
-import { putUserAsset } from "./library/store";
+import {
+  deleteRecovery,
+  getRecovery,
+  putRecovery,
+  putUserAsset,
+  type RecoverySnapshot,
+} from "./library/store";
+import { flag } from "./platform/flags";
+import { projects, type ProjectRecord, type ProjectSummary } from "./platform/projects";
 
 /** Smallest edge a layer may be scaled to, in page px. */
 const MIN_SIZE = 4;
@@ -111,6 +126,32 @@ export class PressApp {
   strokeWidth = 2;
   constrainImageSize = true;
   listeners = new Set<() => void>();
+  /**
+   * Autosave/recovery. The working document is written to IndexedDB shortly
+   * after each edit so a reload or crash does not lose unsaved work. `dirty`
+   * gates writes so an untouched freshly-booted document never overwrites a
+   * genuine recovery snapshot. `pendingRecovery` is a snapshot found at boot
+   * that predates this session; the UI offers to restore it.
+   */
+  private dirty = false;
+  private booted = false;
+  private autosaveTimer: ReturnType<typeof setTimeout> | 0 = 0;
+  /** Bus revision last durably written to the recovery slot. */
+  private savedRev = 0;
+  pendingRecovery: RecoverySnapshot | null = null;
+  /** Debounce for autosave writes, in ms. */
+  private static AUTOSAVE_MS = 1200;
+  /**
+   * The project this session is editing. Once the user makes a real edit a
+   * project is created (or an opened one is reused), so work is always captured
+   * in the local library, not just the crash-recovery slot.
+   */
+  currentProjectId: string | null = null;
+  private projectCreatedAt = 0;
+  private lastThumbnail: string | null = null;
+  private lastThumbAt = 0;
+  /** Regenerate the page thumbnail at most this often during active editing. */
+  private static THUMB_MS = 4000;
   dialog: "image-size" | "new" | "brightness" | null = null;
   channelThumbs: { r: string; g: string; b: string; rgb: string } | null = null;
   /** Per-op audit trail from the last Anchor batch, for the queue surface. */
@@ -152,6 +193,7 @@ export class PressApp {
   }
 
   private emit(): void {
+    this.trackRevision();
     this.compositor?.draw(this.doc);
     for (const fn of this.listeners) fn();
   }
@@ -204,9 +246,244 @@ export class PressApp {
     }
   }
 
+  /**
+   * Detect a genuine content change via the command-bus revision. Every path
+   * that mutates the document (commit, run, Anchor batches, drag commits,
+   * undo/redo) advances the revision, while pure selection/tool repaints do
+   * not — so autosave fires on real edits only. Called from emit(), the single
+   * repaint funnel.
+   */
+  private trackRevision(): void {
+    if (!this.booted) return;
+    if (this.bus.revision() !== this.savedRev) {
+      this.dirty = true;
+      this.scheduleAutosave();
+    }
+  }
+
+  private scheduleAutosave(): void {
+    if (this.autosaveTimer) return;
+    this.autosaveTimer = setTimeout(() => {
+      this.autosaveTimer = 0;
+      void this.autosaveTick();
+    }, PressApp.AUTOSAVE_MS);
+  }
+
+  /** One debounced autosave: crash-recovery slot + the persisted project. */
+  private async autosaveTick(): Promise<void> {
+    await this.writeRecovery();
+    if (flag("platform.enabled")) await this.persistCurrentProject();
+  }
+
+  /**
+   * Persist the working document to the local recovery slot. Serialises through
+   * JSON so the stored value is a plain structured-clone-safe snapshot and never
+   * a live reference. Failures (private mode, quota) degrade to an in-memory
+   * session rather than throwing into the edit path.
+   */
+  async writeRecovery(): Promise<void> {
+    if (!this.dirty) return;
+    const rev = this.bus.revision();
+    const snapshot: RecoverySnapshot = {
+      id: "current",
+      doc: JSON.parse(JSON.stringify(this.doc)),
+      name: this.doc.name,
+      savedAt: Date.now(),
+    };
+    try {
+      await putRecovery(snapshot);
+      this.savedRev = rev;
+      // Edits may have landed while the write was in flight.
+      if (this.bus.revision() === rev) this.dirty = false;
+      else this.scheduleAutosave();
+    } catch {
+      // Non-durable environment: keep editing; the reload safety net is simply
+      // unavailable and we do not pretend otherwise.
+    }
+  }
+
+  /**
+   * Flush any pending autosave immediately. Used when the page is being hidden
+   * or unloaded so the last edits are not lost to the debounce window.
+   */
+  flushRecovery(): void {
+    if (this.autosaveTimer) {
+      clearTimeout(this.autosaveTimer);
+      this.autosaveTimer = 0;
+    }
+    void this.autosaveTick();
+  }
+
+  // ── Projects (local library; cloud provider slots in behind this) ─────────
+
+  /**
+   * Render a page thumbnail from the ACTUAL document, throttled so active
+   * editing does not pay a full composite every autosave. Returns the last
+   * thumbnail when not due, or null if rendering is unavailable.
+   */
+  private maybeThumbnail(force = false): string | null {
+    if (!this.compositor) return this.lastThumbnail;
+    const now = Date.now();
+    if (!force && this.lastThumbnail && now - this.lastThumbAt < PressApp.THUMB_MS) {
+      return this.lastThumbnail;
+    }
+    try {
+      const url = this.compositor.thumbnailDataUrl(this.doc, 360);
+      if (url) {
+        this.lastThumbnail = url;
+        this.lastThumbAt = now;
+      }
+    } catch {
+      // A thumbnail failure must never break autosave or the edit path.
+    }
+    return this.lastThumbnail;
+  }
+
+  /** Upsert the working document into the local project library. */
+  async persistCurrentProject(force = false): Promise<void> {
+    if (!this.dirty && !force) return;
+    if (!this.currentProjectId) {
+      this.currentProjectId = uid("proj");
+      this.projectCreatedAt = Date.now();
+    }
+    const now = Date.now();
+    const record: ProjectRecord = {
+      id: this.currentProjectId,
+      name: this.doc.name || "Untitled",
+      doc: JSON.parse(JSON.stringify(this.doc)),
+      thumbnail: this.maybeThumbnail(force),
+      createdAt: this.projectCreatedAt || now,
+      updatedAt: now,
+    };
+    try {
+      await projects().save(record);
+    } catch {
+      // Non-durable environment: keep editing; local library is unavailable.
+    }
+  }
+
+  /** Save the current project immediately with a freshly rendered thumbnail. */
+  async saveProjectNow(): Promise<void> {
+    await this.persistCurrentProject(true);
+    this.status = `Saved “${this.doc.name || "Untitled"}” to Projects`;
+    this.emit();
+  }
+
+  listProjects(): Promise<ProjectSummary[]> {
+    return projects().list();
+  }
+
+  /** Load a saved project as the working document. */
+  async openProject(id: string): Promise<boolean> {
+    const record = await projects().get(id);
+    if (!record || !record.doc) {
+      this.status = "Project not found";
+      this.emit();
+      return false;
+    }
+    try {
+      const doc = JSON.parse(JSON.stringify(record.doc)) as PressDocument;
+      migrateDocument(doc);
+      this.commit("Open project", doc);
+      this.currentProjectId = record.id;
+      this.projectCreatedAt = record.createdAt;
+      this.lastThumbnail = record.thumbnail;
+      this.lastThumbAt = 0;
+      // The freshly opened state is the saved baseline, not unsaved work.
+      this.savedRev = this.bus.revision();
+      this.dirty = false;
+      this.status = `Opened “${doc.name || "Untitled"}”`;
+      this.emit();
+      return true;
+    } catch (err) {
+      this.status = `Could not open project — ${err instanceof Error ? err.message : String(err)}`;
+      this.emit();
+      return false;
+    }
+  }
+
+  /** Start a fresh project from a preset, capturing it in the library. */
+  async newProject(presetId?: string): Promise<void> {
+    const preset = presetId ? PRESETS.find((p) => p.id === presetId) ?? PRESETS[0]! : PRESETS[0]!;
+    this.commit("New project", documentFromPreset(preset));
+    this.currentProjectId = uid("proj");
+    this.projectCreatedAt = Date.now();
+    this.lastThumbnail = null;
+    this.lastThumbAt = 0;
+    await this.persistCurrentProject(true);
+    this.emit();
+  }
+
+  async renameProject(id: string, name: string): Promise<void> {
+    const clean = name.trim();
+    if (!clean) return;
+    const record = await projects().get(id);
+    if (!record) return;
+    record.name = clean;
+    record.updatedAt = Date.now();
+    if (record.doc && typeof record.doc === "object") {
+      (record.doc as { name?: string }).name = clean;
+    }
+    await projects().save(record);
+    if (id === this.currentProjectId) {
+      this.doc.name = clean;
+    }
+    this.emit();
+  }
+
+  async deleteProject(id: string): Promise<void> {
+    await projects().remove(id);
+    if (id === this.currentProjectId) {
+      this.currentProjectId = null;
+    }
+    this.emit();
+  }
+
+  /**
+   * Read any recovery snapshot left by a previous session. Only surfaces a
+   * snapshot that predates this session's edits, so a normal fresh load shows
+   * no prompt.
+   */
+  private async loadPendingRecovery(): Promise<void> {
+    if (this.dirty) return;
+    try {
+      const snap = await getRecovery();
+      if (snap && snap.doc) this.pendingRecovery = snap;
+    } catch {
+      this.pendingRecovery = null;
+    }
+  }
+
+  /** Adopt the recovery snapshot as the working document. */
+  restoreRecovery(): boolean {
+    const snap = this.pendingRecovery;
+    if (!snap || !snap.doc) return false;
+    try {
+      const doc = JSON.parse(JSON.stringify(snap.doc)) as PressDocument;
+      migrateDocument(doc);
+      this.commit("Recover unsaved work", doc);
+      this.pendingRecovery = null;
+      this.status = `Recovered “${doc.name}” from ${new Date(snap.savedAt).toLocaleString()}`;
+      this.emit();
+      return true;
+    } catch (err) {
+      this.status = `Could not recover — ${err instanceof Error ? err.message : String(err)}`;
+      this.emit();
+      return false;
+    }
+  }
+
+  /** Discard the recovery snapshot; the user has chosen to start clean. */
+  discardRecovery(): void {
+    this.pendingRecovery = null;
+    void deleteRecovery();
+    this.emit();
+  }
+
   async boot(canvas: HTMLCanvasElement): Promise<void> {
     this.status = "Loading CanvasKit (Skia)…";
     this.emit();
+    await this.loadPendingRecovery();
     const { ck, source } = await loadCanvasKit();
     this.ckSource = source;
 
@@ -255,6 +532,17 @@ export class PressApp {
     this.bindKeys();
     this.bindPasteboard(canvas);
     this.status = `Skia ${this.engines.backend} · HarfBuzz · ${this.fonts.list().filter((f) => f.face).length} face(s) · ${colourStackLabel()}`;
+    this.booted = true;
+    // Flush the last edits before the tab is hidden or torn down, so the
+    // debounce window never costs unsaved work on reload/close.
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "hidden") this.flushRecovery();
+      });
+      window.addEventListener("pagehide", () => this.flushRecovery());
+    }
+    // Catch any edits that landed before boot completed.
+    this.trackRevision();
     this.emit();
   }
 
@@ -936,6 +1224,89 @@ export class PressApp {
     this.run({ type: "layer.locked", params: { layerId: id, locked: v } });
   }
 
+  /** Align the current multi-selection to its shared bounds. One undo step. */
+  alignSelected(mode: AlignMode): void {
+    const ids = this.doc.activeLayerIds;
+    if (ids.length < 2) return;
+    this.commit(`Align ${mode}`, alignLayers(this.doc, ids, mode));
+  }
+
+  /** Evenly distribute the current selection along an axis. One undo step. */
+  distributeSelected(axis: "h" | "v"): void {
+    const ids = this.doc.activeLayerIds;
+    if (ids.length < 3) return;
+    this.commit(`Distribute ${axis}`, distributeLayers(this.doc, ids, axis));
+  }
+
+  /** Set or clear (null) the drop-shadow effect on a layer. One undo step. */
+  setDropShadow(id: string, shadow: DropShadowEffect | null): void {
+    this.commit("Drop shadow", setLayerDropShadow(this.doc, id, shadow));
+  }
+
+  /** Set or clear (null) the gradient-overlay effect on a layer. One undo step. */
+  setGradientOverlay(id: string, overlay: GradientOverlayEffect | null): void {
+    this.commit("Gradient overlay", setLayerGradientOverlay(this.doc, id, overlay));
+  }
+
+  /** Set or clear (null) the stroke/outline effect on a layer. One undo step. */
+  setStrokeEffect(id: string, stroke: StrokeEffect | null): void {
+    this.commit("Stroke effect", setLayerStrokeEffect(this.doc, id, stroke));
+  }
+
+  /** Set or clear (null) the outer-glow effect on a layer. One undo step. */
+  setOuterGlow(id: string, glow: OuterGlowEffect | null): void {
+    this.commit("Outer glow", setLayerOuterGlow(this.doc, id, glow));
+  }
+
+  /** A sensible default stroke/outline used when the effect is first enabled. */
+  static defaultStrokeEffect(): StrokeEffect {
+    return {
+      type: "stroke",
+      enabled: true,
+      color: { r: 0.88, g: 0.48, b: 0.18, a: 1 },
+      width: 6,
+      opacity: 1,
+    };
+  }
+
+  /** A sensible default outer glow used when the effect is first enabled. */
+  static defaultOuterGlow(): OuterGlowEffect {
+    return {
+      type: "outer-glow",
+      enabled: true,
+      color: { r: 1, g: 0.9, b: 0.4, a: 1 },
+      blur: 16,
+      opacity: 0.85,
+    };
+  }
+
+  /** A sensible default gradient overlay used when the effect is first enabled. */
+  static defaultGradientOverlay(): GradientOverlayEffect {
+    return {
+      type: "gradient-overlay",
+      enabled: true,
+      angle: 90,
+      stops: [
+        { offset: 0, color: { r: 0.88, g: 0.48, b: 0.18, a: 1 } },
+        { offset: 1, color: { r: 0.12, g: 0.12, b: 0.14, a: 1 } },
+      ],
+      opacity: 1,
+    };
+  }
+
+  /** A sensible default drop shadow, used when the effect is first enabled. */
+  static defaultDropShadow(): DropShadowEffect {
+    return {
+      type: "drop-shadow",
+      enabled: true,
+      color: { r: 0, g: 0, b: 0, a: 1 },
+      offsetX: 6,
+      offsetY: 8,
+      blur: 12,
+      opacity: 0.45,
+    };
+  }
+
   setFg(r: number, g: number, b: number): void {
     if (this.compositor) this.compositor.view.fg = { r, g, b, a: 1 };
     const sel = selectedLayers(this.doc);
@@ -1151,7 +1522,7 @@ export class PressApp {
     if (lower.endsWith(".vdj") || lower.endsWith(".json")) {
       const text = new TextDecoder().decode(bytes);
       const json = JSON.parse(text);
-      if (typeof json.version === "number" && json.version >= 1 && json.version <= 3 && json.pages && json.stories) {
+      if (typeof json.version === "number" && json.version >= 1 && json.version <= 5 && json.pages && json.stories) {
         // A v1 file holds ABSOLUTE child coordinates. v2 composes group
         // transforms, so it MUST be rebased on the way in or every grouped
         // document would open shifted by its own group origin.

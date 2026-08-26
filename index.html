@@ -19,11 +19,13 @@
           <button type="button" class="menu-btn" data-menu="file">File</button>
           <div class="flyout" data-flyout="file" hidden>
             <button type="button" data-cmd="new">New…<span class="kbd">Ctrl+N</span></button>
-            <button type="button" data-cmd="open">Open…</button>
+            <button type="button" data-cmd="projects">Projects…<span class="kbd">Ctrl+O</span></button>
+            <button type="button" data-cmd="open">Open File…</button>
             <button type="button" data-cmd="place">Place…<span class="kbd">Shift+Ctrl+P</span></button>
             <button type="button" data-cmd="import-fonts">Import Fonts…</button>
             <button type="button" data-cmd="import-assets">Import Assets…</button>
             <div class="sep"></div>
+            <button type="button" data-cmd="save-project">Save to Projects<span class="kbd">Ctrl+S</span></button>
             <button type="button" data-cmd="export-png">Export PNG…</button>
             <button type="button" data-cmd="export-pdf">Export PDF…</button>
             <button type="button" data-cmd="save-json">Save Press JSON…</button>
@@ -112,6 +114,7 @@
             <button type="button" data-cmd="win-color"><span class="check" data-check="g-color">✓</span>Color</button>
             <button type="button" data-cmd="win-type"><span class="check" data-check="g-type">✓</span>Character / Paragraph</button>
             <button type="button" data-cmd="win-transform"><span class="check" data-check="g-transform">✓</span>Transform</button>
+            <button type="button" data-cmd="win-effects"><span class="check" data-check="g-effects">✓</span>Effects</button>
             <button type="button" data-cmd="win-layers"><span class="check" data-check="g-layers">✓</span>Layers</button>
             <button type="button" data-cmd="win-pages"><span class="check" data-check="g-pages">✓</span>Pages</button>
             <button type="button" data-cmd="win-nav"><span class="check" data-check="g-nav">✓</span>Navigator / History</button>
@@ -271,6 +274,26 @@
               <span class="lbl">px</span>
               <span class="well" id="stroke-well"></span>
             </div>
+            <div class="row fill">
+              <label class="field"><span>Cap</span>
+                <select class="ctrl" id="stroke-cap" aria-label="Stroke cap">
+                  <option value="butt">Butt</option>
+                  <option value="round">Round</option>
+                  <option value="square">Square</option>
+                </select>
+              </label>
+              <label class="field"><span>Join</span>
+                <select class="ctrl" id="stroke-join" aria-label="Stroke join">
+                  <option value="miter">Miter</option>
+                  <option value="round">Round</option>
+                  <option value="bevel">Bevel</option>
+                </select>
+              </label>
+            </div>
+            <div class="row fill">
+              <span class="lbl">Dash</span>
+              <input class="ctrl grow" id="stroke-dash" inputmode="numeric" placeholder="e.g. 12 6 — empty is solid" aria-label="Stroke dash pattern" />
+            </div>
           </div>
           <div class="pane" data-pane="character" hidden>
             <div class="row">
@@ -324,6 +347,71 @@
               <span class="grow"></span>
               <label class="check"><input type="checkbox" id="tr-constrain" checked />Constrain</label>
             </div>
+            <div class="row align-row" id="align-row" role="group" aria-label="Align and distribute">
+              <button type="button" class="align-btn" data-align="left" title="Align left" aria-label="Align left"><svg class="icon" viewBox="0 0 12 12" aria-hidden="true"><path d="M1.5 1v10M3 3h6M3 7h4"/></svg></button>
+              <button type="button" class="align-btn" data-align="center-h" title="Align centers (horizontal)" aria-label="Align horizontal centers"><svg class="icon" viewBox="0 0 12 12" aria-hidden="true"><path d="M6 1v10M3 3h6M4 7h4"/></svg></button>
+              <button type="button" class="align-btn" data-align="right" title="Align right" aria-label="Align right"><svg class="icon" viewBox="0 0 12 12" aria-hidden="true"><path d="M10.5 1v10M3 3h6M5 7h4"/></svg></button>
+              <span class="align-sep"></span>
+              <button type="button" class="align-btn" data-align="top" title="Align top" aria-label="Align top"><svg class="icon" viewBox="0 0 12 12" aria-hidden="true"><path d="M1 1.5h10M3 3v6M7 3v4"/></svg></button>
+              <button type="button" class="align-btn" data-align="center-v" title="Align middles (vertical)" aria-label="Align vertical centers"><svg class="icon" viewBox="0 0 12 12" aria-hidden="true"><path d="M1 6h10M3 3v6M7 4v4"/></svg></button>
+              <button type="button" class="align-btn" data-align="bottom" title="Align bottom" aria-label="Align bottom"><svg class="icon" viewBox="0 0 12 12" aria-hidden="true"><path d="M1 10.5h10M3 3v6M7 5v4"/></svg></button>
+              <span class="align-sep"></span>
+              <button type="button" class="align-btn" data-dist="h" title="Distribute horizontally" aria-label="Distribute horizontally"><svg class="icon" viewBox="0 0 12 12" aria-hidden="true"><path d="M1.5 2v8M10.5 2v8M6 3.5v5"/></svg></button>
+              <button type="button" class="align-btn" data-dist="v" title="Distribute vertically" aria-label="Distribute vertically"><svg class="icon" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 1.5h8M2 10.5h8M3.5 6h5"/></svg></button>
+            </div>
+          </div>
+        </section>
+
+        <section class="group" id="g-effects">
+          <div class="tabs">
+            <button type="button" class="is-on">Effects</button>
+          </div>
+          <div class="pane" id="fx-pane">
+            <div class="row">
+              <label class="check"><input type="checkbox" id="fx-shadow-on" />Drop Shadow</label>
+              <span class="grow"></span>
+              <input type="color" id="fx-shadow-color" value="#000000" aria-label="Shadow color" />
+            </div>
+            <div class="row fill">
+              <label class="field"><span>X</span><input class="num" id="fx-shadow-x" inputmode="numeric" /></label>
+              <label class="field"><span>Y</span><input class="num" id="fx-shadow-y" inputmode="numeric" /></label>
+            </div>
+            <div class="row fill">
+              <label class="field"><span>Blur</span><input class="num" id="fx-shadow-blur" inputmode="numeric" /></label>
+              <label class="field"><span>Opacity</span><input class="num" id="fx-shadow-opacity" inputmode="decimal" /></label>
+            </div>
+            <div class="fx-sep"></div>
+            <div class="row">
+              <label class="check"><input type="checkbox" id="fx-grad-on" />Gradient Overlay</label>
+              <span class="grow"></span>
+              <input type="color" id="fx-grad-a" value="#e07a2f" aria-label="Gradient start color" />
+              <input type="color" id="fx-grad-b" value="#1f1f24" aria-label="Gradient end color" />
+            </div>
+            <div class="row fill">
+              <label class="field"><span>Angle</span><input class="num" id="fx-grad-angle" inputmode="numeric" /></label>
+              <label class="field"><span>Opacity</span><input class="num" id="fx-grad-opacity" inputmode="decimal" /></label>
+            </div>
+            <div class="fx-sep"></div>
+            <div class="row">
+              <label class="check"><input type="checkbox" id="fx-stroke-on" />Stroke</label>
+              <span class="grow"></span>
+              <input type="color" id="fx-stroke-color" value="#e07a2f" aria-label="Stroke color" />
+            </div>
+            <div class="row fill">
+              <label class="field"><span>Width</span><input class="num" id="fx-stroke-width" inputmode="numeric" /></label>
+              <label class="field"><span>Opacity</span><input class="num" id="fx-stroke-opacity" inputmode="decimal" /></label>
+            </div>
+            <div class="fx-sep"></div>
+            <div class="row">
+              <label class="check"><input type="checkbox" id="fx-glow-on" />Outer Glow</label>
+              <span class="grow"></span>
+              <input type="color" id="fx-glow-color" value="#ffe566" aria-label="Glow color" />
+            </div>
+            <div class="row fill">
+              <label class="field"><span>Blur</span><input class="num" id="fx-glow-blur" inputmode="numeric" /></label>
+              <label class="field"><span>Opacity</span><input class="num" id="fx-glow-opacity" inputmode="decimal" /></label>
+            </div>
+            <p class="fx-empty hint" id="fx-empty" hidden>Select a layer to add effects.</p>
           </div>
         </section>
 
@@ -453,9 +541,34 @@
     </div>
 
     <input type="file" id="file-place" accept="image/png,image/jpeg,image/webp,image/gif,image/bmp,.png,.jpg,.jpeg,.webp,.gif,.bmp" multiple hidden />
-    <input type="file" id="file-font" accept=".ttf,.otf,.woff,.woff2,.ttc,font/ttf,font/otf" multiple hidden />
+    <input type="file" id="file-fonts" accept=".ttf,.otf,.woff,.woff2,.ttc,font/ttf,font/otf" multiple hidden />
+    <input type="file" id="file-assets" accept="image/png,image/jpeg,image/webp,image/gif,image/bmp,.png,.jpg,.jpeg,.webp,.gif,.bmp,.ttf,.otf,.woff,.woff2,.ttc,.psd,.vdj,.json" multiple hidden />
     <input type="file" id="file-open" accept=".psd,.vdj,.json,.png,.jpg,.jpeg,.webp,.gif,.bmp,.press.json,.ttf,.otf" hidden />
     <textarea id="type-input" class="type-input" tabindex="-1" autocomplete="off" spellcheck="false" aria-label="Type"></textarea>
+
+    <div class="dialog-back" id="dlg-projects" hidden>
+      <div class="dialog dialog-wide" role="dialog" aria-labelledby="dlg-projects-title" aria-modal="true">
+        <div class="dialog-title" id="dlg-projects-title">Projects</div>
+        <div class="dialog-body">
+          <div class="proj-toolbar">
+            <button type="button" class="ctrl" data-cmd="new">New document</button>
+            <span class="proj-scope" id="proj-scope">Stored on this device</span>
+          </div>
+          <div id="projects-grid" class="projects-grid" aria-live="polite"></div>
+        </div>
+        <div class="dialog-foot">
+          <button type="button" class="ctrl" data-dlg="projects-close">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="recover-bar" class="recover-bar" role="region" aria-label="Recover unsaved work" hidden>
+      <span class="recover-msg">Unsaved work from a previous session was found:&nbsp;<span id="recover-name" class="recover-name"></span></span>
+      <span class="recover-actions">
+        <button type="button" class="recover-btn recover-primary" data-cmd="recover-restore">Restore</button>
+        <button type="button" class="recover-btn" data-cmd="recover-discard">Discard</button>
+      </span>
+    </div>
 
     <div class="dialog-back" id="dlg-image" hidden>
       <div class="dialog" role="dialog" aria-labelledby="dlg-image-title">

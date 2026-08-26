@@ -1,6 +1,6 @@
 # File format and migration
 
-Status: **v4 in place; packaging not started.** Documents are currently plain
+Status: **v5 in place; packaging not started.** Documents are currently plain
 JSON (`.vdj` / `.json`). The atomic `.viro` package, autosave journal and crash
 recovery described in foundation deliverable D are **not implemented** — see
 "Not yet true" below.
@@ -13,10 +13,21 @@ recovery described in foundation deliverable D are **not implemented** — see
 | 2 | **Local to parent** (page when `parentId` is null) | `parentId` + composed transforms |
 | 3 | unchanged from 2 | unchanged from 2 |
 | 4 | unchanged from 2 | rich-text ranges, style registries and explicit text-frame semantics |
+| 5 | unchanged from 2 | vector stroke styling (dash / cap / join) — a widening stamp |
 
-`PressDocument.version` is `1 | 2 | 3 | 4` (`src/document/types.ts`).
-`createDocument` stamps `DOC_VERSION` (4). `validateDocument` accepts all four
-versions and requires the v4 text fields on current documents.
+`PressDocument.version` is `1 | 2 | 3 | 4 | 5` (`src/document/types.ts`).
+`createDocument` stamps `DOC_VERSION` (5). `validateDocument` accepts all five
+versions, requires the v4 text fields on current documents, and validates any
+v5 stroke styling (even dash intervals, bounded length, valid cap/join enums).
+
+v5 widens `VectorLayer.stroke` from `{ color, width }` to add optional
+`dash?: number[]`, `dashPhase?`, `cap?: "butt"|"round"|"square"` and
+`join?: "miter"|"round"|"bevel"`. It is a **widening version stamp**: a v4
+stroke omits all four, which renders solid / butt / miter — pixel-identical to
+v4 — so `migrateDocument` rewrites nothing and only reports
+`MigrationReport.strokeStylesStamped`. `tests/transform.test.mjs` asserts the
+stamp leaves existing strokes byte-identical and that a v5 dashed stroke
+round-trips through save/open unchanged.
 
 v3 changes `ImageFit`, not transforms: the mode `"fill"` was removed. It was
 byte-identical to `"stretch"` in the compositor and the exporter alike, and the

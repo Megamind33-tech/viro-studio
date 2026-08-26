@@ -25,6 +25,14 @@ const SCRIPTS = [
   "anchor-bus.spec.mjs",
   // audited desktop integration - the File menu reaches the preload bridge
   "electron-bridge.spec.mjs",
+  // data-loss P0 - autosave to IndexedDB and crash/reload recovery
+  "recovery.spec.mjs",
+  // local-first platform (ADR 0004) - projects library + real thumbnails
+  "projects.spec.mjs",
+  // layer effects - drop shadow actually renders (pixel diff)
+  "effects.spec.mjs",
+  // vector stroke styling - dash/cap/join actually render (pixel diff) + v5 round-trip
+  "stroke-style.spec.mjs",
 ];
 
 function run(script) {

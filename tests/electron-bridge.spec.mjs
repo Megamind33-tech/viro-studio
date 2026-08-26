@@ -4,11 +4,14 @@
  * catches the previous failure mode: working IPC handlers with zero callers.
  */
 import { createRequire } from "node:module";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
 import { ensureServer } from "./server.mjs";
 
-const require_ = createRequire("file:///C:/viro%20studio/package.json");
+const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
+const require_ = createRequire(import.meta.url);
 const { chromium } = require_("playwright");
-process.env.PLAYWRIGHT_BROWSERS_PATH ||= "C:/viro studio/.pw-browsers";
+process.env.PLAYWRIGHT_BROWSERS_PATH ||= join(ROOT, ".pw-browsers");
 
 let failed = 0;
 const check = (name, pass, detail = "") => {

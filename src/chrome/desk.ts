@@ -176,10 +176,273 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
   bindStudios();
   bindDialogs();
   bindKeys();
+  bindRecovery();
+  bindProjects();
+  bindEffects();
+  bindAlign();
 
   app.onChange(() => render());
   render();
   return el<HTMLCanvasElement>("skia");
+
+  function bindAlign(): void {
+    el("align-row").addEventListener("click", (e) => {
+      const btn = (e.target as HTMLElement).closest<HTMLElement>("[data-align],[data-dist]");
+      if (!btn) return;
+      if (btn.dataset.align) app.alignSelected(btn.dataset.align as Parameters<typeof app.alignSelected>[0]);
+      else if (btn.dataset.dist) app.distributeSelected(btn.dataset.dist as "h" | "v");
+    });
+  }
+
+  function bindEffects(): void {
+    const defaultShadow = () => ({
+      type: "drop-shadow" as const,
+      enabled: true,
+      color: { r: 0, g: 0, b: 0, a: 1 },
+      offsetX: 6,
+      offsetY: 8,
+      blur: 12,
+      opacity: 0.45,
+    });
+    const currentShadow = () => {
+      const sel = selectedLayers(app.doc)[0];
+      const fx = sel?.effects?.find((e) => e.type === "drop-shadow");
+      return fx ?? null;
+    };
+    el<HTMLInputElement>("fx-shadow-on").addEventListener("change", () => {
+      const sel = selectedLayers(app.doc)[0];
+      if (!sel) {
+        render();
+        return;
+      }
+      const on = el<HTMLInputElement>("fx-shadow-on").checked;
+      const cur = currentShadow();
+      if (on) app.setDropShadow(sel.id, cur ? { ...cur, enabled: true } : defaultShadow());
+      else if (cur) app.setDropShadow(sel.id, { ...cur, enabled: false });
+    });
+    const commitShadow = () => {
+      const sel = selectedLayers(app.doc)[0];
+      if (!sel) return;
+      const cur = currentShadow() ?? defaultShadow();
+      app.setDropShadow(sel.id, {
+        ...cur,
+        enabled: true,
+        offsetX: parseNum(el<HTMLInputElement>("fx-shadow-x").value) ?? cur.offsetX,
+        offsetY: parseNum(el<HTMLInputElement>("fx-shadow-y").value) ?? cur.offsetY,
+        blur: Math.max(0, parseNum(el<HTMLInputElement>("fx-shadow-blur").value) ?? cur.blur),
+        opacity: Math.min(1, Math.max(0, parseNum(el<HTMLInputElement>("fx-shadow-opacity").value) ?? cur.opacity)),
+        color: hexToRgba(el<HTMLInputElement>("fx-shadow-color").value),
+      });
+    };
+    for (const id of ["fx-shadow-x", "fx-shadow-y", "fx-shadow-blur", "fx-shadow-opacity", "fx-shadow-color"]) {
+      el(id).addEventListener("change", commitShadow);
+    }
+
+    const currentGrad = () => {
+      const sel = selectedLayers(app.doc)[0];
+      return sel?.effects?.find((e) => e.type === "gradient-overlay") ?? null;
+    };
+    const defaultGrad = () => ({
+      type: "gradient-overlay" as const,
+      enabled: true,
+      angle: 90,
+      stops: [
+        { offset: 0, color: { r: 0.88, g: 0.48, b: 0.18, a: 1 } },
+        { offset: 1, color: { r: 0.12, g: 0.12, b: 0.14, a: 1 } },
+      ],
+      opacity: 1,
+    });
+    el<HTMLInputElement>("fx-grad-on").addEventListener("change", () => {
+      const sel = selectedLayers(app.doc)[0];
+      if (!sel) {
+        render();
+        return;
+      }
+      const on = el<HTMLInputElement>("fx-grad-on").checked;
+      const cur = currentGrad();
+      if (on) app.setGradientOverlay(sel.id, cur ? { ...cur, enabled: true } : defaultGrad());
+      else if (cur) app.setGradientOverlay(sel.id, { ...cur, enabled: false });
+    });
+    const commitGrad = () => {
+      const sel = selectedLayers(app.doc)[0];
+      if (!sel) return;
+      const cur = currentGrad() ?? defaultGrad();
+      const a = hexToRgba(el<HTMLInputElement>("fx-grad-a").value);
+      const b = hexToRgba(el<HTMLInputElement>("fx-grad-b").value);
+      app.setGradientOverlay(sel.id, {
+        ...cur,
+        enabled: true,
+        angle: parseNum(el<HTMLInputElement>("fx-grad-angle").value) ?? cur.angle,
+        opacity: Math.min(1, Math.max(0, parseNum(el<HTMLInputElement>("fx-grad-opacity").value) ?? cur.opacity)),
+        stops: [
+          { offset: 0, color: a },
+          { offset: 1, color: b },
+        ],
+      });
+    };
+    for (const id of ["fx-grad-a", "fx-grad-b", "fx-grad-angle", "fx-grad-opacity"]) {
+      el(id).addEventListener("change", commitGrad);
+    }
+
+    const currentStroke = () => {
+      const sel = selectedLayers(app.doc)[0];
+      return sel?.effects?.find((e) => e.type === "stroke") ?? null;
+    };
+    const defaultStroke = () => ({
+      type: "stroke" as const,
+      enabled: true,
+      color: { r: 0.88, g: 0.48, b: 0.18, a: 1 },
+      width: 6,
+      opacity: 1,
+    });
+    el<HTMLInputElement>("fx-stroke-on").addEventListener("change", () => {
+      const sel = selectedLayers(app.doc)[0];
+      if (!sel) {
+        render();
+        return;
+      }
+      const on = el<HTMLInputElement>("fx-stroke-on").checked;
+      const cur = currentStroke();
+      if (on) app.setStrokeEffect(sel.id, cur ? { ...cur, enabled: true } : defaultStroke());
+      else if (cur) app.setStrokeEffect(sel.id, { ...cur, enabled: false });
+    });
+    const commitStroke = () => {
+      const sel = selectedLayers(app.doc)[0];
+      if (!sel) return;
+      const cur = currentStroke() ?? defaultStroke();
+      app.setStrokeEffect(sel.id, {
+        ...cur,
+        enabled: true,
+        width: Math.max(0, parseNum(el<HTMLInputElement>("fx-stroke-width").value) ?? cur.width),
+        opacity: Math.min(1, Math.max(0, parseNum(el<HTMLInputElement>("fx-stroke-opacity").value) ?? cur.opacity)),
+        color: hexToRgba(el<HTMLInputElement>("fx-stroke-color").value),
+      });
+    };
+    for (const id of ["fx-stroke-width", "fx-stroke-opacity", "fx-stroke-color"]) {
+      el(id).addEventListener("change", commitStroke);
+    }
+
+    const currentGlow = () => {
+      const sel = selectedLayers(app.doc)[0];
+      return sel?.effects?.find((e) => e.type === "outer-glow") ?? null;
+    };
+    const defaultGlow = () => ({
+      type: "outer-glow" as const,
+      enabled: true,
+      color: { r: 1, g: 0.9, b: 0.4, a: 1 },
+      blur: 16,
+      opacity: 0.85,
+    });
+    el<HTMLInputElement>("fx-glow-on").addEventListener("change", () => {
+      const sel = selectedLayers(app.doc)[0];
+      if (!sel) {
+        render();
+        return;
+      }
+      const on = el<HTMLInputElement>("fx-glow-on").checked;
+      const cur = currentGlow();
+      if (on) app.setOuterGlow(sel.id, cur ? { ...cur, enabled: true } : defaultGlow());
+      else if (cur) app.setOuterGlow(sel.id, { ...cur, enabled: false });
+    });
+    const commitGlow = () => {
+      const sel = selectedLayers(app.doc)[0];
+      if (!sel) return;
+      const cur = currentGlow() ?? defaultGlow();
+      app.setOuterGlow(sel.id, {
+        ...cur,
+        enabled: true,
+        blur: Math.max(0, parseNum(el<HTMLInputElement>("fx-glow-blur").value) ?? cur.blur),
+        opacity: Math.min(1, Math.max(0, parseNum(el<HTMLInputElement>("fx-glow-opacity").value) ?? cur.opacity)),
+        color: hexToRgba(el<HTMLInputElement>("fx-glow-color").value),
+      });
+    };
+    for (const id of ["fx-glow-blur", "fx-glow-opacity", "fx-glow-color"]) {
+      el(id).addEventListener("change", commitGlow);
+    }
+  }
+
+  function bindRecovery(): void {
+    const bar = document.getElementById("recover-bar");
+    bar?.addEventListener("click", (e) => {
+      const btn = (e.target as HTMLElement).closest<HTMLElement>("[data-cmd]");
+      if (btn?.dataset.cmd) cmd(btn.dataset.cmd);
+    });
+  }
+
+  function openProjects(): void {
+    el("dlg-projects").hidden = false;
+    void renderProjects();
+  }
+
+  function closeProjects(): void {
+    el("dlg-projects").hidden = true;
+  }
+
+  async function renderProjects(): Promise<void> {
+    const grid = el("projects-grid");
+    const list = await app.listProjects();
+    if (!list.length) {
+      grid.innerHTML = `<p class="empty">No projects yet. Your saved work will appear here.</p>`;
+      return;
+    }
+    grid.innerHTML = list
+      .map((p) => {
+        const when = new Date(p.updatedAt).toLocaleString();
+        const thumb = p.thumbnail
+          ? `<img src="${esc(p.thumbnail)}" alt="">`
+          : `<span class="proj-noimg" aria-hidden="true"></span>`;
+        return `<div class="proj-card" data-proj="${esc(p.id)}">
+          <button type="button" class="proj-open" data-proj-open="${esc(p.id)}" title="Open ${esc(p.name)}">
+            <span class="proj-thumb">${thumb}</span>
+            <span class="proj-name">${esc(p.name)}</span>
+            <time class="proj-time">${esc(when)}</time>
+          </button>
+          <div class="proj-actions">
+            <button type="button" class="proj-btn" data-proj-rename="${esc(p.id)}">Rename</button>
+            <button type="button" class="proj-btn" data-proj-delete="${esc(p.id)}">Delete</button>
+          </div>
+        </div>`;
+      })
+      .join("");
+  }
+
+  function bindProjects(): void {
+    const dlg = el("dlg-projects");
+    dlg.addEventListener("click", (e) => {
+      const t = e.target as HTMLElement;
+      if (t.closest('[data-dlg="projects-close"]')) {
+        closeProjects();
+        return;
+      }
+      if (t.closest('[data-cmd="new"]')) {
+        closeProjects();
+        cmd("new");
+        return;
+      }
+      const openId = t.closest<HTMLElement>("[data-proj-open]")?.dataset.projOpen;
+      if (openId) {
+        void app.openProject(openId).then((ok) => {
+          if (ok) closeProjects();
+        });
+        return;
+      }
+      const renameId = t.closest<HTMLElement>("[data-proj-rename]")?.dataset.projRename;
+      if (renameId) {
+        const card = t.closest<HTMLElement>(".proj-card");
+        const current = card?.querySelector(".proj-name")?.textContent ?? "";
+        const name = window.prompt("Rename project", current);
+        if (name && name.trim()) void app.renameProject(renameId, name).then(() => renderProjects());
+        return;
+      }
+      const deleteId = t.closest<HTMLElement>("[data-proj-delete]")?.dataset.projDelete;
+      if (deleteId) {
+        if (window.confirm("Delete this project? This cannot be undone.")) {
+          void app.deleteProject(deleteId).then(() => renderProjects());
+        }
+        return;
+      }
+    });
+  }
 
   function view() {
     return app.compositor?.view ?? null;
@@ -325,6 +588,9 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
       case "win-transform":
         toggle("g-transform");
         return;
+      case "win-effects":
+        toggle("g-effects");
+        return;
       case "win-layers":
         toggle("g-layers");
         return;
@@ -345,6 +611,18 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
         return;
       case "add-page":
         app.addPageToDoc();
+        return;
+      case "recover-restore":
+        app.restoreRecovery();
+        return;
+      case "recover-discard":
+        app.discardRecovery();
+        return;
+      case "projects":
+        void openProjects();
+        return;
+      case "save-project":
+        void app.saveProjectNow();
         return;
       default:
         return;
@@ -743,6 +1021,9 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
     el("para-first").addEventListener("change", () => patchParagraph());
     el("para-after").addEventListener("change", () => patchParagraph());
     el("stroke-w").addEventListener("change", () => patchStroke());
+    el("stroke-cap").addEventListener("change", () => patchStroke());
+    el("stroke-join").addEventListener("change", () => patchStroke());
+    el("stroke-dash").addEventListener("change", () => patchStroke());
 
     el<HTMLInputElement>("nav-zoom").addEventListener("input", (e) => {
       setZoom(Number((e.target as HTMLInputElement).value) / 100);
@@ -768,7 +1049,32 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
   function patchStroke(): void {
     const w = parseNum(el<HTMLInputElement>("stroke-w").value);
     if (w == null) return;
-    app.run({ type: "vector.strokeWidth", params: { width: w, fallbackColor: state.fg } });
+    const cap = el<HTMLSelectElement>("stroke-cap").value;
+    const join = el<HTMLSelectElement>("stroke-join").value;
+    const dash = parseDash(el<HTMLInputElement>("stroke-dash").value);
+    const params: Record<string, unknown> = { width: w, fallbackColor: state.fg, cap, join };
+    // Undefined means "leave the dash as-is" (unparseable input); an explicit
+    // [] clears back to solid. Only send a parsed value so a typo never clobbers.
+    if (dash !== undefined) params.dash = dash;
+    app.run({ type: "vector.strokeWidth", params });
+  }
+
+  /**
+   * Parse a dash field ("12 6", "12,6", "8") into Skia's even on/off intervals.
+   * Empty is solid ([]); a single value repeats as an equal on/off; an odd list
+   * is doubled (SVG's rule) so the control can never emit an invalid pattern.
+   * Returns undefined for non-numeric input, meaning "do not touch the dash".
+   */
+  function parseDash(raw: string): number[] | undefined {
+    const text = raw.trim();
+    if (!text) return [];
+    const parts = text.split(/[\s,]+/).filter(Boolean).map(Number);
+    if (!parts.length || parts.some((n) => !Number.isFinite(n) || n < 0)) return undefined;
+    let arr = parts;
+    if (arr.length === 1) arr = [arr[0]!, arr[0]!];
+    else if (arr.length % 2 !== 0) arr = [...arr, ...arr];
+    if (arr.every((n) => n === 0)) return [];
+    return arr;
   }
 
   function bindDialogs(): void {
@@ -1233,6 +1539,14 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
         e.preventDefault();
         cmd("new");
       }
+      if (k === "o" && !e.shiftKey) {
+        e.preventDefault();
+        cmd("projects");
+      }
+      if (k === "s" && !e.shiftKey) {
+        e.preventDefault();
+        cmd("save-project");
+      }
       if (k === "j") {
         e.preventDefault();
         cmd("duplicate");
@@ -1299,6 +1613,18 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
     el("dlg-image").hidden = app.dialog !== "image-size";
     el("dlg-new").hidden = app.dialog !== "new";
     el("dlg-bc").hidden = app.dialog !== "brightness";
+    const recoverBar = document.getElementById("recover-bar");
+    if (recoverBar) {
+      const snap = app.pendingRecovery;
+      recoverBar.hidden = !snap;
+      if (snap) {
+        const nameEl = document.getElementById("recover-name");
+        if (nameEl) {
+          const when = new Date(snap.savedAt).toLocaleString();
+          nameEl.textContent = `“${snap.name}” — autosaved ${when}`;
+        }
+      }
+    }
     el("menu-cutout").hidden = !app.hasCutout;
     const filterCut = document.getElementById("filter-cutout");
     if (filterCut) filterCut.hidden = !app.hasCutout;
@@ -1344,6 +1670,9 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
     setDisabled(LAYER_FIELDS, !sel);
     setDisabled(STORY_FIELDS, !story);
     setDisabled(["stroke-w"], sel?.kind !== "vector");
+    // Cap/join/dash only apply once a vector actually carries a stroke.
+    const hasStroke = sel?.kind === "vector" && !!sel.stroke;
+    setDisabled(["stroke-cap", "stroke-join", "stroke-dash"], !hasStroke);
     setDisabled(["duplicate-btn", "delete-btn"], !sel);
     document.querySelectorAll<HTMLButtonElement>("#para-align [data-align]").forEach((b) => {
       b.disabled = !story;
@@ -1358,7 +1687,62 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
     if (sel?.kind === "vector") {
       fillIfIdle("stroke-w", sel.stroke ? fmt(sel.stroke.width, 1) : "0");
       el("stroke-well").style.background = sel.stroke ? rgbaCss(sel.stroke.color) : "transparent";
+      el<HTMLSelectElement>("stroke-cap").value = sel.stroke?.cap ?? "butt";
+      el<HTMLSelectElement>("stroke-join").value = sel.stroke?.join ?? "miter";
+      fillIfIdle("stroke-dash", sel.stroke?.dash?.length ? sel.stroke.dash.join(" ") : "");
     }
+
+    // Effects — drop shadow of the selected layer.
+    const shadow = sel?.effects?.find((e) => e.type === "drop-shadow") ?? null;
+    const shadowOn = !!shadow && shadow.enabled;
+    el<HTMLInputElement>("fx-shadow-on").checked = shadowOn;
+    fillIfIdle("fx-shadow-x", shadow ? fmt(shadow.offsetX, 0) : "6");
+    fillIfIdle("fx-shadow-y", shadow ? fmt(shadow.offsetY, 0) : "8");
+    fillIfIdle("fx-shadow-blur", shadow ? fmt(shadow.blur, 0) : "12");
+    fillIfIdle("fx-shadow-opacity", shadow ? fmt(shadow.opacity, 2) : "0.45");
+    if (shadow) el<HTMLInputElement>("fx-shadow-color").value = rgbaToHex(shadow.color);
+    setDisabled(["fx-shadow-on"], !sel);
+    setDisabled(["fx-shadow-x", "fx-shadow-y", "fx-shadow-blur", "fx-shadow-opacity", "fx-shadow-color"], !shadowOn);
+
+    const grad = sel?.effects?.find((e) => e.type === "gradient-overlay") ?? null;
+    const gradOn = !!grad && grad.enabled;
+    el<HTMLInputElement>("fx-grad-on").checked = gradOn;
+    fillIfIdle("fx-grad-angle", grad ? fmt(grad.angle, 0) : "90");
+    fillIfIdle("fx-grad-opacity", grad ? fmt(grad.opacity, 2) : "1");
+    if (grad && grad.stops[0]) el<HTMLInputElement>("fx-grad-a").value = rgbaToHex(grad.stops[0].color);
+    if (grad && grad.stops[1]) el<HTMLInputElement>("fx-grad-b").value = rgbaToHex(grad.stops[grad.stops.length - 1].color);
+    setDisabled(["fx-grad-on"], !sel);
+    setDisabled(["fx-grad-a", "fx-grad-b", "fx-grad-angle", "fx-grad-opacity"], !gradOn);
+
+    const strokeFx = sel?.effects?.find((e) => e.type === "stroke") ?? null;
+    const strokeOn = !!strokeFx && strokeFx.enabled;
+    el<HTMLInputElement>("fx-stroke-on").checked = strokeOn;
+    fillIfIdle("fx-stroke-width", strokeFx ? fmt(strokeFx.width, 0) : "6");
+    fillIfIdle("fx-stroke-opacity", strokeFx ? fmt(strokeFx.opacity, 2) : "1");
+    if (strokeFx) el<HTMLInputElement>("fx-stroke-color").value = rgbaToHex(strokeFx.color);
+    setDisabled(["fx-stroke-on"], !sel);
+    setDisabled(["fx-stroke-width", "fx-stroke-opacity", "fx-stroke-color"], !strokeOn);
+
+    const glow = sel?.effects?.find((e) => e.type === "outer-glow") ?? null;
+    const glowOn = !!glow && glow.enabled;
+    el<HTMLInputElement>("fx-glow-on").checked = glowOn;
+    fillIfIdle("fx-glow-blur", glow ? fmt(glow.blur, 0) : "16");
+    fillIfIdle("fx-glow-opacity", glow ? fmt(glow.opacity, 2) : "0.85");
+    if (glow) el<HTMLInputElement>("fx-glow-color").value = rgbaToHex(glow.color);
+    setDisabled(["fx-glow-on"], !sel);
+    setDisabled(["fx-glow-blur", "fx-glow-opacity", "fx-glow-color"], !glowOn);
+
+    const fxEmpty = document.getElementById("fx-empty");
+    if (fxEmpty) fxEmpty.hidden = !!sel;
+
+    // Align needs 2+ selected layers; distribute needs 3+.
+    const selCount = app.doc.activeLayerIds.length;
+    document.querySelectorAll<HTMLButtonElement>("#align-row [data-align]").forEach((b) => {
+      b.disabled = selCount < 2;
+    });
+    document.querySelectorAll<HTMLButtonElement>("#align-row [data-dist]").forEach((b) => {
+      b.disabled = selCount < 3;
+    });
 
     el("fg-swatch").style.background = rgbaCss(state.fg);
     el("bg-swatch").style.background = rgbaCss(state.bg);

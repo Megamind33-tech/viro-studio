@@ -69,6 +69,79 @@ export interface Transform {
   scaleY?: number;
 }
 
+/**
+ * Non-destructive layer effects (Photoshop "layer style" family). Applied by the
+ * compositor when rendering the layer, and by the exporter, so canvas and output
+ * stay identical. Absent on v1–v4 documents; additive and forward/backward safe.
+ */
+export interface DropShadowEffect {
+  type: "drop-shadow";
+  enabled: boolean;
+  /** 0..1 float channels, matching Rgba elsewhere. */
+  color: Rgba;
+  offsetX: number;
+  offsetY: number;
+  /** Blur radius in page px. */
+  blur: number;
+  /** 0..1, multiplies the shadow colour's alpha. */
+  opacity: number;
+}
+
+export interface GradientStop {
+  /** 0..1 position along the gradient. */
+  offset: number;
+  color: Rgba;
+}
+
+/**
+ * A gradient painted over the layer's silhouette (Photoshop "Gradient Overlay").
+ * Clipped to the layer's existing alpha, so a rectangle, an image or glyph runs
+ * all take the gradient in their own shape. Additive effect — no schema bump.
+ */
+export interface GradientOverlayEffect {
+  type: "gradient-overlay";
+  enabled: boolean;
+  /** Degrees, clockwise from +x, across the layer box. */
+  angle: number;
+  stops: GradientStop[];
+  /** 0..1 overall overlay opacity. */
+  opacity: number;
+}
+
+/**
+ * A solid outline traced around the layer's silhouette (Photoshop "Stroke").
+ * Renders for any layer kind by dilating its alpha and tinting the ring that
+ * stands proud of the original content. Additive effect — no schema bump.
+ */
+export interface StrokeEffect {
+  type: "stroke";
+  enabled: boolean;
+  /** 0..1 float channels, matching Rgba elsewhere. */
+  color: Rgba;
+  /** Outline width in page px, drawn outward from the silhouette. */
+  width: number;
+  /** 0..1, multiplies the stroke colour's alpha. */
+  opacity: number;
+}
+
+/**
+ * A soft coloured halo bleeding outward from the layer's silhouette (Photoshop
+ * "Outer Glow") — a blurred silhouette of the glow colour drawn behind the
+ * layer, i.e. a zero-offset drop shadow in a light colour. Additive — no bump.
+ */
+export interface OuterGlowEffect {
+  type: "outer-glow";
+  enabled: boolean;
+  /** 0..1 float channels, matching Rgba elsewhere. */
+  color: Rgba;
+  /** Blur radius in page px. */
+  blur: number;
+  /** 0..1, multiplies the glow colour's alpha. */
+  opacity: number;
+}
+
+export type LayerEffect = DropShadowEffect | GradientOverlayEffect | StrokeEffect | OuterGlowEffect;
+
 export interface LayerBase {
   id: string;
   name: string;
@@ -78,6 +151,8 @@ export interface LayerBase {
   blend: BlendMode;
   transform: Transform;
   parentId: string | null;
+  /** Non-destructive effects rendered under/over the layer. Optional for back-compat. */
+  effects?: LayerEffect[];
 }
 
 export interface RasterLayer extends LayerBase {
@@ -114,12 +189,35 @@ export interface PathNode {
   outY: number;
 }
 
+/** How a stroke terminates at an open end. Skia default is "butt". */
+export type StrokeCap = "butt" | "round" | "square";
+/** How a stroke turns a corner. Skia default is "miter". */
+export type StrokeJoin = "miter" | "round" | "bevel";
+
+/**
+ * A vector layer's outline. `dash`/`cap`/`join` are optional and were added in
+ * document v5; a v1–v4 stroke that omits them renders solid, butt-capped and
+ * miter-joined exactly as before (the v5 migration is a widening version stamp).
+ */
+export interface VectorStroke {
+  color: Rgba;
+  width: number;
+  /**
+   * On/off dash intervals in page px. Skia requires an even count (≥2); an
+   * absent or empty array is a solid stroke. `dashPhase` shifts the pattern.
+   */
+  dash?: number[];
+  dashPhase?: number;
+  cap?: StrokeCap;
+  join?: StrokeJoin;
+}
+
 export interface VectorLayer extends LayerBase {
   kind: "vector";
   closed: boolean;
   nodes: PathNode[];
   fill: Rgba | null;
-  stroke: { color: Rgba; width: number } | null;
+  stroke: VectorStroke | null;
 }
 
 export interface GroupLayer extends LayerBase {
@@ -298,8 +396,10 @@ export interface PressDocument {
    * 1 = absolute transforms (pre-hierarchy). 2 = local transforms.
    * 3 = ImageFit "fill" collapsed into "stretch".
    * 4 = versioned rich-text ranges, style registries and text-frame semantics.
+   * 5 = vector stroke styling (dash/cap/join) — a widening stamp; v1–v4 strokes
+   *     stay valid and render identically (solid, butt cap, miter join).
    */
-  version: 1 | 2 | 3 | 4;
+  version: 1 | 2 | 3 | 4 | 5;
   name: string;
   ppi: number;
   color: {

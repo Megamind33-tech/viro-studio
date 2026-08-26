@@ -17,7 +17,7 @@
  * there, which is why `stats().snapshotEntries` should be read as "document
  * replacements", not as migration debt.
  */
-import type { Align, BlendMode, CharacterStyle, ImageFit, ParagraphStyle, PressDocument, ResampleAlgo, Rgba } from "./types";
+import type { Align, BlendMode, CharacterStyle, ImageFit, ParagraphStyle, PressDocument, ResampleAlgo, Rgba, StrokeCap, StrokeJoin } from "./types";
 import { SKIA_BLEND } from "./types";
 import { applyCharacterRange, applyParagraphRange, assertTextRange, replaceStoryRange, type TextAffinity } from "./text-model";
 import { CommandError, deriveInverse, registerCommand, v, type CommandDef } from "./commands";
@@ -29,6 +29,7 @@ import {
   addVectorRect,
   applyImageSize,
   cloneDoc,
+  MAX_DASH_INTERVALS,
   selectedLayers,
 } from "./factory";
 import {
@@ -41,6 +42,7 @@ import {
   deleteSelected,
   duplicateSelected,
   groupSelected,
+  mergeStroke,
   reorderLayer,
   replaceAssetData,
   setCharacter,
@@ -87,6 +89,48 @@ function reqNum(
   const n = v.num(o, key, type, opts);
   if (n === undefined) throw new CommandError(`${type}: "${key}" is required`);
   return n;
+}
+
+const STROKE_CAPS = ["butt", "round", "square"] as const;
+const STROKE_JOINS = ["miter", "round", "bevel"] as const;
+
+/** Optional stroke cap enum; undefined when absent. */
+function strokeCap(raw: unknown, type: string): StrokeCap | undefined {
+  if (raw === undefined || raw === null) return undefined;
+  if (typeof raw !== "string" || !(STROKE_CAPS as readonly string[]).includes(raw)) {
+    throw new CommandError(`${type}: "cap" must be one of ${STROKE_CAPS.join(", ")}`);
+  }
+  return raw as StrokeCap;
+}
+
+/** Optional stroke join enum; undefined when absent. */
+function strokeJoin(raw: unknown, type: string): StrokeJoin | undefined {
+  if (raw === undefined || raw === null) return undefined;
+  if (typeof raw !== "string" || !(STROKE_JOINS as readonly string[]).includes(raw)) {
+    throw new CommandError(`${type}: "join" must be one of ${STROKE_JOINS.join(", ")}`);
+  }
+  return raw as StrokeJoin;
+}
+
+/**
+ * Optional dash pattern. An empty array clears the dash (solid). A non-empty
+ * pattern must be an even list of finite, non-negative numbers, not all zero,
+ * bounded in length — mirrors `validateStroke` so bad input never reaches Skia.
+ */
+function dashArray(raw: unknown, type: string): number[] | undefined {
+  if (raw === undefined || raw === null) return undefined;
+  if (!Array.isArray(raw)) throw new CommandError(`${type}: "dash" must be an array of numbers`);
+  if (raw.length === 0) return [];
+  if (raw.length % 2 !== 0) throw new CommandError(`${type}: "dash" needs an even number of on,off intervals`);
+  if (raw.length > MAX_DASH_INTERVALS) throw new CommandError(`${type}: "dash" has too many intervals (max ${MAX_DASH_INTERVALS})`);
+  const nums = raw.map((n, i) => {
+    if (typeof n !== "number" || !Number.isFinite(n) || n < 0) {
+      throw new CommandError(`${type}: "dash[${i}]" must be a finite number >= 0`);
+    }
+    return n;
+  });
+  if (nums.every((n) => n === 0)) throw new CommandError(`${type}: "dash" is all zeros, which draws nothing`);
+  return nums;
 }
 
 /**
@@ -540,16 +584,23 @@ const DEFS: CommandDef<never>[] = [
       return {
         width: reqNum(o, "width", "vector.strokeWidth", { min: 0, max: 10_000 }),
         fallbackColor: rgba(o.fallbackColor, "vector.strokeWidth", "fallbackColor"),
+        cap: strokeCap(o.cap, "vector.strokeWidth"),
+        join: strokeJoin(o.join, "vector.strokeWidth"),
+        dash: dashArray(o.dash, "vector.strokeWidth"),
+        dashPhase: o.dashPhase === undefined ? undefined : reqNum(o, "dashPhase", "vector.strokeWidth", { min: 0, max: 100_000 }),
       };
     },
-    // Applies to every selected vector. No ops.ts primitive sets stroke on an
-    // existing layer — that gap is recorded in the Anchor catalogue too.
+    // Applies to every selected vector, merging so width, cap, join and dash
+    // edit independently and colour is preserved (v5 stroke styling).
     apply: (p, doc) => {
       const next = cloneDoc(doc);
       for (const layer of selectedLayers(next)) {
         if (layer.kind !== "vector" || layer.locked) continue;
-        const prev = layer.stroke ?? { color: p.fallbackColor, width: 1 };
-        layer.stroke = { color: prev.color, width: p.width };
+        layer.stroke = mergeStroke(
+          layer.stroke,
+          { width: p.width, cap: p.cap, join: p.join, dash: p.dash, dashPhase: p.dashPhase },
+          p.fallbackColor,
+        );
       }
       return next;
     },

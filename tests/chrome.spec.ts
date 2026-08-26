@@ -118,7 +118,7 @@ test.describe("VIRO Press chrome", () => {
     await bootReady(page);
 
     await page.locator("[data-menu=file]").click();
-    await page.locator("[data-cmd=new]").click();
+    await page.locator("[data-flyout=file] [data-cmd=new]").click();
     await page.locator("[data-preset=print-a3]").click();
     await page.locator("[data-dlg=new-ok]").click();
     await expect(page.locator("#dlg-new")).toBeHidden();
@@ -141,7 +141,7 @@ test.describe("VIRO Press chrome", () => {
     );
     const [chooser] = await Promise.all([
       page.waitForEvent("filechooser"),
-      page.locator("[data-menu=file]").click().then(() => page.locator("[data-cmd=place]").click()),
+      page.locator("[data-menu=file]").click().then(() => page.locator("[data-flyout=file] [data-cmd=place]").click()),
     ]);
     await chooser.setFiles({ name: "swatch.png", mimeType: "image/png", buffer: png });
     await expect(page.locator("#layer-list")).toContainText("swatch.png");

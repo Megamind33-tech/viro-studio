@@ -15,12 +15,24 @@ import type {
   Rgba,
   Story,
   Swatch,
+  VectorStroke,
 } from "./types";
 
 let n = 0;
 export function uid(prefix: string): string {
   n += 1;
   return `${prefix}_${Date.now().toString(36)}_${n.toString(36)}`;
+}
+
+/** Deep-copy a vector stroke, preserving optional v5 dash/cap/join styling. */
+export function cloneStroke(stroke: VectorStroke | null | undefined): VectorStroke | null {
+  if (!stroke) return null;
+  const out: VectorStroke = { color: { ...stroke.color }, width: stroke.width };
+  if (stroke.dash && stroke.dash.length) out.dash = [...stroke.dash];
+  if (stroke.dashPhase !== undefined) out.dashPhase = stroke.dashPhase;
+  if (stroke.cap) out.cap = stroke.cap;
+  if (stroke.join) out.join = stroke.join;
+  return out;
 }
 
 export const ink: Rgba = { r: 0.12, g: 0.12, b: 0.12, a: 1 };
@@ -432,7 +444,7 @@ export interface DraftPathSpec extends DraftCommon {
   nodes: PathNode[];
   closed: boolean;
   fill: Rgba | null;
-  stroke?: { color: Rgba; width: number } | null;
+  stroke?: VectorStroke | null;
 }
 
 export function draftPath(doc: PressDocument, pageIndex: number, spec: DraftPathSpec): string {
@@ -443,7 +455,7 @@ export function draftPath(doc: PressDocument, pageIndex: number, spec: DraftPath
     closed: spec.closed,
     nodes: spec.nodes.map((p) => ({ ...p })),
     fill: spec.fill ? { ...spec.fill } : null,
-    stroke: spec.stroke ? { color: { ...spec.stroke.color }, width: spec.stroke.width } : null,
+    stroke: cloneStroke(spec.stroke),
   };
   page.layers.push(layer);
   return layer.id;
@@ -508,7 +520,7 @@ export function addVectorLine(
   y1: number,
   x2: number,
   y2: number,
-  stroke: { color: Rgba; width: number },
+  stroke: VectorStroke,
 ): PressDocument {
   return addVectorLayer(
     doc,
@@ -524,7 +536,7 @@ export function addVectorLine(
 
 export interface DraftRectSpec extends DraftCommon {
   fill: Rgba | null;
-  stroke?: { color: Rgba; width: number } | null;
+  stroke?: VectorStroke | null;
 }
 
 export function draftRect(doc: PressDocument, pageIndex: number, spec: DraftRectSpec): string {
@@ -829,7 +841,7 @@ export function addVectorLayer(
   w: number,
   h: number,
   nodes: PathNode[],
-  opts: { closed: boolean; fill: Rgba | null; stroke: { color: Rgba; width: number } | null },
+  opts: { closed: boolean; fill: Rgba | null; stroke: VectorStroke | null },
 ): PressDocument {
   const next = cloneDoc(doc);
   const page = activePage(next);
@@ -846,7 +858,7 @@ export function addVectorLayer(
     closed: opts.closed,
     nodes,
     fill: opts.fill,
-    stroke: opts.stroke,
+    stroke: cloneStroke(opts.stroke),
   };
   page.layers.push(layer);
   next.activeLayerIds = [layer.id];
@@ -945,11 +957,49 @@ export function applyImageSize(
  * Validation — used by the preset/template verification pass
  * ------------------------------------------------------------------ */
 
+const STROKE_CAPS = new Set(["butt", "round", "square"]);
+const STROKE_JOINS = new Set(["miter", "round", "bevel"]);
+/** A dashed rule made of 64 on/off pairs is already excessive; cap the parser surface. */
+export const MAX_DASH_INTERVALS = 128;
+
+/** Validate a vector stroke's optional v5 styling. Returns problems; empty = ok. */
+export function validateStroke(stroke: VectorStroke, where: string): string[] {
+  const errs: string[] = [];
+  if (!(stroke.width > 0)) errs.push(`${where}: stroke width must be > 0`);
+  if (stroke.dash !== undefined) {
+    if (!Array.isArray(stroke.dash)) errs.push(`${where}: stroke dash must be an array of numbers`);
+    else if (stroke.dash.length) {
+      if (stroke.dash.length % 2 !== 0) {
+        errs.push(`${where}: stroke dash needs an even number of intervals (on,off pairs)`);
+      }
+      if (stroke.dash.length > MAX_DASH_INTERVALS) {
+        errs.push(`${where}: stroke dash has too many intervals (max ${MAX_DASH_INTERVALS})`);
+      }
+      if (!stroke.dash.every((n) => Number.isFinite(n) && n >= 0)) {
+        errs.push(`${where}: stroke dash intervals must be finite and >= 0`);
+      }
+      if (stroke.dash.every((n) => n === 0)) {
+        errs.push(`${where}: stroke dash is all zeros, which draws nothing`);
+      }
+    }
+  }
+  if (stroke.dashPhase !== undefined && !Number.isFinite(stroke.dashPhase)) {
+    errs.push(`${where}: stroke dashPhase must be finite`);
+  }
+  if (stroke.cap !== undefined && !STROKE_CAPS.has(stroke.cap)) {
+    errs.push(`${where}: stroke cap must be butt, round or square`);
+  }
+  if (stroke.join !== undefined && !STROKE_JOINS.has(stroke.join)) {
+    errs.push(`${where}: stroke join must be miter, round or bevel`);
+  }
+  return errs;
+}
+
 /** Structural check against types.ts. Returns a list of problems; empty means valid. */
 export function validateDocument(doc: PressDocument): string[] {
   const errs: string[] = [];
-  if (doc.version !== 1 && doc.version !== 2 && doc.version !== 3 && doc.version !== 4) {
-    errs.push("version must be 1, 2, 3 or 4");
+  if (doc.version !== 1 && doc.version !== 2 && doc.version !== 3 && doc.version !== 4 && doc.version !== 5) {
+    errs.push("version must be 1, 2, 3, 4 or 5");
   }
   if (!doc.name) errs.push("name is empty");
   if (!(doc.ppi > 0)) errs.push(`ppi must be > 0 (got ${doc.ppi})`);
@@ -1016,6 +1066,7 @@ export function validateDocument(doc: PressDocument): string[] {
         }
         if (!layer.fill && !layer.stroke) errs.push(`${page.name}/${layer.name}: vector has neither fill nor stroke`);
         if (layer.nodes.length < 2) errs.push(`${page.name}/${layer.name}: vector needs at least 2 nodes`);
+        if (layer.stroke) for (const e of validateStroke(layer.stroke, `${page.name}/${layer.name}`)) errs.push(e);
       }
     }
   }
