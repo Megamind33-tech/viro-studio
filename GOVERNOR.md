@@ -117,6 +117,7 @@ Hosted platform (approved 2026-08-26 via **ADR 0004**, phased + flag-gated):
 | Anchor op API (preview/apply/audit) | PROVEN_WORKING | `tests/anchor-bus.spec.mjs` |
 | Layer effects: stroke/outline + outer glow (leaf + group) | PROVEN_WORKING (new) | `tests/effects.*` pixel-diff + undo, `tests/effects.test.mjs` |
 | Vector stroke styling: dash / cap / join (doc v5) | PROVEN_WORKING (new) | `tests/stroke-style.*` pixel-diff + v5 round-trip, migration invariant in `tests/transform.test.mjs` |
+| Multi-select transform & smart guides | PROVEN_WORKING (new) | RFC-6; pure math in `src/document/multi-transform.ts`; `tests/multi-transform.test.mjs` 16/16 + `tests/multi-transform.spec.mjs` 11/11 E2E |
 | Frontend hosting (Cloudflare Pages config) | PROVEN_WORKING (config; deploy owner-gated) | build emits `dist`, boots under CSP, `docs/deploy/cloudflare-pages.md` |
 | Templates/presets + procedural marks | PARTIALLY_IMPLEMENTED | real generators; catalog breadth limited |
 | Accounts / auth / sessions | ABSENT | no code |
@@ -181,6 +182,12 @@ page-rendered thumbnails) built and tested locally while cloud/payment provision
 Measurable targets: `npm test` green (245 unit, 5 chrome, 8/8 slices incl. projects 11/11 &
 recovery 13/13); build green; `tsc` clean.
 
+Editor feature RFCs (`docs/research/0001-next-editor-features.md`): RFC-1/2/3/4/6 (alignment,
+gradients, effects, stroke styling, multi-select transform & smart guides) delivered and
+test-verified; **RFC-5** (boolean path ops) is ACCEPTED-as-EXPERIMENT per **ADR 0005** and pending
+its **Phase-0** proof-of-model spike (v5→v6 widening migration + pixel-identical-reopen invariant)
+before Phase A ships.
+
 Next (unblocks on owner provisioning per ADR 0004): P1 cloud (Supabase Auth + RLS +
 authorization/tenant tests), P2 cloud sync of the same project model, P3 Lenco entitlements.
 
@@ -228,6 +235,12 @@ owner — requested via the environment setup-actions channel:
 - ACCEPTED (phased, flag-gated — ADR 0004): hosted platform on Cloudflare Pages + Supabase
   (`eu-west-2`) + Lenco Pay. Owner direction received 2026-08-26. Build order P1 foundation →
   P2 cloud documents → P3 entitlements/Lenco → P4 collaboration/admin/client portal.
+- ACCEPTED-as-EXPERIMENT (phased — ADR 0005): boolean path operations (union/subtract/intersect/
+  exclude) on the **multi-contour subpath model**, carried by a **v5→v6** widening migration under the
+  four-point serialization contract with the single-contour case preserved. Gated behind a **Phase-0**
+  proof-of-model spike (migration + pixel-identical-reopen invariant + multi-contour render + a proof
+  subtract) before the file-format bump merges; Phase A (destructive booleans) promotes only once its
+  acceptance criteria are green. **Phase B** (live/non-destructive booleans) DEFERRED to a later ADR.
 - DEFERRED (needs RFC + owner): expanded curated template families (§57) with a real
   thumbnail-render pipeline (§61); OpenType/variable-font UI.
 - REJECTED: fabricating template counts, fonts, AI actions, or SaaS dashboards to match screenshots.
@@ -261,6 +274,27 @@ truthful editor release.
 
 ## Decision Log
 
+- 2026-08-26 — **Ratified ADR 0005 (boolean path operations)** (`docs/adr/0005-boolean-path-operations.md`).
+  Governor decision: **EXPERIMENT → ACCEPT the multi-contour subpath model; DEFER live/non-destructive
+  booleans**. ACCEPT the compound-path *subpath* representation (optional `contours[]` with the legacy
+  single `nodes`/`closed` preserved as the one-contour case) as the committed evolution of `VectorLayer`.
+  Correction to the research doc: current `DOC_VERSION` is already **5** (RFC-4 dashed strokes bumped
+  v4→v5), so booleans are a **v5→v6** widening migration under the four-point serialization contract
+  (`types.ts` version union + field, `migrate.ts` `DOC_VERSION=6` widening stamp, `app.ts` `openBytes`
+  guard `<= 6`, `factory.validateDocument`) — not the "beyond v5" the RFC assumed. Because this mutates a
+  `PROVEN_WORKING` core shape, it is gated behind a **Phase-0** proof-of-model spike with a
+  **pixel-identical-reopen** regression test first (§11/§78): the migration invariant in
+  `tests/transform.test.mjs` must stay green before any boolean code lands. Phase A (destructive
+  booleans) promotes to full ACCEPT only once the ADR's acceptance criteria are green; **Phase B**
+  (live/non-destructive booleans) is DEFERRED to a later ADR. Migration impact: none yet (decision only);
+  future v5→v6 is a widening stamp, no pixels move. Owner: Governor.
+- 2026-08-26 — Delivered RFC-6 **multi-select transform & smart guides**
+  (`docs/research/0001-next-editor-features.md`; commits `3d4cbce`, `c3fdbcd`, `b3fa75c`). Group
+  move/scale/rotate coalesce into **one** history step; smart guides with snapping render on the overlay
+  pass; the transform hot path is allocation-free (pure math in `src/document/multi-transform.ts`). No
+  schema change (transform-only, versionless); the existing single-selection drag stays `PROVEN_WORKING`
+  (regression-preserved). Proven with units (`tests/multi-transform.test.mjs` 16/16) and pixel-diff E2E
+  (`tests/multi-transform.spec.mjs` 11/11). Migration impact: none. Owner: engineering.
 - 2026-08-26 — Implemented and validated the **Cloudflare Pages frontend hosting config** repo-side
   (commit `5f7b223`): `wrangler.jsonc` (Pages project `viro-press`, `pages_build_output_dir: ./dist`),
   `public/_headers` (application/wasm MIME, immutable caching for hashed `/assets/*` and vendored
