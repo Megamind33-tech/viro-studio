@@ -63,7 +63,13 @@ import type { PdfExportReport } from "./export/pdf";
 import { documentFromPsd } from "./import/psd";
 import { documentFromVdj } from "./import/vdj";
 import { pageToLocal } from "./document/transform";
-import { putUserAsset } from "./library/store";
+import {
+  deleteRecovery,
+  getRecovery,
+  putRecovery,
+  putUserAsset,
+  type RecoverySnapshot,
+} from "./library/store";
 
 /** Smallest edge a layer may be scaled to, in page px. */
 const MIN_SIZE = 4;
@@ -111,6 +117,21 @@ export class PressApp {
   strokeWidth = 2;
   constrainImageSize = true;
   listeners = new Set<() => void>();
+  /**
+   * Autosave/recovery. The working document is written to IndexedDB shortly
+   * after each edit so a reload or crash does not lose unsaved work. `dirty`
+   * gates writes so an untouched freshly-booted document never overwrites a
+   * genuine recovery snapshot. `pendingRecovery` is a snapshot found at boot
+   * that predates this session; the UI offers to restore it.
+   */
+  private dirty = false;
+  private booted = false;
+  private autosaveTimer: ReturnType<typeof setTimeout> | 0 = 0;
+  /** Bus revision last durably written to the recovery slot. */
+  private savedRev = 0;
+  pendingRecovery: RecoverySnapshot | null = null;
+  /** Debounce for autosave writes, in ms. */
+  private static AUTOSAVE_MS = 1200;
   dialog: "image-size" | "new" | "brightness" | null = null;
   channelThumbs: { r: string; g: string; b: string; rgb: string } | null = null;
   /** Per-op audit trail from the last Anchor batch, for the queue surface. */
@@ -152,6 +173,7 @@ export class PressApp {
   }
 
   private emit(): void {
+    this.trackRevision();
     this.compositor?.draw(this.doc);
     for (const fn of this.listeners) fn();
   }
@@ -204,9 +226,113 @@ export class PressApp {
     }
   }
 
+  /**
+   * Detect a genuine content change via the command-bus revision. Every path
+   * that mutates the document (commit, run, Anchor batches, drag commits,
+   * undo/redo) advances the revision, while pure selection/tool repaints do
+   * not — so autosave fires on real edits only. Called from emit(), the single
+   * repaint funnel.
+   */
+  private trackRevision(): void {
+    if (!this.booted) return;
+    if (this.bus.revision() !== this.savedRev) {
+      this.dirty = true;
+      this.scheduleAutosave();
+    }
+  }
+
+  private scheduleAutosave(): void {
+    if (this.autosaveTimer) return;
+    this.autosaveTimer = setTimeout(() => {
+      this.autosaveTimer = 0;
+      void this.writeRecovery();
+    }, PressApp.AUTOSAVE_MS);
+  }
+
+  /**
+   * Persist the working document to the local recovery slot. Serialises through
+   * JSON so the stored value is a plain structured-clone-safe snapshot and never
+   * a live reference. Failures (private mode, quota) degrade to an in-memory
+   * session rather than throwing into the edit path.
+   */
+  async writeRecovery(): Promise<void> {
+    if (!this.dirty) return;
+    const rev = this.bus.revision();
+    const snapshot: RecoverySnapshot = {
+      id: "current",
+      doc: JSON.parse(JSON.stringify(this.doc)),
+      name: this.doc.name,
+      savedAt: Date.now(),
+    };
+    try {
+      await putRecovery(snapshot);
+      this.savedRev = rev;
+      // Edits may have landed while the write was in flight.
+      if (this.bus.revision() === rev) this.dirty = false;
+      else this.scheduleAutosave();
+    } catch {
+      // Non-durable environment: keep editing; the reload safety net is simply
+      // unavailable and we do not pretend otherwise.
+    }
+  }
+
+  /**
+   * Flush any pending autosave immediately. Used when the page is being hidden
+   * or unloaded so the last edits are not lost to the debounce window.
+   */
+  flushRecovery(): void {
+    if (this.autosaveTimer) {
+      clearTimeout(this.autosaveTimer);
+      this.autosaveTimer = 0;
+    }
+    void this.writeRecovery();
+  }
+
+  /**
+   * Read any recovery snapshot left by a previous session. Only surfaces a
+   * snapshot that predates this session's edits, so a normal fresh load shows
+   * no prompt.
+   */
+  private async loadPendingRecovery(): Promise<void> {
+    if (this.dirty) return;
+    try {
+      const snap = await getRecovery();
+      if (snap && snap.doc) this.pendingRecovery = snap;
+    } catch {
+      this.pendingRecovery = null;
+    }
+  }
+
+  /** Adopt the recovery snapshot as the working document. */
+  restoreRecovery(): boolean {
+    const snap = this.pendingRecovery;
+    if (!snap || !snap.doc) return false;
+    try {
+      const doc = JSON.parse(JSON.stringify(snap.doc)) as PressDocument;
+      migrateDocument(doc);
+      this.commit("Recover unsaved work", doc);
+      this.pendingRecovery = null;
+      this.status = `Recovered “${doc.name}” from ${new Date(snap.savedAt).toLocaleString()}`;
+      this.emit();
+      return true;
+    } catch (err) {
+      this.status = `Could not recover — ${err instanceof Error ? err.message : String(err)}`;
+      this.emit();
+      return false;
+    }
+  }
+
+  /** Discard the recovery snapshot; the user has chosen to start clean. */
+  discardRecovery(): void {
+    this.pendingRecovery = null;
+    void deleteRecovery();
+    this.emit();
+  }
+
   async boot(canvas: HTMLCanvasElement): Promise<void> {
     this.status = "Loading CanvasKit (Skia)…";
     this.emit();
+    await this.loadPendingRecovery();
     const { ck, source } = await loadCanvasKit();
     this.ckSource = source;
 
@@ -255,6 +381,17 @@ export class PressApp {
     this.bindKeys();
     this.bindPasteboard(canvas);
     this.status = `Skia ${this.engines.backend} · HarfBuzz · ${this.fonts.list().filter((f) => f.face).length} face(s) · ${colourStackLabel()}`;
+    this.booted = true;
+    // Flush the last edits before the tab is hidden or torn down, so the
+    // debounce window never costs unsaved work on reload/close.
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "hidden") this.flushRecovery();
+      });
+      window.addEventListener("pagehide", () => this.flushRecovery());
+    }
+    // Catch any edits that landed before boot completed.
+    this.trackRevision();
     this.emit();
   }
 

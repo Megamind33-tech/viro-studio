@@ -78,6 +78,68 @@
   resize: vertical;
 }
 
+/* Autosave recovery prompt — offered at boot when a previous session left
+   unsaved work in the local recovery slot. */
+.recover-bar {
+  position: fixed;
+  top: 44px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  max-width: min(720px, 90vw);
+  padding: 8px 12px;
+  border: 1px solid var(--hair);
+  border-radius: 2px;
+  background: var(--raised);
+  color: var(--ink);
+  font-size: 12px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45);
+}
+
+.recover-msg {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recover-name {
+  color: var(--muted);
+}
+
+.recover-actions {
+  display: flex;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.recover-btn {
+  padding: 4px 12px;
+  border: 1px solid var(--hair);
+  border-radius: 2px;
+  background: transparent;
+  color: var(--ink);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.recover-btn:hover {
+  border-color: var(--accent);
+}
+
+.recover-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #1a1a1a;
+}
+
+.recover-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 /* IME/keyboard surface for the Type tool. Invisible, never intercepts clicks. */
 .type-input {
   position: fixed;

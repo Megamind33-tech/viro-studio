@@ -150,6 +150,19 @@ export class CommandBus {
   private named: { id: string; label: string; doc: PressDocument }[] = [];
 
   /**
+   * Monotonic mutation counter. Increments on every operation that changes
+   * document content (execute, snapshot, undo, redo). Consumers use it as a
+   * cheap dirtiness signal — e.g. autosave — without diffing the document each
+   * frame. It is intentionally not reset by undo/redo: a state reached by undo
+   * is still a state worth persisting.
+   */
+  private rev = 0;
+
+  revision(): number {
+    return this.rev;
+  }
+
+  /**
    * Dirty region of the LAST operation, not an accumulation across a coalesced
    * gesture. One pointer-move only needs that step's delta repainted;
    * accumulating a forty-step drag would repaint far more than necessary. Undo
@@ -180,6 +193,7 @@ export class CommandBus {
     });
     this.redoStack = [];
     this.lastDirty = run.dirty;
+    this.rev++;
     return { doc: run.doc, label: run.label, notes: run.notes, affected: run.affected, dirty: run.dirty, coalesced };
   }
 
@@ -339,6 +353,7 @@ export class CommandBus {
     this.undoStack.push({ kind: "snapshot", label, doc: cloneDoc(docBefore) });
     if (this.undoStack.length > HISTORY_LIMIT) this.undoStack.shift();
     this.redoStack = [];
+    this.rev++;
   }
 
   // ── undo / redo ────────────────────────────────────────────────────────────
@@ -375,12 +390,14 @@ export class CommandBus {
     if (entry.kind === "snapshot") {
       this.redoStack.push({ kind: "snapshot", label: entry.label, doc: cloneDoc(doc) });
       this.lastDirty = null; // a whole-document swap dirties everything
+      this.rev++;
       return { doc: entry.doc, label: entry.label, notes: [], affected: [], dirty: null, coalesced: false };
     }
     const { doc: next, affected } = this.applyInverse(doc, entry);
     this.redoStack.push(entry);
     const dirty = dirtyFor(doc, next, affected);
     this.lastDirty = dirty;
+    this.rev++;
     return { doc: next, label: entry.label, notes: [], affected, dirty, coalesced: false };
   }
 
@@ -390,12 +407,14 @@ export class CommandBus {
     if (entry.kind === "snapshot") {
       this.undoStack.push({ kind: "snapshot", label: entry.label, doc: cloneDoc(doc) });
       this.lastDirty = null;
+      this.rev++;
       return { doc: entry.doc, label: entry.label, notes: [], affected: [], dirty: null, coalesced: false };
     }
     const { doc: next, affected } = this.redoEntry(doc, entry);
     this.undoStack.push(entry);
     const dirty = dirtyFor(doc, next, affected);
     this.lastDirty = dirty;
+    this.rev++;
     return { doc: next, label: entry.label, notes: [], affected, dirty, coalesced: false };
   }
 

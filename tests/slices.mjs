@@ -25,6 +25,8 @@ const SCRIPTS = [
   "anchor-bus.spec.mjs",
   // audited desktop integration - the File menu reaches the preload bridge
   "electron-bridge.spec.mjs",
+  // data-loss P0 - autosave to IndexedDB and crash/reload recovery
+  "recovery.spec.mjs",
 ];
 
 function run(script) {

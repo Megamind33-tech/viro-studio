@@ -458,6 +458,14 @@
     <input type="file" id="file-open" accept=".psd,.vdj,.json,.png,.jpg,.jpeg,.webp,.gif,.bmp,.press.json,.ttf,.otf" hidden />
     <textarea id="type-input" class="type-input" tabindex="-1" autocomplete="off" spellcheck="false" aria-label="Type"></textarea>
 
+    <div id="recover-bar" class="recover-bar" role="region" aria-label="Recover unsaved work" hidden>
+      <span class="recover-msg">Unsaved work from a previous session was found:&nbsp;<span id="recover-name" class="recover-name"></span></span>
+      <span class="recover-actions">
+        <button type="button" class="recover-btn recover-primary" data-cmd="recover-restore">Restore</button>
+        <button type="button" class="recover-btn" data-cmd="recover-discard">Discard</button>
+      </span>
+    </div>
+
     <div class="dialog-back" id="dlg-image" hidden>
       <div class="dialog" role="dialog" aria-labelledby="dlg-image-title">
         <div class="dialog-title" id="dlg-image-title">Image Size</div>

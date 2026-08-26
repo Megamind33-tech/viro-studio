@@ -19,6 +19,21 @@ export interface UserFont {
   addedAt: number;
 }
 
+/**
+ * A durable copy of the working document so an accidental reload, tab crash or
+ * navigation does not discard unsaved edits. There is no server; this local
+ * snapshot is the only safety net between explicit `.press.json` saves.
+ */
+export interface RecoverySnapshot {
+  /** Single-slot key. The app keeps one recovery record for the active session. */
+  id: "current";
+  /** Serialised PressDocument (structured-clone safe). */
+  doc: unknown;
+  /** Document name at the time of the snapshot, for the recovery prompt. */
+  name: string;
+  savedAt: number;
+}
+
 type LibraryDB = {
   assets: {
     key: string;
@@ -28,19 +43,26 @@ type LibraryDB = {
     key: string;
     value: UserFont;
   };
+  recovery: {
+    key: string;
+    value: RecoverySnapshot;
+  };
 };
 
 let dbp: Promise<IDBPDatabase<LibraryDB>> | null = null;
 
 function db(): Promise<IDBPDatabase<LibraryDB>> {
   if (!dbp) {
-    dbp = openDB<LibraryDB>("viro-press-library", 2, {
+    dbp = openDB<LibraryDB>("viro-press-library", 3, {
       upgrade(database, oldVersion) {
         if (!database.objectStoreNames.contains("assets")) {
           database.createObjectStore("assets", { keyPath: "id" });
         }
         if (oldVersion < 2 && !database.objectStoreNames.contains("fonts")) {
           database.createObjectStore("fonts", { keyPath: "id" });
+        }
+        if (oldVersion < 3 && !database.objectStoreNames.contains("recovery")) {
+          database.createObjectStore("recovery", { keyPath: "id" });
         }
       },
     });
@@ -76,4 +98,24 @@ export async function putUserFont(font: UserFont): Promise<void> {
 
 export async function deleteUserFont(id: string): Promise<void> {
   await (await db()).delete("fonts", id);
+}
+
+export async function putRecovery(snapshot: RecoverySnapshot): Promise<void> {
+  await (await db()).put("recovery", snapshot);
+}
+
+export async function getRecovery(): Promise<RecoverySnapshot | undefined> {
+  try {
+    return await (await db()).get("recovery", "current");
+  } catch {
+    return undefined;
+  }
+}
+
+export async function deleteRecovery(): Promise<void> {
+  try {
+    await (await db()).delete("recovery", "current");
+  } catch {
+    // Blocked/private-mode IndexedDB — nothing durable to clear.
+  }
 }

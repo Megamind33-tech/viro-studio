@@ -176,10 +176,19 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
   bindStudios();
   bindDialogs();
   bindKeys();
+  bindRecovery();
 
   app.onChange(() => render());
   render();
   return el<HTMLCanvasElement>("skia");
+
+  function bindRecovery(): void {
+    const bar = document.getElementById("recover-bar");
+    bar?.addEventListener("click", (e) => {
+      const btn = (e.target as HTMLElement).closest<HTMLElement>("[data-cmd]");
+      if (btn?.dataset.cmd) cmd(btn.dataset.cmd);
+    });
+  }
 
   function view() {
     return app.compositor?.view ?? null;
@@ -345,6 +354,12 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
         return;
       case "add-page":
         app.addPageToDoc();
+        return;
+      case "recover-restore":
+        app.restoreRecovery();
+        return;
+      case "recover-discard":
+        app.discardRecovery();
         return;
       default:
         return;
@@ -1299,6 +1314,18 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
     el("dlg-image").hidden = app.dialog !== "image-size";
     el("dlg-new").hidden = app.dialog !== "new";
     el("dlg-bc").hidden = app.dialog !== "brightness";
+    const recoverBar = document.getElementById("recover-bar");
+    if (recoverBar) {
+      const snap = app.pendingRecovery;
+      recoverBar.hidden = !snap;
+      if (snap) {
+        const nameEl = document.getElementById("recover-name");
+        if (nameEl) {
+          const when = new Date(snap.savedAt).toLocaleString();
+          nameEl.textContent = `“${snap.name}” — autosaved ${when}`;
+        }
+      }
+    }
     el("menu-cutout").hidden = !app.hasCutout;
     const filterCut = document.getElementById("filter-cutout");
     if (filterCut) filterCut.hidden = !app.hasCutout;
