@@ -72,7 +72,7 @@ export class FontRegistry {
         if (bytes.byteLength < 1000) throw new Error(`font too small (${bytes.byteLength} b)`);
         const face = await loadFace(spec.id, `${spec.family} ${spec.style}`, bytes);
         this.upsert({ id: spec.id, family: spec.family, style: spec.style, name: `${spec.family} ${spec.style}`, source: "bundled", face });
-        this.fallbackId = spec.id;
+        if (!this.get(this.fallbackId)?.face) this.fallbackId = spec.id;
       } catch (err) {
         console.warn("[fonts] bundled face failed", spec.id, err);
       }

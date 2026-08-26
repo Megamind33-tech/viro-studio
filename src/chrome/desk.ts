@@ -155,6 +155,7 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
     bg: { r: 1, g: 1, b: 1, a: 1 },
   };
   let listedAssets: UserAsset[] = [];
+  let libGen = 0;
 
   const blend = el<HTMLSelectElement>("blend");
   blend.innerHTML = (Object.keys(BLEND_LABEL) as BlendMode[])
@@ -174,11 +175,19 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
   bindOptions();
   bindColor();
   bindStudios();
-  bindDialogs();
+  try {
+    bindDialogs();
+  } catch (err) {
+    console.error("[desk] dialog bind failed", err);
+  }
   bindKeys();
 
   app.onChange(() => render());
-  render();
+  try {
+    render();
+  } catch (err) {
+    console.error("[desk] first render failed", err);
+  }
   return el<HTMLCanvasElement>("skia");
 
   function view() {
@@ -225,11 +234,12 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
       case "place":
         void placeFiles();
         return;
+      case "font-upload":
       case "import-fonts":
-        el<HTMLInputElement>("file-fonts").click();
+        clickFile("file-font");
         return;
       case "import-assets":
-        el<HTMLInputElement>("file-assets").click();
+        clickFile("file-place");
         return;
       case "export-png":
         app.exportPng();
@@ -375,7 +385,7 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
   async function placeFiles(): Promise<void> {
     const bridge = window.viroPress;
     if (!bridge) {
-      el<HTMLInputElement>("file-place").click();
+      clickFile("file-place");
       return;
     }
     try {
@@ -384,8 +394,7 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
         { name: "Fonts", extensions: ["ttf", "otf", "woff"] },
       ]);
       if (!opened) return;
-      const name = opened.path.split(/[\\/]/).pop() || opened.path;
-      await app.openBytes(name, opened.bytes);
+      await app.ingestFiles([fileFromOpened(opened)]);
     } catch (err) {
       app.status = `Place failed — ${err instanceof Error ? err.message : String(err)}`;
       paint();
@@ -546,6 +555,7 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
     el<HTMLSelectElement>("ch-font").addEventListener("change", () => {
       void app.setFont(el<HTMLSelectElement>("ch-font").value);
     });
+    el("opt-font-upload").addEventListener("click", () => clickFile("file-font"));
     el<HTMLInputElement>("opt-feather").addEventListener("change", (e) => {
       state.feather = parseNum((e.target as HTMLInputElement).value) ?? 0;
     });
@@ -743,6 +753,9 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
     el("para-first").addEventListener("change", () => patchParagraph());
     el("para-after").addEventListener("change", () => patchParagraph());
     el("stroke-w").addEventListener("change", () => patchStroke());
+    el<HTMLTextAreaElement>("ch-story").addEventListener("input", () => {
+      app.typeText(el<HTMLTextAreaElement>("ch-story").value);
+    });
 
     el<HTMLInputElement>("nav-zoom").addEventListener("input", (e) => {
       setZoom(Number((e.target as HTMLInputElement).value) / 100);
@@ -772,26 +785,9 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
   }
 
   function bindDialogs(): void {
-    el<HTMLInputElement>("file-open").addEventListener("change", () => {
-      const f = el<HTMLInputElement>("file-open").files?.[0];
-      if (f) void f.arrayBuffer().then((buf) => app.openBytes(f.name, buf));
-      el<HTMLInputElement>("file-open").value = "";
-    });
-    el<HTMLInputElement>("file-place").addEventListener("change", () => {
-      const files = [...(el<HTMLInputElement>("file-place").files ?? [])];
-      if (files.length) void app.ingestFiles(files);
-      el<HTMLInputElement>("file-place").value = "";
-    });
-    el<HTMLInputElement>("file-fonts").addEventListener("change", () => {
-      const files = [...(el<HTMLInputElement>("file-fonts").files ?? [])];
-      if (files.length) void app.ingestFiles(files);
-      el<HTMLInputElement>("file-fonts").value = "";
-    });
-    el<HTMLInputElement>("file-assets").addEventListener("change", () => {
-      const files = [...(el<HTMLInputElement>("file-assets").files ?? [])];
-      if (files.length) void app.ingestFiles(files);
-      el<HTMLInputElement>("file-assets").value = "";
-    });
+    bindFilePicker(app, "file-open");
+    bindFilePicker(app, "file-place");
+    bindFilePicker(app, "file-font");
     bindNewDialog();
     document.querySelectorAll("[data-dlg]").forEach((b) => {
       b.addEventListener("click", () => {
@@ -1336,6 +1332,7 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
     fillIfIdle("ch-track", story ? fmt(story.character.tracking, 1) : "");
     fillIfIdle("para-first", story ? fmt(story.paragraph.firstLineIndent, 1) : "");
     fillIfIdle("para-after", story ? fmt(story.paragraph.spaceAfter, 1) : "");
+    fillIfIdle("ch-story", story ? story.text : "");
     document.querySelectorAll<HTMLElement>("#para-align [data-align]").forEach((b) => {
       b.classList.toggle("is-on", story?.paragraph.align === b.dataset.align);
     });
@@ -1474,11 +1471,13 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
   async function renderLibrary(): Promise<void> {
     const host = document.getElementById("lib-assets");
     if (!host) return;
+    const gen = ++libGen;
     try {
       listedAssets = await listUserAssets();
     } catch {
       listedAssets = [];
     }
+    if (gen !== libGen) return;
     host.innerHTML = listedAssets.length
       ? listedAssets
           .map(
@@ -1681,9 +1680,32 @@ function shortName(p: Preset): string {
 }
 
 function fillIfIdle(id: string, value: string): void {
-  const node = el<HTMLInputElement>(id);
+  const node = document.getElementById(id);
+  if (!(node instanceof HTMLInputElement || node instanceof HTMLTextAreaElement || node instanceof HTMLSelectElement)) {
+    return;
+  }
   if (document.activeElement === node) return;
   node.value = value;
+}
+
+function clickFile(id: string): void {
+  const node = document.getElementById(id);
+  if (node instanceof HTMLInputElement) node.click();
+}
+
+function bindFilePicker(app: PressApp, id: string): void {
+  const node = document.getElementById(id);
+  if (!(node instanceof HTMLInputElement)) return;
+  node.addEventListener("change", () => {
+    const files = [...(node.files ?? [])];
+    node.value = "";
+    if (files.length) void app.ingestFiles(files);
+  });
+}
+
+function fileFromOpened(opened: { path: string; bytes: ArrayBuffer }): File {
+  const name = opened.path.split(/[\\/]/).pop() || opened.path;
+  return new File([opened.bytes], name);
 }
 
 /** Mirror the live zoom into the status-bar combo. Without this the combo keeps
@@ -1709,7 +1731,12 @@ function syncZoomSelect(z: number): void {
 function setDisabled(ids: readonly string[], off: boolean): void {
   for (const id of ids) {
     const node = document.getElementById(id);
-    if (node instanceof HTMLInputElement || node instanceof HTMLSelectElement || node instanceof HTMLButtonElement) {
+    if (
+      node instanceof HTMLInputElement ||
+      node instanceof HTMLSelectElement ||
+      node instanceof HTMLButtonElement ||
+      node instanceof HTMLTextAreaElement
+    ) {
       node.disabled = off;
     }
   }
@@ -1721,7 +1748,7 @@ const TRANSFORM_FIELDS = [
 ] as const;
 const STORY_FIELDS = [
   "opt-font", "opt-size", "opt-lead", "opt-track",
-  "ch-font", "ch-size", "ch-lead", "ch-track",
+  "ch-font", "ch-size", "ch-lead", "ch-track", "ch-story",
   "para-first", "para-after",
 ] as const;
 const LAYER_FIELDS = ["blend", "opacity", "lock-btn"] as const;

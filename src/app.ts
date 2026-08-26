@@ -181,6 +181,7 @@ export class PressApp {
    * serializable objects.
    */
   commit(label: string, next: PressDocument): void {
+    this.exitTypeEdit();
     this.bus.pushSnapshot(label, this.doc);
     this.doc = next;
     this.emit();
@@ -268,16 +269,36 @@ export class PressApp {
   private bindKeys(): void {
     window.addEventListener("keydown", (e) => {
       const t = e.target as HTMLElement;
-      if (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable) {
+      const inField = t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable;
+      if (inField) {
+        if (e.key === "Escape" && this.textSession && t === this.editor) {
+          e.preventDefault();
+          this.exitTypeEdit();
+          this.emit();
+          return;
+        }
         if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") {
           e.preventDefault();
           this.undo();
         }
         return;
       }
+      if (this.textSession) {
+        if (e.key === "Escape") {
+          this.exitTypeEdit();
+          this.emit();
+          return;
+        }
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") {
+          e.preventDefault();
+          e.shiftKey ? this.redo() : this.undo();
+          return;
+        }
+        this.typeKeyIntoSession(e);
+        return;
+      }
       if (e.key === "Escape") {
         this.dialog = null;
-        this.exitTypeEdit();
         this.emit();
         return;
       }
@@ -521,6 +542,7 @@ export class PressApp {
         return;
       }
       if (tool === "type") {
+        e.preventDefault();
         const hit = hitTest(this.doc, p.x, p.y);
         if (hit?.kind === "type-frame" && !hit.locked) {
           this.doc = setActiveLayers(this.doc, [hit.id]);
@@ -756,6 +778,7 @@ export class PressApp {
   newFromPreset(id: string): void {
     const preset = PRESETS.find((p) => p.id === id) ?? PRESETS[0]!;
     this.dialog = null;
+    this.exitTypeEdit();
     this.commit("New document", documentFromPreset(preset));
   }
 
@@ -799,14 +822,6 @@ export class PressApp {
       const blob = file.type === mime ? file : new Blob([await file.arrayBuffer()], { type: mime });
       const dataUrl = await blobToDataUrl(blob);
       const dims = await imageSize(dataUrl);
-      this.run({
-        type: "image.place",
-        params: {
-          asset: { name: file.name, mime, dataUrl, width: dims.w, height: dims.h },
-          x: at?.x ?? 48,
-          y: at?.y ?? 48,
-        },
-      });
       try {
         await putUserAsset({
           id: uid("lib"),
@@ -820,6 +835,14 @@ export class PressApp {
       } catch {
         // IndexedDB is optional; the layer is already on the page.
       }
+      this.run({
+        type: "image.place",
+        params: {
+          asset: { name: file.name, mime, dataUrl, width: dims.w, height: dims.h },
+          x: at?.x ?? 48,
+          y: at?.y ?? 48,
+        },
+      });
     } catch (err) {
       this.status = `Place failed — ${err instanceof Error ? err.message : String(err)}`;
       this.emit();
@@ -1236,7 +1259,42 @@ export class PressApp {
     this.pushTextEditView(start, end);
     this.placeEditor();
     editor.focus();
+    queueMicrotask(() => editor.focus());
     this.emit();
+  }
+
+  /** Insert into the IME surface when a canvas click stole focus from it. */
+  private typeKeyIntoSession(e: KeyboardEvent): void {
+    const ed = this.ensureEditor();
+    ed.focus();
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    const start = ed.selectionStart;
+    const end = ed.selectionEnd;
+    if (e.key === "Backspace") {
+      e.preventDefault();
+      if (start === end && start > 0) ed.setRangeText("", start - 1, start, "end");
+      else ed.setRangeText("", start, end, "end");
+      ed.dispatchEvent(new Event("input"));
+      return;
+    }
+    if (e.key === "Delete") {
+      e.preventDefault();
+      if (start === end) ed.setRangeText("", start, start + 1, "end");
+      else ed.setRangeText("", start, end, "end");
+      ed.dispatchEvent(new Event("input"));
+      return;
+    }
+    if (e.key === "Enter") {
+      e.preventDefault();
+      ed.setRangeText("\n", start, end, "end");
+      ed.dispatchEvent(new Event("input"));
+      return;
+    }
+    if (e.key.length === 1) {
+      e.preventDefault();
+      ed.setRangeText(e.key, start, end, "end");
+      ed.dispatchEvent(new Event("input"));
+    }
   }
 
   exitTypeEdit(): void {
@@ -1248,13 +1306,15 @@ export class PressApp {
 
   private ensureEditor(): HTMLTextAreaElement {
     if (this.editor) return this.editor;
-    const el = document.createElement("textarea");
-    el.id = "type-editor";
-    el.setAttribute("aria-label", "Type editor");
+    const existing = document.getElementById("type-input");
+    const el =
+      existing instanceof HTMLTextAreaElement ? existing : document.createElement("textarea");
+    if (!el.id) el.id = "type-input";
+    el.classList.add("type-input");
+    el.setAttribute("aria-label", "Type");
+    el.tabIndex = -1;
     el.autocomplete = "off";
     el.spellcheck = false;
-    el.style.cssText =
-      "position:fixed;z-index:40;margin:0;padding:0;border:0;outline:none;resize:none;overflow:hidden;background:transparent;color:transparent;caret-color:transparent;font:16px sans-serif;line-height:1;width:12px;height:24px;opacity:0.01;";
     el.addEventListener("input", () => {
       if (!this.textSession) return;
       this.run(
@@ -1276,7 +1336,7 @@ export class PressApp {
     el.addEventListener("keyup", syncCaret);
     el.addEventListener("click", syncCaret);
     el.addEventListener("select", syncCaret);
-    document.body.appendChild(el);
+    if (!el.parentElement) document.body.appendChild(el);
     this.editor = el;
     return el;
   }
