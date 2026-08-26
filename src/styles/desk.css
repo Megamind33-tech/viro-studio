@@ -1,0 +1,1915 @@
+/* VIRO Press desk — Photoshop CC density. Tokens from 19-ENGINE-RESEARCH §4. */
+:root {
+  --panel: #2b2b2b;
+  --raised: #323232;
+  --pasteboard: #1f1f1f;
+  --hair: #1a1a1a;
+  --hair-light: rgba(255, 255, 255, 0.08);
+  --ink: #e8e8e8;
+  --muted: #b4b4b4;
+  --dim: #8a8a8a;
+  --accent: #e07a2f;
+  --danger: #c44c4c;
+  --input: #1e1e1e;
+  --hover: #3a3a3a;
+  --sel: #404040;
+  --menu: 22px;
+  --options: 30px;
+  --toolbox: 30px;
+  --status: 22px;
+  --studio: 272px;
+  --tabs: 22px;
+  --radius: 1px;
+  --space-1: 2px;
+  --space-2: 4px;
+  --space-3: 6px;
+  --space-4: 8px;
+  --space-5: 12px;
+  --space-6: 14px;
+  --font: "Segoe UI Variable", "Segoe UI", "SegoeUI", Tahoma, sans-serif;
+  --mono: "Cascadia Mono", "Consolas", "Segoe UI Mono", monospace;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--pasteboard);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: 11px;
+  line-height: 1.2;
+  font-feature-settings: "tnum" 1;
+  font-variant-numeric: tabular-nums;
+  user-select: none;
+  color-scheme: dark;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+  border-radius: var(--radius);
+}
+
+input,
+textarea,
+select {
+  user-select: text;
+}
+
+button {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: var(--ink);
+  cursor: default;
+}
+
+#boot {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  gap: 6px;
+  background: var(--pasteboard);
+  z-index: 50;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+#boot[hidden],
+#desk[hidden],
+[hidden] {
+  display: none !important;
+}
+
+#boot.gone {
+  display: none !important;
+}
+
+.boot-mark {
+  color: var(--ink);
+  font-size: 13px;
+  letter-spacing: 0.16em;
+}
+
+#desk {
+  height: 100%;
+  display: grid;
+  grid-template-rows: var(--menu) var(--options) minmax(0, 1fr) var(--status);
+  grid-template-columns: var(--toolbox) minmax(0, 1fr) var(--studio);
+  background: var(--panel);
+}
+
+.menubar {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: stretch;
+  background: var(--raised);
+  border-bottom: 1px solid var(--hair);
+  z-index: 20;
+}
+
+.menubar .brand {
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  color: var(--dim);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-size: 10px;
+  border-right: 1px solid var(--hair);
+}
+
+.menu {
+  position: relative;
+  display: flex;
+}
+
+.menu-btn {
+  padding: 0 9px;
+  height: var(--menu);
+  color: var(--ink);
+  background: transparent;
+}
+
+.menu-btn:hover,
+.menu-btn.open {
+  background: var(--hover);
+}
+
+.flyout {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  min-width: 228px;
+  padding: 4px 0;
+  background: var(--panel);
+  border: 1px solid var(--hair);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
+  z-index: 40;
+}
+
+.flyout.sub {
+  left: 100%;
+  top: -4px;
+}
+
+.flyout button,
+.flyout .item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 22px;
+  padding: 0 12px 0 28px;
+  color: var(--ink);
+  text-align: left;
+  position: relative;
+  white-space: nowrap;
+  background: transparent;
+}
+
+.flyout button:hover,
+.flyout .item:hover {
+  background: var(--hover);
+}
+
+.flyout button[disabled],
+.flyout .item[aria-disabled="true"] {
+  color: #6a6a6a;
+}
+
+.flyout .kbd {
+  margin-left: auto;
+  padding-left: 24px;
+  color: var(--dim);
+  font-size: 10px;
+}
+
+.flyout .check {
+  position: absolute;
+  left: 10px;
+  color: var(--ink);
+  font-size: 10px;
+}
+
+.sep {
+  height: 1px;
+  margin: 4px 8px;
+  background: var(--hair-light);
+}
+
+.has-sub {
+  position: relative;
+}
+
+.has-sub > .flyout.sub {
+  display: none;
+}
+
+.has-sub:hover > .flyout.sub {
+  display: block;
+}
+
+.optionsbar {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  height: var(--options);
+  padding: 0 var(--space-3);
+  background: var(--panel);
+  border-bottom: 1px solid var(--hair);
+  overflow: hidden;
+}
+
+.opt-tool {
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  border: 1px solid transparent;
+}
+
+.opt-strip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  height: 100%;
+}
+
+.opt-strip .div {
+  width: 1px;
+  height: 18px;
+  background: var(--hair-light);
+}
+
+.field {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.field > span,
+.lbl {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.num,
+select.ctrl,
+input.ctrl {
+  height: 18px;
+  background: var(--input);
+  border: 1px solid var(--hair);
+  color: var(--ink);
+  padding: 0 5px;
+  outline: none;
+}
+
+.num {
+  width: 54px;
+}
+
+.num.w3 {
+  width: 42px;
+}
+
+.num.w4 {
+  width: 64px;
+}
+
+.num:focus,
+select.ctrl:focus,
+input.ctrl:focus,
+textarea:focus {
+  border-color: var(--accent);
+}
+
+select.ctrl {
+  max-width: 140px;
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--muted);
+}
+
+.check input {
+  flex: 0 0 auto;
+}
+
+.toolbox {
+  grid-row: 3;
+  grid-column: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2px 0 6px;
+  background: var(--panel);
+  border-right: 1px solid var(--hair);
+  z-index: 5;
+}
+
+.tool {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  color: #cfcfcf;
+  border: 1px solid transparent;
+  position: relative;
+}
+
+.tool svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.25;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.tool:hover {
+  background: var(--hover);
+}
+
+.tool.is-active {
+  background: var(--sel);
+  color: var(--ink);
+}
+
+.tool.is-active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 3px;
+  bottom: 3px;
+  width: 2px;
+  background: var(--accent);
+}
+
+/* Group divider between tool families, as Photoshop rules its toolbar. */
+.tool-gap,
+.tool-sep {
+  width: 18px;
+  height: 1px;
+  margin: 4px 0;
+  background: var(--hair-light);
+}
+
+.swatch-well {
+  margin-top: auto;
+  width: 28px;
+  height: 36px;
+  position: relative;
+}
+
+.swatch-well .bg,
+.swatch-well .fg {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border: 1px solid #111;
+}
+
+.swatch-well .bg {
+  right: 3px;
+  bottom: 6px;
+}
+
+.swatch-well .fg {
+  left: 3px;
+  top: 4px;
+  z-index: 1;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.15);
+}
+
+.swatch-well .swap,
+.swatch-well .deflt {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  color: var(--muted);
+  font-size: 8px;
+  line-height: 10px;
+  text-align: center;
+}
+
+.swatch-well .swap {
+  top: 0;
+  right: 1px;
+}
+
+.swatch-well .deflt {
+  left: 1px;
+  bottom: 0;
+}
+
+.workspace {
+  grid-row: 3;
+  grid-column: 2;
+  display: grid;
+  grid-template-rows: var(--tabs) minmax(0, 1fr);
+  min-width: 0;
+  background: var(--pasteboard);
+  border-right: 1px solid var(--hair);
+}
+
+.doc-tabs {
+  display: flex;
+  align-items: stretch;
+  background: #252525;
+  border-bottom: 1px solid var(--hair);
+}
+
+.doc-tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  height: 100%;
+  background: var(--pasteboard);
+  border-right: 1px solid var(--hair);
+  border-top: 2px solid var(--accent);
+  color: var(--ink);
+}
+
+.doc-tab .zoom {
+  color: var(--muted);
+}
+
+.pasteboard {
+  position: relative;
+  min-height: 0;
+  background: var(--pasteboard);
+}
+
+.pasteboard canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.studios {
+  grid-row: 3;
+  grid-column: 3;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  /* Groups now hold their height, so this is the surface that actually scrolls. */
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--panel);
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  border-bottom: 1px solid var(--hair);
+  /*
+   * Size to content and never crush.
+   *
+   * With `min-height: 0` and no `flex-shrink` guard, every group shrank below
+   * its own body as soon as enough panels were open, while `.tabs` kept its
+   * full 22px — so the next group's tab strip painted straight over the rows
+   * above it. That is what sliced "Weight" and "Folio" in half and swallowed
+   * the Color panel's G, B and hex rows. Because the children shrank instead
+   * of overflowing, `.studios { overflow }` never engaged and nothing scrolled.
+   */
+  flex: 0 0 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.group.grow {
+  /* The one elastic group still keeps a floor: tabs plus a usable body. */
+  flex: 1 1 160px;
+  min-height: 120px;
+}
+
+.tabs {
+  display: flex;
+  align-items: stretch;
+  height: var(--tabs);
+  background: #262626;
+  border-bottom: 1px solid var(--hair);
+  flex-shrink: 0;
+}
+
+.tabs button {
+  padding: 0 8px;
+  color: var(--dim);
+  border-right: 1px solid var(--hair);
+  height: 100%;
+}
+
+.tabs button.is-on {
+  color: var(--ink);
+  background: var(--panel);
+  box-shadow: inset 0 -2px 0 var(--accent);
+}
+
+.pane {
+  padding: var(--space-3) var(--space-4);
+  background: var(--panel);
+}
+
+.pane.scroll {
+  overflow: auto;
+  min-height: 72px;
+  max-height: 220px;
+}
+
+.layers-pane {
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 140px;
+  flex: 1;
+}
+
+.layer-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--hair);
+  background: var(--raised);
+}
+
+.layer-head select.ctrl {
+  flex: 1;
+  min-width: 0;
+}
+
+.lock-btn {
+  width: 18px;
+  height: 18px;
+  color: var(--muted);
+  border: 1px solid transparent;
+}
+
+.lock-btn.is-on {
+  color: var(--ink);
+  border-color: var(--hair-light);
+  background: var(--hover);
+}
+
+.layer-list {
+  flex: 1;
+  overflow: auto;
+  min-height: 88px;
+  background: #282828;
+}
+
+.ly {
+  display: grid;
+  /* eye · lock · thumbnail · name · fx — the thumbnail column is the one
+     Photoshop is recognised by, and it was missing entirely. */
+  grid-template-columns: 16px 16px 38px minmax(0, 1fr) 28px;
+  align-items: center;
+  height: 38px;
+  padding-right: 4px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.35);
+  color: var(--ink);
+}
+
+.ly.is-on {
+  background: var(--sel);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
+.ly .lk {
+  text-align: center;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+/* A drawn eye, not the radio-button glyph the row used to print. */
+.ly .eye {
+  width: 16px;
+  height: 100%;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 13px 9px;
+  opacity: 0.25;
+}
+
+.ly .eye.is-on {
+  opacity: 1;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='9' viewBox='0 0 13 9'%3E%3Cpath d='M.7 4.5S2.9.8 6.5.8s5.8 3.7 5.8 3.7-2.2 3.7-5.8 3.7S.7 4.5.7 4.5z' fill='none' stroke='%23B4B4B4' stroke-width='1'/%3E%3Ccircle cx='6.5' cy='4.5' r='1.7' fill='%23B4B4B4'/%3E%3C/svg%3E");
+}
+
+.ly .thumb {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  justify-self: center;
+  /* Photoshop's transparency checker is LIGHT. A dark checker looks tidier
+     against the panel but swallows exactly what these thumbnails mostly hold —
+     near-black type and hairline rules — so every row reads empty. */
+  background: #f0f0f0;
+  background-image:
+    linear-gradient(45deg, #cfcfcf 25%, transparent 25%, transparent 75%, #cfcfcf 75%),
+    linear-gradient(45deg, #cfcfcf 25%, transparent 25%, transparent 75%, #cfcfcf 75%);
+  background-size: 8px 8px;
+  background-position: 0 0, 4px 4px;
+  box-shadow: 0 0 0 1px var(--hair);
+  overflow: hidden;
+}
+
+.ly .thumb img {
+  max-width: 100%;
+  max-height: 100%;
+  display: block;
+}
+
+.ly .thumb.is-empty {
+  background-image: none;
+  background: #232323;
+  color: var(--dim);
+  font-size: 9px;
+}
+
+.ly .mark {
+  color: var(--dim);
+  font-size: 9px;
+}
+
+.ly .nm {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ly .fx {
+  color: var(--dim);
+  font-size: 9px;
+  text-align: right;
+}
+
+.ly.child .nm {
+  padding-left: 10px;
+}
+
+.ly.group-row .nm {
+  font-weight: 600;
+}
+
+.layer-foot {
+  display: flex;
+  gap: var(--space-1);
+  padding: 3px var(--space-2);
+  border-top: 1px solid var(--hair);
+  background: var(--raised);
+}
+
+.layer-foot button {
+  width: 22px;
+  height: 20px;
+  color: var(--muted);
+}
+
+.layer-foot button:hover {
+  background: var(--hover);
+  color: var(--ink);
+}
+
+.swatches {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 1px;
+  background: var(--hair);
+  border: 1px solid var(--hair);
+}
+
+.swatches button {
+  aspect-ratio: 1;
+  border: 0;
+  border-radius: 0;
+}
+
+.channel,
+.path-row,
+.page-row,
+.hist-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 20px;
+  padding: 0 4px;
+  color: var(--ink);
+}
+
+.channel.is-on,
+.path-row.is-on,
+.page-row.is-on,
+.hist-row.is-on {
+  background: var(--sel);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
+.ch-chip {
+  width: 28px;
+  height: 12px;
+  border: 1px solid #111;
+}
+
+.page-thumb {
+  width: 22px;
+  height: 28px;
+  background: #f4f4f4;
+  border: 1px solid #111;
+  box-shadow: 1px 1px 0 rgba(0, 0, 0, 0.4);
+  display: block;
+  overflow: hidden;
+}
+
+/* The composite is aspect-fitted by pageThumb; contain keeps it undistorted and
+   lets the sheet colour show through where the ratios differ. */
+.page-thumb img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+}
+
+.page-thumb.wide {
+  width: 36px;
+  height: 22px;
+}
+
+.nav-view {
+  height: 88px;
+  background: #191919;
+  border: 1px solid var(--hair);
+  position: relative;
+  overflow: hidden;
+}
+
+.nav-page {
+  position: absolute;
+  /* Backstop only — renderNav paints a real page composite over this. */
+  background-color: #232323;
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  box-shadow: 0 0 0 1px #111;
+}
+
+.nav-port {
+  position: absolute;
+  border: 1px solid var(--accent);
+  pointer-events: none;
+}
+
+.pane[data-pane="navigator"] .nav-view + .row {
+  margin-top: var(--space-3);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-2);
+}
+
+.row:last-child {
+  margin-bottom: 0;
+}
+
+.row-section {
+  margin-top: var(--space-4);
+}
+
+.grow {
+  flex: 1;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.rgb-row {
+  display: grid;
+  grid-template-columns: 12px 1fr 36px;
+  gap: var(--space-3);
+  align-items: center;
+  margin-bottom: var(--space-2);
+}
+
+.rgb-row:last-child {
+  margin-bottom: 0;
+}
+
+.rgb-row input[type="range"] {
+  width: 100%;
+  min-width: 0;
+}
+
+.sv {
+  height: 72px;
+  border: 1px solid var(--hair);
+  position: relative;
+  cursor: crosshair;
+}
+
+.color-controls {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+
+.color-controls .rgb-row,
+.color-controls .row {
+  margin-bottom: 0;
+}
+
+.hue {
+  height: 10px;
+  margin-top: var(--space-2);
+  border: 1px solid var(--hair);
+  background: linear-gradient(
+    to right,
+    #ff0000,
+    #ffff00,
+    #00ff00,
+    #00ffff,
+    #0000ff,
+    #ff00ff,
+    #ff0000
+  );
+  position: relative;
+  cursor: default;
+}
+
+.sv-dot,
+.hue-dot {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  border: 1px solid #fff;
+  box-shadow: 0 0 0 1px #000;
+  border-radius: 0;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.hue-dot {
+  top: 50%;
+  height: 10px;
+  width: 5px;
+  transform: translate(-50%, -50%);
+}
+
+.align {
+  display: flex;
+  gap: 1px;
+}
+
+.align button {
+  width: 22px;
+  height: 18px;
+  border: 1px solid var(--hair);
+  background: var(--input);
+  color: var(--muted);
+}
+
+.align button.is-on {
+  color: var(--ink);
+  box-shadow: inset 0 -1px 0 var(--accent);
+}
+
+.well {
+  width: 28px;
+  height: 18px;
+  border: 1px solid #111;
+  padding: 0;
+}
+
+.well input[type="color"] {
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  cursor: default;
+}
+
+.hint {
+  color: var(--dim);
+  font-size: 10px;
+  line-height: 1.35;
+}
+
+.empty {
+  color: var(--dim);
+  padding: 8px 4px;
+}
+
+.anchor-body {
+  padding: 8px;
+}
+
+.anchor-body h2 {
+  margin: 0 0 6px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.statusbar {
+  grid-column: 1 / -1;
+  grid-row: 4;
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: 0 var(--space-4);
+  background: var(--raised);
+  border-top: 1px solid var(--hair);
+  color: var(--muted);
+}
+
+.statusbar .stat {
+  padding-right: 10px;
+  border-right: 1px solid var(--hair-light);
+}
+
+.statusbar .stat:last-child {
+  border: 0;
+}
+
+.statusbar select.ctrl {
+  width: 72px;
+}
+
+.dialog-back {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.46);
+  z-index: 30;
+  display: grid;
+  place-items: center;
+}
+
+.dialog {
+  width: 360px;
+  background: var(--raised);
+  border: 1px solid var(--hair);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  border-radius: 0;
+}
+
+.dialog.wide {
+  width: 420px;
+}
+
+.dialog-title {
+  height: 26px;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  background: #3a3a3a;
+  border-bottom: 1px solid var(--hair);
+  font-weight: 600;
+}
+
+.dialog-body {
+  padding: var(--space-5) var(--space-6);
+}
+
+.dialog-grid {
+  display: grid;
+  grid-template-columns: 92px 1fr 88px;
+  gap: var(--space-3) var(--space-4);
+  align-items: center;
+}
+
+.dialog-grid .span {
+  grid-column: 2 / 4;
+}
+
+.dialog-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  padding: var(--space-4) var(--space-6) var(--space-5);
+}
+
+.btn {
+  min-width: 72px;
+  height: 22px;
+  padding: 0 10px;
+  background: #3d3d3d;
+  border: 1px solid #1a1a1a;
+  color: var(--ink);
+}
+
+.btn:hover {
+  background: #484848;
+}
+
+.btn.default {
+  border-color: var(--accent);
+}
+
+.preset-list {
+  max-height: 180px;
+  overflow: auto;
+  border: 1px solid var(--hair);
+  background: var(--input);
+  margin-bottom: 8px;
+}
+
+.preset-list button {
+  display: flex;
+  width: 100%;
+  height: 20px;
+  padding: 0 8px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.preset-list button.is-on {
+  background: var(--sel);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
+.preset-list .fam {
+  color: var(--dim);
+  font-size: 10px;
+}
+
+/* ── New Document ─────────────────────────────────────────────────────────────
+   Photoshop CC / InDesign layout: category tabs, a grouped preset list on the
+   left, an editable detail column on the right. Every control in the detail
+   column drives createDocument(); nothing here is decorative. */
+.dialog.nd {
+  width: 792px;
+  max-width: calc(100vw - 48px);
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 56px);
+}
+
+.nd-tabs {
+  display: flex;
+  flex: 0 0 auto;
+  height: var(--tabs);
+  padding: 0 8px;
+  gap: 1px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--hair);
+}
+
+.nd-tabs button {
+  height: var(--tabs);
+  padding: 0 14px;
+  color: var(--muted);
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  letter-spacing: 0.2px;
+}
+
+.nd-tabs button:hover {
+  color: var(--ink);
+  background: var(--hover);
+}
+
+.nd-tabs button.is-on {
+  color: var(--ink);
+  background: var(--raised);
+  border-bottom-color: var(--accent);
+  font-weight: 600;
+}
+
+.nd-tabs button:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.nd-body {
+  display: grid;
+  grid-template-columns: 318px 1fr;
+  min-height: 0;
+  flex: 1 1 auto;
+}
+
+.nd-left {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-right: 1px solid var(--hair);
+  background: var(--panel);
+}
+
+.nd-blurb {
+  flex: 0 0 auto;
+  padding: 7px 10px;
+  color: var(--dim);
+  font-size: 10px;
+  line-height: 1.35;
+  border-bottom: 1px solid var(--hair);
+}
+
+.preset-list.nd-list {
+  flex: 1 1 auto;
+  max-height: none;
+  min-height: 0;
+  height: 396px;
+  margin: 0;
+  border: 0;
+  background: var(--input);
+}
+
+.nd-fam {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 5px 10px 3px;
+  background: #232323;
+  border-bottom: 1px solid #191919;
+  color: var(--dim);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.9px;
+  text-transform: uppercase;
+}
+
+.preset-list.nd-list button {
+  display: block;
+  height: auto;
+  padding: 5px 10px 6px 12px;
+  text-align: left;
+  border-bottom: 1px solid #232323;
+  box-shadow: inset 2px 0 0 transparent;
+}
+
+.preset-list.nd-list button:hover {
+  background: #262626;
+}
+
+.preset-list.nd-list button.is-on {
+  background: var(--sel);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
+.preset-list.nd-list button:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.nd-row-1 {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.nd-nm {
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nd-dim {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.nd-desc {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  margin-top: 2px;
+  color: var(--dim);
+  font-size: 10px;
+  line-height: 1.32;
+  overflow: hidden;
+}
+
+.preset-list.nd-list button.is-on .nd-desc {
+  color: #a5a5a5;
+}
+
+.nd-right {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--raised);
+}
+
+.nd-head {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  height: var(--tabs);
+  padding: 0 12px;
+  border-bottom: 1px solid var(--hair);
+}
+
+.nd-head-name {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nd-badge {
+  flex: 0 0 auto;
+  padding: 1px 6px;
+  border: 1px solid #3f3f3f;
+  color: var(--dim);
+  font-size: 9px;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+
+.nd-badge.is-custom {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.nd-preview {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  height: 146px;
+  background: var(--pasteboard);
+  border-bottom: 1px solid var(--hair);
+}
+
+.nd-derived {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: var(--space-3) var(--space-5);
+  background: #2e2e2e;
+  border-bottom: 1px solid var(--hair);
+}
+
+.nd-derived-px {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.nd-derived-sub {
+  color: var(--dim);
+  font-size: 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nd-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  padding: var(--space-3) var(--space-5) var(--space-5);
+}
+
+.nd-grid {
+  display: grid;
+  grid-template-columns: 74px 1fr;
+  gap: 5px 8px;
+  align-items: center;
+}
+
+.nd-lbl {
+  color: var(--muted);
+  font-size: 11px;
+  text-align: right;
+}
+
+.nd-cell {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+
+.nd-cell > .nd-grow {
+  flex: 1 1 0;
+  width: auto;
+  min-width: 0;
+}
+
+.nd-unit {
+  flex: 0 0 auto;
+  width: 54px;
+  max-width: 54px;
+}
+
+.nd-suffix {
+  flex: 0 0 auto;
+  color: var(--dim);
+  font-size: 10px;
+}
+
+.nd-chk {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--muted);
+  font-size: 11px;
+  margin-left: 4px;
+}
+
+.nd-sep {
+  grid-column: 1 / -1;
+  height: 1px;
+  margin: 4px 0 3px;
+  background: var(--hair);
+}
+
+.nd-orient {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 1px;
+}
+
+.nd-orient button {
+  width: 22px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  background: #3d3d3d;
+  border: 1px solid var(--hair);
+}
+
+.nd-orient button + button {
+  margin-left: -1px;
+}
+
+.nd-orient button svg {
+  width: 12px;
+  height: 12px;
+  fill: var(--muted);
+}
+
+.nd-orient button:hover {
+  background: #484848;
+}
+
+.nd-orient button.is-on {
+  background: var(--sel);
+  border-color: var(--accent);
+  position: relative;
+  z-index: 1;
+}
+
+.nd-orient button.is-on svg {
+  fill: var(--accent);
+}
+
+.nd-orient button:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.nd-margins {
+  gap: 4px;
+}
+
+.nd-mini {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  min-width: 0;
+}
+
+.nd-mini > label {
+  color: var(--dim);
+  font-size: 10px;
+}
+
+.nd-mini > .num {
+  flex: 1 1 0;
+  width: auto;
+  min-width: 30px;
+}
+
+.nd-link {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  background: #3d3d3d;
+  border: 1px solid var(--hair);
+}
+
+.nd-link svg {
+  width: 13px;
+  height: 13px;
+  fill: none;
+  stroke: var(--muted);
+  stroke-width: 1.3;
+  stroke-linecap: round;
+}
+
+.nd-link:hover {
+  background: #484848;
+}
+
+.nd-link[aria-pressed="true"] {
+  background: var(--sel);
+  border-color: var(--accent);
+}
+
+.nd-link[aria-pressed="true"] svg {
+  stroke: var(--accent);
+}
+
+.nd-link:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.nd .dialog-foot {
+  flex: 0 0 auto;
+  align-items: center;
+  padding: 8px 12px;
+  background: var(--panel);
+  border-top: 1px solid var(--hair);
+}
+
+.nd-note {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--dim);
+  font-size: 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nd-pv-bleed {
+  fill: #2a2a2a;
+  stroke: #4a4a4a;
+  stroke-width: 1;
+  stroke-dasharray: 3 2;
+}
+
+.nd-pv-page {
+  fill: #f2f2f2;
+  stroke: #6a6a6a;
+  stroke-width: 1;
+}
+
+.nd-pv-margin {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1;
+}
+
+.nd-pv-col {
+  fill: none;
+  stroke: rgba(224, 122, 47, 0.42);
+  stroke-width: 1;
+}
+
+/* ── Panel density ────────────────────────────────────────────────────────────
+   Photoshop packs a panel row across the full column width. A fixed-width input
+   followed by dead gutter is the giveaway of an unstyled form, so rows marked
+   `.fill` let their inputs take the remaining track while labels stay intrinsic. */
+.row.fill > .field {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.row.fill > .field > .num,
+.row.fill > .num,
+.row.fill > input.ctrl {
+  flex: 1 1 0;
+  width: auto;
+  min-width: 0;
+}
+
+.row.fill > .field > span,
+.row.fill > .lbl,
+.row.fill > .well {
+  flex: 0 0 auto;
+}
+
+/* ── Inert controls ───────────────────────────────────────────────────────────
+   With no selection there is no honest number to show. Photoshop greys the
+   control out; a blank but live-looking input reads as breakage. */
+.num:disabled,
+select.ctrl:disabled,
+input.ctrl:disabled {
+  background: #232323;
+  border-color: #202020;
+  color: var(--dim);
+}
+
+.field:has(> .num:disabled) > span,
+.check:has(input:disabled) {
+  color: #6d6d6d;
+}
+
+button:disabled,
+.align button:disabled,
+.layer-foot button:disabled,
+.lock-btn:disabled {
+  color: #5f5f5f;
+  background: none;
+}
+
+.layer-foot button:disabled:hover {
+  background: none;
+  color: #5f5f5f;
+}
+
+/* ── Icon buttons ─────────────────────────────────────────────────────────────
+   Panel affordances are glyphs, not letters. 12px stroke icons on currentColor
+   so hover/active/disabled states inherit from the button. */
+.icon {
+  width: 12px;
+  height: 12px;
+  display: block;
+  margin: 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1;
+  stroke-linecap: square;
+  shape-rendering: crispEdges;
+}
+
+.icon.solid {
+  fill: currentColor;
+  stroke: none;
+}
+
+.align button .icon {
+  stroke-width: 1;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   NATIVE OS CHROME ERADICATION
+   Photoshop ships zero operating-system form widgets. Every <select>, range
+   and checkbox below is repainted from scratch: `appearance: none` plus real
+   pixels. The elements themselves stay in the DOM with their ids, values and
+   events untouched — desk.ts keeps working exactly as written.
+   The <select> popup list is the one thing CSS cannot reach; src/chrome/
+   controls.ts suppresses the native list and draws `.cbx-pop` instead.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* One crisp check path, reused as a mask by the checkbox and the combo
+     popup so both stay pixel-sharp — not a glyph font, not a scaled emoji. */
+  --check-glyph: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M1.8 6.1 4.6 9 10.2 2.9' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='square' stroke-linejoin='miter'/%3E%3C/svg%3E");
+}
+
+/* ── Combo box, closed state ──────────────────────────────────────────────
+   The real <select> keeps painting its own selected-option text, so the
+   label can never drift from `.value` — no mirror element, no stale facade,
+   and every id/event desk.ts binds to survives untouched. */
+select,
+select.ctrl {
+  appearance: none;
+  -webkit-appearance: none;
+  height: 18px;
+  min-width: 0;
+  padding: 0 15px 0 5px;
+  background-color: var(--input);
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='7' height='4' viewBox='0 0 7 4'%3E%3Cpath d='M0 0h7L3.5 4z' fill='%23B4B4B4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 4px center;
+  background-size: 7px 4px;
+  border: 1px solid var(--hair);
+  border-radius: var(--radius);
+  color: var(--ink);
+  font: inherit;
+  line-height: 16px;
+  outline: none;
+  cursor: default;
+  text-overflow: ellipsis;
+  text-shadow: none;
+  user-select: none;
+  box-shadow: inset 0 1px 0 rgba(0, 0, 0, 0.3);
+}
+
+select:hover:not(:disabled) {
+  background-color: #242424;
+  border-color: #2c2c2c;
+}
+
+select.is-open:not(:disabled) {
+  background-color: #262626;
+  border-color: #3d3d3d;
+}
+
+select:focus-visible:not(:disabled) {
+  border-color: var(--accent);
+}
+
+/* controls.ts never lets Chromium render the option list, but keep any row
+   the engine might still paint on-palette rather than OS white. */
+select option {
+  background: var(--raised);
+  color: var(--ink);
+}
+
+/* Must out-rank the shorthand `background:` in the Inert-controls block. */
+select:disabled,
+select.ctrl:disabled {
+  background-color: #232323;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='7' height='4' viewBox='0 0 7 4'%3E%3Cpath d='M0 0h7L3.5 4z' fill='%23585858'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 4px center;
+  background-size: 7px 4px;
+  border-color: #202020;
+  color: var(--dim);
+  box-shadow: none;
+}
+
+/* ── Combo box popup, drawn by controls.ts ────────────────────────────── */
+.cbx-pop {
+  position: fixed;
+  z-index: 200;
+  max-height: 320px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 2px 0;
+  background: var(--raised);
+  border: 1px solid var(--hair);
+  border-radius: var(--radius);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 7px 20px rgba(0, 0, 0, 0.55);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: 11px;
+  line-height: 1.2;
+  user-select: none;
+}
+
+.cbx-opt {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 14px 0 18px;
+  white-space: nowrap;
+  cursor: default;
+}
+
+.cbx-opt.is-active {
+  background: var(--hover);
+}
+
+.cbx-opt.is-disabled {
+  color: #6a6a6a;
+}
+
+.cbx-opt.is-on::before {
+  content: "";
+  position: absolute;
+  left: 5px;
+  top: 50%;
+  width: 9px;
+  height: 9px;
+  margin-top: -4px;
+  background: var(--accent);
+  -webkit-mask: var(--check-glyph) no-repeat center / 9px 9px;
+  mask: var(--check-glyph) no-repeat center / 9px 9px;
+}
+
+.cbx-sep {
+  height: 1px;
+  margin: 3px 6px;
+  background: var(--hair-light);
+}
+
+/* ── Checkbox ─────────────────────────────────────────────────────────────
+   12px well; copper fill and a masked white check when on. Copper stays
+   precious — a checked box is one of the four places the brief allows it. */
+input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  position: relative;
+  flex: 0 0 auto;
+  width: 12px;
+  height: 12px;
+  margin: 0;
+  padding: 0;
+  background: var(--input);
+  border: 1px solid var(--hair);
+  border-radius: 0;
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.45);
+  cursor: default;
+  vertical-align: middle;
+}
+
+input[type="checkbox"]:hover:not(:disabled) {
+  background: #232323;
+  border-color: #343434;
+}
+
+input[type="checkbox"]:checked {
+  background: var(--accent);
+  border-color: #a2571f;
+  box-shadow: none;
+}
+
+input[type="checkbox"]:checked::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  background: #ffffff;
+  -webkit-mask: var(--check-glyph) no-repeat center / 10px 10px;
+  mask: var(--check-glyph) no-repeat center / 10px 10px;
+}
+
+/* Copper on copper is invisible once the box is filled, so the ring sits a
+   pixel clear of the box and lets the panel show through the gap. */
+input[type="checkbox"]:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 1px;
+  border-color: var(--accent);
+  box-shadow: none;
+}
+
+input[type="checkbox"]:disabled {
+  background: #232323;
+  border-color: #202020;
+  box-shadow: none;
+}
+
+input[type="checkbox"]:disabled:checked {
+  background: #6b4a2c;
+  border-color: #202020;
+}
+
+input[type="checkbox"]:disabled:checked::after {
+  background: #9a9a9a;
+}
+
+/* ── Sliders ──────────────────────────────────────────────────────────────
+   A sunk hairline groove and a flat 9x13 handle: Photoshop's slider, not a
+   round OS pill and emphatically not the browser's blue. `--track-a/-b` are
+   painted live by controls.ts for the R/G/B sliders; every other range
+   falls through to the plain input-well colour. */
+input[type="range"] {
+  appearance: none;
+  -webkit-appearance: none;
+  --track-a: #1e1e1e;
+  --track-b: #1e1e1e;
+  width: 100%;
+  height: 14px;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  outline: none;
+  cursor: default;
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 5px;
+  border: 1px solid var(--hair);
+  border-radius: 0;
+  background-color: var(--input);
+  background-image: linear-gradient(90deg, var(--track-a), var(--track-b));
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.55);
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 9px;
+  height: 13px;
+  margin-top: -4px;
+  border: 1px solid #141414;
+  border-radius: 0;
+  background: #c8c8c8;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+input[type="range"]:hover:not(:disabled)::-webkit-slider-thumb {
+  background: #dcdcdc;
+}
+
+input[type="range"]:active:not(:disabled)::-webkit-slider-thumb {
+  background: #f0f0f0;
+  border-color: #0d0d0d;
+}
+
+input[type="range"]:focus-visible::-webkit-slider-thumb {
+  border-color: var(--accent);
+}
+
+input[type="range"]:disabled::-webkit-slider-runnable-track {
+  background-color: #232323;
+  background-image: none;
+}
+
+input[type="range"]:disabled::-webkit-slider-thumb {
+  background: #5c5c5c;
+  border-color: #1a1a1a;
+}
+
+/* Gecko fallbacks. The QA harness is Chromium; these are belt and braces. */
+input[type="range"]::-moz-range-track {
+  height: 5px;
+  border: 1px solid var(--hair);
+  border-radius: 0;
+  background-color: var(--input);
+  background-image: linear-gradient(90deg, var(--track-a), var(--track-b));
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 7px;
+  height: 11px;
+  border: 1px solid #141414;
+  border-radius: 0;
+  background: #c8c8c8;
+}
+
+/* ── Scrollbars ───────────────────────────────────────────────────────────
+   8px, no arrow buttons, no rounding past 1px. Covers the studio column,
+   the layer list, every `.pane.scroll` and the preset list. */
+/* Chromium honours `::-webkit-scrollbar` only while `scrollbar-width` and
+   `scrollbar-color` are untouched — set either and it silently falls back to
+   the rounded built-in bar. So the standard properties are quarantined to
+   engines that have no pseudo-element scrollbars at all. */
+@supports not selector(::-webkit-scrollbar) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #4a4a4a #2b2b2b;
+  }
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #2b2b2b;
+  border-radius: 0;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #4a4a4a;
+  border: 1px solid #2b2b2b;
+  border-radius: 1px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #585858;
+}
+
+::-webkit-scrollbar-thumb:active {
+  background: #666666;
+}
+
+::-webkit-scrollbar-corner {
+  background: #2b2b2b;
+}
+
+::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+.layer-list::-webkit-scrollbar-track,
+.preset-list::-webkit-scrollbar-track {
+  background: #232323;
+}
+
+.layer-list::-webkit-scrollbar-thumb,
+.preset-list::-webkit-scrollbar-thumb {
+  border-color: #232323;
+}

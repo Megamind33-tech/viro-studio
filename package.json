@@ -1,0 +1,49 @@
+{
+  "name": "viro-press",
+  "version": "0.1.0",
+  "private": true,
+  "description": "VIRO Press — Photoshop/InDesign-class design OS. Compositor is Skia (CanvasKit), type is HarfBuzz, colour is LittleCMS. Not Canvas2D. Not Canva.",
+  "type": "module",
+  "main": "dist-electron/main.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "postinstall": "node scripts/copy-wasm.mjs && node scripts/vendor-font.mjs",
+    "dev": "vite",
+    "dev:web": "vite --mode web",
+    "build": "vite build",
+    "preview": "vite preview --host 127.0.0.1 --port 5173 --strictPort",
+    "test:engines": "node tests/engines.mjs",
+    "test:chrome": "playwright test",
+    "test": "npm run test:engines && npm run test:unit && npm run test:chrome && npm run test:slices",
+    "test:unit": "node --experimental-strip-types --import ./tests/ts-register.mjs --test tests/transform.test.mjs tests/image-fit.test.mjs tests/text-model.test.mjs tests/command-bus.test.mjs tests/anchor-command.test.mjs tests/ui-commands.test.mjs",
+    "test:slices": "node tests/slices.mjs"
+  },
+  "dependencies": {
+    "@pdf-lib/fontkit": "^1.1.1",
+    "ag-psd": "^31.0.2",
+    "buffer": "^6.0.3",
+    "canvaskit-wasm": "^0.42.0",
+    "clipper2-wasm": "^0.4.0",
+    "fontkit": "^2.0.4",
+    "harfbuzzjs": "^1.6.0",
+    "idb": "^8.0.3",
+    "jszip": "^3.10.1",
+    "lcms-wasm": "^1.0.5",
+    "onnxruntime-web": "^1.27.0",
+    "opentype.js": "^2.0.0",
+    "paper": "^0.12.18",
+    "pdf-lib": "^1.17.1",
+    "pdfkit": "^0.20.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.62.1",
+    "@types/node": "^26.2.0",
+    "electron": "^43.4.1",
+    "playwright": "^1.62.1",
+    "typescript": "^7.0.2",
+    "vite": "^8.2.2",
+    "vite-plugin-electron": "^1.1.1"
+  }
+}

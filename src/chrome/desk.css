@@ -1,0 +1,7 @@
+@import "../styles/desk.css";
+
+/* HTML hidden must win over author display:grid on dialogs and the boot splash. */
+#boot.gone,
+[hidden] {
+  display: none !important;
+}

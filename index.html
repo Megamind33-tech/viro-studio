@@ -1,0 +1,592 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VIRO Press</title>
+    <link rel="stylesheet" href="/src/chrome/desk.css" />
+  </head>
+  <body>
+    <div id="boot" hidden>
+      <div class="boot-mark">VIRO Press</div>
+      <div class="boot-sub" id="bootStatus">Loading Skia · HarfBuzz · LittleCMS</div>
+    </div>
+
+    <div id="desk">
+      <nav class="menubar" id="menubar" aria-label="Application menu">
+        <div class="brand">Press</div>
+        <div class="menu">
+          <button type="button" class="menu-btn" data-menu="file">File</button>
+          <div class="flyout" data-flyout="file" hidden>
+            <button type="button" data-cmd="new">New…<span class="kbd">Ctrl+N</span></button>
+            <button type="button" data-cmd="open">Open…</button>
+            <button type="button" data-cmd="place">Place…<span class="kbd">Shift+Ctrl+P</span></button>
+            <div class="sep"></div>
+            <button type="button" data-cmd="export-png">Export PNG…</button>
+            <button type="button" data-cmd="export-pdf">Export PDF…</button>
+            <button type="button" data-cmd="save-json">Save Press JSON…</button>
+          </div>
+        </div>
+        <div class="menu">
+          <button type="button" class="menu-btn" data-menu="edit">Edit</button>
+          <div class="flyout" data-flyout="edit" hidden>
+            <button type="button" data-cmd="undo">Undo<span class="kbd">Ctrl+Z</span></button>
+            <button type="button" data-cmd="redo">Redo<span class="kbd">Ctrl+Y</span></button>
+            <div class="sep"></div>
+            <button type="button" data-cmd="duplicate">Duplicate<span class="kbd">Ctrl+J</span></button>
+            <button type="button" data-cmd="delete">Delete<span class="kbd">Del</span></button>
+          </div>
+        </div>
+        <div class="menu">
+          <button type="button" class="menu-btn" data-menu="image">Image</button>
+          <div class="flyout" data-flyout="image" hidden>
+            <button type="button" data-cmd="image-size">Image Size…<span class="kbd">Ctrl+Alt+I</span></button>
+            <div class="sep"></div>
+            <div class="has-sub">
+              <button type="button" class="item">Adjustments</button>
+              <div class="flyout sub">
+                <button type="button" data-cmd="adj-bc">Brightness/Contrast…</button>
+              </div>
+            </div>
+            <button type="button" data-cmd="cutout" id="menu-cutout" hidden>Cutout background</button>
+          </div>
+        </div>
+        <div class="menu">
+          <button type="button" class="menu-btn" data-menu="layer">Layer</button>
+          <div class="flyout" data-flyout="layer" hidden>
+            <button type="button" data-cmd="group">Group Layers<span class="kbd">Ctrl+G</span></button>
+            <button type="button" data-cmd="ungroup">Ungroup<span class="kbd">Ctrl+Shift+G</span></button>
+            <div class="sep"></div>
+            <button type="button" data-cmd="bring-forward">Bring Forward<span class="kbd">Ctrl+]</span></button>
+            <button type="button" data-cmd="send-backward">Send Backward<span class="kbd">Ctrl+[</span></button>
+            <div class="sep"></div>
+            <button type="button" data-cmd="lock">Lock / Unlock</button>
+            <button type="button" data-cmd="hide">Hide / Show</button>
+          </div>
+        </div>
+        <div class="menu">
+          <button type="button" class="menu-btn" data-menu="type">Type</button>
+          <div class="flyout" data-flyout="type" hidden>
+            <button type="button" data-cmd="type-left">Align Left</button>
+            <button type="button" data-cmd="type-center">Align Center</button>
+            <button type="button" data-cmd="type-right">Align Right</button>
+            <button type="button" data-cmd="type-justify">Justify</button>
+          </div>
+        </div>
+        <div class="menu">
+          <button type="button" class="menu-btn" data-menu="select">Select</button>
+          <div class="flyout" data-flyout="select" hidden>
+            <button type="button" data-cmd="select-all">All<span class="kbd">Ctrl+A</span></button>
+            <button type="button" data-cmd="deselect">Deselect<span class="kbd">Ctrl+D</span></button>
+          </div>
+        </div>
+        <div class="menu">
+          <button type="button" class="menu-btn" data-menu="filter">Filter</button>
+          <div class="flyout" data-flyout="filter" hidden>
+            <button type="button" data-cmd="adj-bc">Brightness/Contrast…</button>
+            <button type="button" data-cmd="cutout" id="filter-cutout">Cutout background</button>
+          </div>
+        </div>
+        <div class="menu">
+          <button type="button" class="menu-btn" data-menu="view">View</button>
+          <div class="flyout" data-flyout="view" hidden>
+            <button type="button" data-cmd="view-rulers"><span class="check" data-check="rulers">✓</span>Rulers<span class="kbd">Ctrl+R</span></button>
+            <button type="button" data-cmd="view-guides"><span class="check" data-check="guides">✓</span>Guides</button>
+            <button type="button" data-cmd="view-bleed"><span class="check" data-check="bleed">✓</span>Bleed</button>
+            <div class="sep"></div>
+            <button type="button" data-cmd="zoom-in">Zoom In<span class="kbd">Ctrl+=</span></button>
+            <button type="button" data-cmd="zoom-out">Zoom Out<span class="kbd">Ctrl+-</span></button>
+            <button type="button" data-cmd="zoom-fit">Fit on Screen<span class="kbd">Ctrl+0</span></button>
+            <button type="button" data-cmd="zoom-100">100%<span class="kbd">Ctrl+1</span></button>
+          </div>
+        </div>
+        <div class="menu">
+          <button type="button" class="menu-btn" data-menu="window">Window</button>
+          <div class="flyout" data-flyout="window" hidden>
+            <button type="button" data-cmd="win-color"><span class="check" data-check="g-color">✓</span>Color</button>
+            <button type="button" data-cmd="win-type"><span class="check" data-check="g-type">✓</span>Character / Paragraph</button>
+            <button type="button" data-cmd="win-transform"><span class="check" data-check="g-transform">✓</span>Transform</button>
+            <button type="button" data-cmd="win-layers"><span class="check" data-check="g-layers">✓</span>Layers</button>
+            <button type="button" data-cmd="win-pages"><span class="check" data-check="g-pages">✓</span>Pages</button>
+            <button type="button" data-cmd="win-nav"><span class="check" data-check="g-nav">✓</span>Navigator / History</button>
+            <div class="sep"></div>
+            <button type="button" data-cmd="win-anchor"><span class="check" data-check="g-anchor"></span>Anchor</button>
+          </div>
+        </div>
+      </nav>
+
+      <div class="optionsbar" id="optionsbar" aria-label="Options">
+        <div class="opt-tool" id="opt-icon" aria-hidden="true"></div>
+        <div class="opt-strip" data-for="move">
+          <label class="field"><span>X</span><input class="num" id="opt-x" inputmode="decimal" /></label>
+          <label class="field"><span>Y</span><input class="num" id="opt-y" inputmode="decimal" /></label>
+          <span class="div"></span>
+          <label class="field"><span>W</span><input class="num" id="opt-w" inputmode="decimal" /></label>
+          <label class="field"><span>H</span><input class="num" id="opt-h" inputmode="decimal" /></label>
+          <label class="check"><input type="checkbox" id="opt-constrain" checked />Constrain</label>
+          <span class="div"></span>
+          <label class="field"><span>°</span><input class="num w3" id="opt-r" inputmode="decimal" /></label>
+          <span class="div"></span>
+          <label class="field"><span>Fit</span>
+            <select class="ctrl" id="opt-fit">
+              <option value="cover">Cover</option>
+              <option value="contain">Contain</option>
+              <option value="stretch">Stretch</option>
+            </select>
+          </label>
+        </div>
+        <div class="opt-strip" data-for="type" hidden>
+          <label class="field"><span>Font</span>
+            <select class="ctrl" id="opt-font">
+              <option value="noto-sans">Noto Sans</option>
+            </select>
+          </label>
+          <label class="field"><span>Size</span><input class="num w3" id="opt-size" inputmode="decimal" /></label>
+          <label class="field"><span>Leading</span><input class="num w3" id="opt-lead" inputmode="decimal" /></label>
+          <label class="field"><span>Tracking</span><input class="num w3" id="opt-track" inputmode="decimal" /></label>
+        </div>
+        <div class="opt-strip" data-for="marquee" hidden>
+          <label class="field"><span>Feather</span><input class="num w3" id="opt-feather" value="0" inputmode="decimal" /></label>
+          <span>px</span>
+          <label class="check"><input type="checkbox" id="opt-aa" checked />Anti-alias</label>
+        </div>
+        <div class="opt-strip" data-for="crop" hidden>
+          <span class="lbl">Drag on an image frame to reframe</span>
+        </div>
+        <div class="opt-strip" data-for="pen" hidden>
+          <span class="lbl">Click to add nodes · Enter closes path</span>
+        </div>
+        <div class="opt-strip" data-for="rect" hidden>
+          <span class="lbl">Rectangle</span>
+          <span class="div"></span>
+          <span class="lbl">Fill from foreground</span>
+        </div>
+        <div class="opt-strip" data-for="hand" hidden>
+          <span class="lbl">Drag pasteboard · Space also pans</span>
+        </div>
+        <div class="opt-strip" data-for="zoom" hidden>
+          <span class="lbl">Click zoom in · Alt-click zoom out</span>
+        </div>
+      </div>
+
+      <aside class="toolbox" id="toolbox" aria-label="Toolbox">
+        <button type="button" class="tool is-active" data-tool="move" title="Move (V)" aria-label="Move" aria-pressed="true">
+          <svg viewBox="0 0 16 16"><path d="M8 1v14M1 8h14M3.5 3.5 1 8l2.5 4.5M12.5 3.5 15 8l-2.5 4.5M3.5 3.5h9M3.5 12.5h9"/></svg>
+        </button>
+        <button type="button" class="tool" data-tool="marquee" title="Rectangular Marquee (M)" aria-label="Marquee" aria-pressed="false">
+          <svg viewBox="0 0 16 16"><rect x="2.5" y="3.5" width="11" height="9" stroke-dasharray="2 1.5"/></svg>
+        </button>
+        <div class="tool-sep" role="separator"></div>
+        <button type="button" class="tool" data-tool="crop" title="Crop / Reframe (C)" aria-label="Crop" aria-pressed="false">
+          <svg viewBox="0 0 16 16"><path d="M4 2v10h10M2 4h10v10"/></svg>
+        </button>
+        <div class="tool-sep" role="separator"></div>
+        <button type="button" class="tool" data-tool="type" title="Type (T)" aria-label="Type" aria-pressed="false">
+          <svg viewBox="0 0 16 16"><path d="M3 3.5h10M8 3.5V13M5.5 13h5"/></svg>
+        </button>
+        <button type="button" class="tool" data-tool="pen" title="Pen (P)" aria-label="Pen" aria-pressed="false">
+          <svg viewBox="0 0 16 16"><path d="M2.5 13.5 4 9l6.4-6.4a1.5 1.5 0 0 1 2.1 0l.4.4a1.5 1.5 0 0 1 0 2.1L6.5 11.5z"/><path d="M9.8 3.2 12.8 6.2"/><path d="M4 9l2.5 2.5"/></svg>
+        </button>
+        <button type="button" class="tool" data-tool="rect" title="Rectangle (U)" aria-label="Rectangle" aria-pressed="false">
+          <svg viewBox="0 0 16 16"><rect x="2.5" y="3.5" width="11" height="9"/></svg>
+        </button>
+        <button type="button" class="tool" data-tool="ellipse" title="Ellipse (Shift+U)" aria-label="Ellipse" aria-pressed="false">
+          <svg viewBox="0 0 16 16"><ellipse cx="8" cy="8" rx="5.5" ry="4.5"/></svg>
+        </button>
+        <button type="button" class="tool" data-tool="line" title="Line (Shift+U)" aria-label="Line" aria-pressed="false">
+          <svg viewBox="0 0 16 16"><path d="M2.5 13.5 13.5 2.5"/></svg>
+        </button>
+        <div class="tool-sep" role="separator"></div>
+        <button type="button" class="tool" data-tool="hand" title="Hand (H)" aria-label="Hand" aria-pressed="false">
+          <svg viewBox="0 0 16 16"><path d="M6 7.5V4.5a1 1 0 0 1 2 0V7M8 7V4.2a1 1 0 0 1 2 0V7M10 7.2V5.2a1 1 0 0 1 2 0V9c0 2.2-1.5 4-3.8 4.5C6 14 4 12.2 4 10V8.2a1 1 0 0 1 2 0V9"/></svg>
+        </button>
+        <button type="button" class="tool" data-tool="zoom" title="Zoom (Z)" aria-label="Zoom" aria-pressed="false">
+          <svg viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5 14 14"/></svg>
+        </button>
+        <div class="swatch-well" title="Foreground / Background">
+          <button type="button" class="bg" id="bg-swatch" aria-label="Background color"></button>
+          <button type="button" class="fg" id="fg-swatch" aria-label="Foreground color"></button>
+          <button type="button" class="swap" id="swap-fgbg" title="Swap (X)">↔</button>
+          <button type="button" class="deflt" id="default-fgbg" title="Default (D)">■</button>
+        </div>
+      </aside>
+
+      <main class="workspace">
+        <div class="doc-tabs">
+          <div class="doc-tab">
+            <span id="doc-name">Untitled</span>
+            <span class="zoom" id="doc-zoom">35%</span>
+          </div>
+        </div>
+        <div class="pasteboard" id="pasteboard">
+          <canvas id="skia" aria-label="Document pasteboard"></canvas>
+        </div>
+      </main>
+
+      <aside class="studios" id="studios" aria-label="Studios">
+        <section class="group" id="g-color">
+          <div class="tabs" data-tabs="color">
+            <button type="button" class="is-on" data-tab="color">Color</button>
+            <button type="button" data-tab="swatches">Swatches</button>
+          </div>
+          <div class="pane" data-pane="color">
+            <div class="sv" id="sv-plane" aria-label="Saturation brightness">
+              <div class="sv-dot" id="sv-dot"></div>
+            </div>
+            <div class="hue" id="hue-bar" aria-label="Hue">
+              <div class="hue-dot" id="hue-dot"></div>
+            </div>
+            <div class="color-controls">
+              <div class="rgb-row"><span>R</span><input type="range" id="rgb-r" min="0" max="255" /><input class="num w3" id="rgb-r-n" /></div>
+              <div class="rgb-row"><span>G</span><input type="range" id="rgb-g" min="0" max="255" /><input class="num w3" id="rgb-g-n" /></div>
+              <div class="rgb-row"><span>B</span><input type="range" id="rgb-b" min="0" max="255" /><input class="num w3" id="rgb-b-n" /></div>
+              <div class="row">
+                <span class="lbl">#</span>
+                <input class="num w4 ctrl grow" id="hex" maxlength="7" />
+                <span class="well" id="fg-well"></span>
+              </div>
+            </div>
+          </div>
+          <div class="pane" data-pane="swatches" hidden>
+            <div class="swatches" id="swatch-list"></div>
+          </div>
+        </section>
+
+        <section class="group" id="g-type">
+          <div class="tabs" data-tabs="type">
+            <button type="button" class="is-on" data-tab="stroke">Stroke</button>
+            <button type="button" data-tab="character">Character</button>
+            <button type="button" data-tab="paragraph">Paragraph</button>
+          </div>
+          <div class="pane" data-pane="stroke">
+            <div class="row fill">
+              <span class="lbl">Weight</span>
+              <input class="num" id="stroke-w" inputmode="decimal" />
+              <span class="lbl">px</span>
+              <span class="well" id="stroke-well"></span>
+            </div>
+          </div>
+          <div class="pane" data-pane="character" hidden>
+            <div class="row">
+              <select class="ctrl grow" id="ch-font">
+                <option value="noto-sans">Noto Sans</option>
+              </select>
+            </div>
+            <div class="row fill">
+              <label class="field"><span>Size</span><input class="num w3" id="ch-size" /></label>
+              <label class="field"><span>Lead</span><input class="num w3" id="ch-lead" /></label>
+              <label class="field"><span>Track</span><input class="num w3" id="ch-track" /></label>
+            </div>
+            <div class="row">
+              <span class="lbl">Color</span>
+              <span class="well" id="ch-well"></span>
+            </div>
+          </div>
+          <div class="pane" data-pane="paragraph" hidden>
+            <div class="row">
+              <div class="align" id="para-align">
+                <button type="button" data-align="left" title="Align left" aria-label="Align left"><svg class="icon solid" viewBox="0 0 12 12" aria-hidden="true"><rect x="1" y="2" width="10" height="1"/><rect x="1" y="4" width="6" height="1"/><rect x="1" y="6" width="10" height="1"/><rect x="1" y="8" width="7" height="1"/></svg></button>
+                <button type="button" data-align="center" title="Align center" aria-label="Align center"><svg class="icon solid" viewBox="0 0 12 12" aria-hidden="true"><rect x="1" y="2" width="10" height="1"/><rect x="3" y="4" width="6" height="1"/><rect x="1" y="6" width="10" height="1"/><rect x="2.5" y="8" width="7" height="1"/></svg></button>
+                <button type="button" data-align="right" title="Align right" aria-label="Align right"><svg class="icon solid" viewBox="0 0 12 12" aria-hidden="true"><rect x="1" y="2" width="10" height="1"/><rect x="5" y="4" width="6" height="1"/><rect x="1" y="6" width="10" height="1"/><rect x="4" y="8" width="7" height="1"/></svg></button>
+                <button type="button" data-align="justify" title="Justify" aria-label="Justify"><svg class="icon solid" viewBox="0 0 12 12" aria-hidden="true"><rect x="1" y="2" width="10" height="1"/><rect x="1" y="4" width="10" height="1"/><rect x="1" y="6" width="10" height="1"/><rect x="1" y="8" width="10" height="1"/></svg></button>
+              </div>
+            </div>
+            <div class="row fill">
+              <label class="field"><span>1st</span><input class="num w3" id="para-first" /></label>
+              <label class="field"><span>After</span><input class="num w3" id="para-after" /></label>
+            </div>
+          </div>
+        </section>
+
+        <section class="group" id="g-transform">
+          <div class="tabs">
+            <button type="button" class="is-on">Transform</button>
+          </div>
+          <div class="pane">
+            <div class="row fill">
+              <label class="field"><span>X</span><input class="num" id="tr-x" /></label>
+              <label class="field"><span>Y</span><input class="num" id="tr-y" /></label>
+            </div>
+            <div class="row fill">
+              <label class="field"><span>W</span><input class="num" id="tr-w" /></label>
+              <label class="field"><span>H</span><input class="num" id="tr-h" /></label>
+            </div>
+            <div class="row">
+              <label class="field"><span>°</span><input class="num w3" id="tr-r" /></label>
+              <span class="grow"></span>
+              <label class="check"><input type="checkbox" id="tr-constrain" checked />Constrain</label>
+            </div>
+          </div>
+        </section>
+
+        <section class="group grow" id="g-layers">
+          <div class="tabs" data-tabs="stack">
+            <button type="button" class="is-on" data-tab="layers">Layers</button>
+            <button type="button" data-tab="channels">Channels</button>
+            <button type="button" data-tab="paths">Paths</button>
+          </div>
+          <div class="layers-pane" data-pane="layers">
+            <div class="layer-head">
+              <select class="ctrl" id="blend" aria-label="Blend mode"></select>
+              <label class="field"><span>Opacity</span><input class="num w3" id="opacity" /></label>
+              <button type="button" class="lock-btn" id="lock-btn" title="Lock layer" aria-label="Lock layer"><svg class="icon" viewBox="0 0 12 12" aria-hidden="true"><path d="M3.5 5.5V4a2.5 2.5 0 0 1 5 0v1.5"/><rect x="2.5" y="5.5" width="7" height="5"/></svg></button>
+            </div>
+            <div class="layer-list" id="layer-list"></div>
+            <div class="layer-foot">
+              <button type="button" data-cmd="group" title="New group" aria-label="New group"><svg class="icon" viewBox="0 0 12 12" aria-hidden="true"><path d="M1.5 10.5v-8h3l1.2 1.6h4.8v6.4z"/></svg></button>
+              <button type="button" data-cmd="adj-bc" title="Brightness/Contrast" aria-label="Brightness/Contrast"><svg class="icon" viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="6" r="4.5"/><path d="M6 1.5a4.5 4.5 0 0 1 0 9z" fill="currentColor" stroke="none"/></svg></button>
+              <button type="button" data-cmd="duplicate" title="Duplicate layer" aria-label="Duplicate layer"><svg class="icon" viewBox="0 0 12 12" aria-hidden="true"><path d="M3.5 1.5h4l2 2v5h-6z"/><path d="M2.5 3.5v7h5"/></svg></button>
+              <button type="button" data-cmd="delete" title="Delete layer" aria-label="Delete layer"><svg class="icon" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 3.5h8M4.5 3.5v-1h3v1M3.2 3.5l.5 7h4.6l.5-7"/></svg></button>
+            </div>
+          </div>
+          <div class="pane scroll" data-pane="channels" hidden id="channel-list">
+            <button type="button" class="channel is-on" data-ch="rgb"><span class="ch-chip" id="ch-rgb-chip" style="background:linear-gradient(90deg,#c44,#4a4,#44c)"></span>RGB</button>
+            <button type="button" class="channel" data-ch="r"><span class="ch-chip" id="ch-r-chip" style="background:#c44"></span>Red</button>
+            <button type="button" class="channel" data-ch="g"><span class="ch-chip" id="ch-g-chip" style="background:#4a4"></span>Green</button>
+            <button type="button" class="channel" data-ch="b"><span class="ch-chip" id="ch-b-chip" style="background:#44c"></span>Blue</button>
+            <div class="row" id="ch-thumbs" hidden>
+              <img id="ch-thumb" alt="Channel preview" style="width:100%;border:1px solid #111;image-rendering:pixelated" />
+            </div>
+          </div>
+          <div class="pane scroll" data-pane="paths" hidden id="path-list"></div>
+        </section>
+
+        <section class="group" id="g-pages">
+          <div class="tabs">
+            <button type="button" class="is-on">Pages</button>
+          </div>
+          <div class="pane scroll" id="page-list"></div>
+          <div class="layer-foot">
+            <button type="button" data-cmd="add-page" title="New page" aria-label="New page"><svg class="icon" viewBox="0 0 12 12" aria-hidden="true"><path d="M3.5 1.5h4l2 2v7h-6z"/><path d="M6 5.2v3M4.5 6.7h3"/></svg></button>
+          </div>
+        </section>
+
+        <section class="group" id="g-nav">
+          <div class="tabs" data-tabs="nav">
+            <button type="button" class="is-on" data-tab="navigator">Navigator</button>
+            <button type="button" data-tab="history">History</button>
+          </div>
+          <div class="pane" data-pane="navigator">
+            <div class="nav-view" id="nav-view">
+              <div class="nav-page" id="nav-page"></div>
+              <div class="nav-port" id="nav-port"></div>
+            </div>
+            <div class="row">
+              <input type="range" id="nav-zoom" min="5" max="400" value="35" />
+              <span id="nav-zoom-lbl">35%</span>
+            </div>
+          </div>
+          <div class="pane scroll" data-pane="history" hidden>
+            <div id="history-list"></div>
+          </div>
+        </section>
+
+        <!--
+          Anchor is a docked studio (Window > Anchor), never menu/toolbox/options chrome.
+          See DESK-CHROME.md. Hidden until the operator opens it.
+        -->
+        <section class="group" id="g-anchor" hidden>
+          <div class="tabs">
+            <button type="button" class="is-on">Anchor</button>
+          </div>
+          <div class="anchor-body">
+            <h2>Op queue</h2>
+            <p class="hint">
+              Anchor applies structured ops <code>{ id, op, target, params, reason }</code> to the
+              Press document graph. It is a docked studio, never product chrome.
+            </p>
+            <div class="empty" id="anchor-ops">No ops in queue.</div>
+          </div>
+        </section>
+      </aside>
+
+      <footer class="statusbar" id="statusbar">
+        <span class="stat" id="stat-doc">Untitled</span>
+        <label class="stat field"><span>Zoom</span>
+          <select class="ctrl" id="stat-zoom">
+            <option value="fit">Fit</option>
+            <option>12.5%</option>
+            <option>25%</option>
+            <option>33.33%</option>
+            <option>50%</option>
+            <option selected>100%</option>
+            <option>200%</option>
+            <option>300%</option>
+            <option>400%</option>
+          </select>
+        </label>
+        <span class="stat" id="stat-size">0 × 0 px</span>
+        <span class="stat" id="stat-ppi">72 ppi</span>
+        <span class="stat" id="stat-color">RGB/8</span>
+        <span class="stat grow" id="stat-engine">Booting engines…</span>
+      </footer>
+    </div>
+
+    <input type="file" id="file-place" accept="image/*" hidden />
+    <input type="file" id="file-open" accept=".psd,.vdj,.json,.png,.jpg,.jpeg,.webp,.press.json" hidden />
+
+    <div class="dialog-back" id="dlg-image" hidden>
+      <div class="dialog" role="dialog" aria-labelledby="dlg-image-title">
+        <div class="dialog-title" id="dlg-image-title">Image Size</div>
+        <div class="dialog-body">
+          <div class="dialog-grid">
+            <span class="lbl">Width</span>
+            <input class="num" id="img-w" inputmode="decimal" />
+            <select class="ctrl" id="img-w-unit"><option>Pixels</option></select>
+            <span class="lbl">Height</span>
+            <input class="num" id="img-h" inputmode="decimal" />
+            <select class="ctrl" id="img-h-unit"><option>Pixels</option></select>
+            <span class="lbl">Resolution</span>
+            <input class="num" id="img-ppi" inputmode="decimal" />
+            <span class="lbl">Pixels/Inch</span>
+            <span class="lbl">Print</span>
+            <span class="span lbl" id="img-print">—</span>
+          </div>
+          <div class="row row-section">
+            <label class="check"><input type="checkbox" id="img-constrain" checked />Constrain proportions</label>
+          </div>
+          <div class="row">
+            <label class="check"><input type="checkbox" id="img-resample" checked />Resample</label>
+            <select class="ctrl grow" id="img-algo">
+              <option value="nearest">Nearest Neighbor</option>
+              <option value="bilinear">Bilinear</option>
+              <option value="bicubic" selected>Bicubic</option>
+            </select>
+          </div>
+        </div>
+        <div class="dialog-foot">
+          <button type="button" class="btn" data-dlg="image-cancel">Cancel</button>
+          <button type="button" class="btn default" data-dlg="image-ok">OK</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="dialog-back" id="dlg-new" hidden>
+      <div class="dialog nd" role="dialog" aria-labelledby="dlg-new-title">
+        <div class="dialog-title" id="dlg-new-title">New Document</div>
+
+        <div class="nd-tabs" id="nd-tabs" role="tablist" aria-label="Preset category"></div>
+
+        <div class="nd-body">
+          <div class="nd-left">
+            <div class="nd-blurb" id="nd-blurb"></div>
+            <div class="preset-list nd-list" id="preset-list" role="listbox" aria-label="Document presets"></div>
+          </div>
+
+          <div class="nd-right">
+            <div class="nd-head">
+              <span class="nd-head-name" id="nd-head-name">A4</span>
+              <span class="nd-badge" id="nd-badge">Preset</span>
+            </div>
+
+            <div class="nd-preview" id="nd-preview"></div>
+
+            <div class="nd-derived">
+              <span class="nd-derived-px" id="nd-derived-px">— × — px</span>
+              <span class="nd-derived-sub" id="nd-derived-sub"></span>
+            </div>
+
+            <div class="nd-scroll">
+              <div class="nd-grid">
+                <label class="nd-lbl" for="nd-name">Name</label>
+                <div class="nd-cell"><input class="ctrl nd-grow" id="nd-name" value="Untitled" /></div>
+
+                <label class="nd-lbl" for="nd-w">Width</label>
+                <div class="nd-cell">
+                  <input class="num nd-grow" id="nd-w" type="text" inputmode="decimal" />
+                  <select class="ctrl nd-unit" id="nd-unit" aria-label="Units">
+                    <option value="px">px</option>
+                    <option value="mm">mm</option>
+                    <option value="in">in</option>
+                  </select>
+                </div>
+
+                <label class="nd-lbl" for="nd-h">Height</label>
+                <div class="nd-cell">
+                  <input class="num nd-grow" id="nd-h" type="text" inputmode="decimal" />
+                  <div class="nd-orient" role="group" aria-label="Orientation">
+                    <button type="button" id="nd-portrait" title="Portrait" aria-label="Portrait">
+                      <svg viewBox="0 0 12 12" aria-hidden="true"><rect x="3.5" y="1.5" width="5" height="9" /></svg>
+                    </button>
+                    <button type="button" id="nd-landscape" title="Landscape" aria-label="Landscape">
+                      <svg viewBox="0 0 12 12" aria-hidden="true"><rect x="1.5" y="3.5" width="9" height="5" /></svg>
+                    </button>
+                  </div>
+                </div>
+
+                <label class="nd-lbl" for="nd-ppi">Resolution</label>
+                <div class="nd-cell">
+                  <input class="num nd-grow" id="nd-ppi" type="text" inputmode="numeric" />
+                  <span class="nd-suffix">pixels / inch</span>
+                </div>
+
+                <label class="nd-lbl" for="nd-cs">Color Mode</label>
+                <div class="nd-cell">
+                  <div class="ctrl nd-grow" id="nd-cs" role="status">RGB Color · 8 bit</div>
+                </div>
+
+                <label class="nd-lbl" for="nd-pages">Pages</label>
+                <div class="nd-cell">
+                  <input class="num w3" id="nd-pages" type="text" inputmode="numeric" />
+                  <label class="nd-chk" for="nd-facing"><input type="checkbox" id="nd-facing" /><span>Facing pages</span></label>
+                </div>
+
+                <label class="nd-lbl" for="nd-cols">Columns</label>
+                <div class="nd-cell">
+                  <input class="num w3" id="nd-cols" type="text" inputmode="numeric" />
+                  <span class="nd-suffix">Gutter</span>
+                  <input class="num w4" id="nd-gutter" type="text" inputmode="decimal" />
+                  <span class="nd-suffix nd-u" data-unit-label>mm</span>
+                </div>
+
+                <div class="nd-sep"></div>
+
+                <span class="nd-lbl">Margins</span>
+                <div class="nd-cell nd-margins">
+                  <button type="button" class="nd-link" id="nd-link" aria-pressed="false" title="Make all margins the same">
+                    <svg viewBox="0 0 14 14" aria-hidden="true">
+                      <path d="M5.4 8.6 8.6 5.4M5.6 3.9 6.9 2.6a2.4 2.4 0 0 1 3.4 3.4L9 7.3M5 6.7 3.7 8a2.4 2.4 0 0 0 3.4 3.4l1.3-1.3" />
+                    </svg>
+                  </button>
+                  <span class="nd-mini"><label for="nd-mt">T</label><input class="num w3" id="nd-mt" type="text" inputmode="decimal" /></span>
+                  <span class="nd-mini"><label for="nd-mr">R</label><input class="num w3" id="nd-mr" type="text" inputmode="decimal" /></span>
+                  <span class="nd-mini"><label for="nd-mb">B</label><input class="num w3" id="nd-mb" type="text" inputmode="decimal" /></span>
+                  <span class="nd-mini"><label for="nd-ml" id="nd-ml-lbl">L</label><input class="num w3" id="nd-ml" type="text" inputmode="decimal" /></span>
+                  <span class="nd-suffix nd-u" data-unit-label>mm</span>
+                </div>
+
+                <label class="nd-lbl" for="nd-bleed">Bleed</label>
+                <div class="nd-cell">
+                  <input class="num w4" id="nd-bleed" type="text" inputmode="decimal" />
+                  <span class="nd-suffix">mm on every edge</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="dialog-foot">
+          <span class="nd-note" id="nd-note"></span>
+          <button type="button" class="btn" data-dlg="new-cancel">Cancel</button>
+          <button type="button" class="btn default" data-dlg="new-ok">Create</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="dialog-back" id="dlg-bc" hidden>
+      <div class="dialog" role="dialog" aria-labelledby="dlg-bc-title">
+        <div class="dialog-title" id="dlg-bc-title">Brightness/Contrast</div>
+        <div class="dialog-body">
+          <div class="row"><span class="lbl">Brightness</span><input type="range" id="bc-b" min="-1" max="1" step="0.01" value="0" /><span id="bc-b-n">0</span></div>
+          <div class="row"><span class="lbl">Contrast</span><input type="range" id="bc-c" min="-1" max="1" step="0.01" value="0" /><span id="bc-c-n">0</span></div>
+        </div>
+        <div class="dialog-foot">
+          <button type="button" class="btn" data-dlg="bc-cancel">Cancel</button>
+          <button type="button" class="btn default" data-dlg="bc-ok">OK</button>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
