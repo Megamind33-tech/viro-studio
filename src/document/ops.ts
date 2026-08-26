@@ -2,6 +2,7 @@ import type {
   ImageFit,
   Align,
   BlendMode,
+  DropShadowEffect,
   Layer,
   Page,
   PressDocument,
@@ -50,6 +51,25 @@ export function setLayerName(doc: PressDocument, id: string, name: string): Pres
   const next = cloneDoc(doc);
   const layer = findLayer(activePage(next), id);
   if (layer) layer.name = name;
+  return next;
+}
+
+/**
+ * Set (or clear, with null) a layer's drop-shadow effect. Effects are stored as
+ * a list so future styles (glow, stroke, gradient overlay) coexist; this
+ * replaces only the drop-shadow entry.
+ */
+export function setLayerDropShadow(
+  doc: PressDocument,
+  id: string,
+  shadow: DropShadowEffect | null,
+): PressDocument {
+  const next = cloneDoc(doc);
+  const layer = findLayer(activePage(next), id);
+  if (!layer) return next;
+  const effects = (layer.effects ?? []).filter((e) => e.type !== "drop-shadow");
+  if (shadow) effects.push(shadow);
+  layer.effects = effects;
   return next;
 }
 

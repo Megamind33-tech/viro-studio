@@ -69,6 +69,26 @@ export interface Transform {
   scaleY?: number;
 }
 
+/**
+ * Non-destructive layer effects (Photoshop "layer style" family). Applied by the
+ * compositor when rendering the layer, and by the exporter, so canvas and output
+ * stay identical. Absent on v1–v4 documents; additive and forward/backward safe.
+ */
+export interface DropShadowEffect {
+  type: "drop-shadow";
+  enabled: boolean;
+  /** 0..1 float channels, matching Rgba elsewhere. */
+  color: Rgba;
+  offsetX: number;
+  offsetY: number;
+  /** Blur radius in page px. */
+  blur: number;
+  /** 0..1, multiplies the shadow colour's alpha. */
+  opacity: number;
+}
+
+export type LayerEffect = DropShadowEffect;
+
 export interface LayerBase {
   id: string;
   name: string;
@@ -78,6 +98,8 @@ export interface LayerBase {
   blend: BlendMode;
   transform: Transform;
   parentId: string | null;
+  /** Non-destructive effects rendered under/over the layer. Optional for back-compat. */
+  effects?: LayerEffect[];
 }
 
 export interface RasterLayer extends LayerBase {

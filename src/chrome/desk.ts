@@ -178,10 +178,56 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
   bindKeys();
   bindRecovery();
   bindProjects();
+  bindEffects();
 
   app.onChange(() => render());
   render();
   return el<HTMLCanvasElement>("skia");
+
+  function bindEffects(): void {
+    const defaultShadow = () => ({
+      type: "drop-shadow" as const,
+      enabled: true,
+      color: { r: 0, g: 0, b: 0, a: 1 },
+      offsetX: 6,
+      offsetY: 8,
+      blur: 12,
+      opacity: 0.45,
+    });
+    const currentShadow = () => {
+      const sel = selectedLayers(app.doc)[0];
+      const fx = sel?.effects?.find((e) => e.type === "drop-shadow");
+      return fx ?? null;
+    };
+    el<HTMLInputElement>("fx-shadow-on").addEventListener("change", () => {
+      const sel = selectedLayers(app.doc)[0];
+      if (!sel) {
+        render();
+        return;
+      }
+      const on = el<HTMLInputElement>("fx-shadow-on").checked;
+      const cur = currentShadow();
+      if (on) app.setDropShadow(sel.id, cur ? { ...cur, enabled: true } : defaultShadow());
+      else if (cur) app.setDropShadow(sel.id, { ...cur, enabled: false });
+    });
+    const commitShadow = () => {
+      const sel = selectedLayers(app.doc)[0];
+      if (!sel) return;
+      const cur = currentShadow() ?? defaultShadow();
+      app.setDropShadow(sel.id, {
+        ...cur,
+        enabled: true,
+        offsetX: parseNum(el<HTMLInputElement>("fx-shadow-x").value) ?? cur.offsetX,
+        offsetY: parseNum(el<HTMLInputElement>("fx-shadow-y").value) ?? cur.offsetY,
+        blur: Math.max(0, parseNum(el<HTMLInputElement>("fx-shadow-blur").value) ?? cur.blur),
+        opacity: Math.min(1, Math.max(0, parseNum(el<HTMLInputElement>("fx-shadow-opacity").value) ?? cur.opacity)),
+        color: hexToRgba(el<HTMLInputElement>("fx-shadow-color").value),
+      });
+    };
+    for (const id of ["fx-shadow-x", "fx-shadow-y", "fx-shadow-blur", "fx-shadow-opacity", "fx-shadow-color"]) {
+      el(id).addEventListener("change", commitShadow);
+    }
+  }
 
   function bindRecovery(): void {
     const bar = document.getElementById("recover-bar");
@@ -409,6 +455,9 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
         return;
       case "win-transform":
         toggle("g-transform");
+        return;
+      case "win-effects":
+        toggle("g-effects");
         return;
       case "win-layers":
         toggle("g-layers");
@@ -1476,6 +1525,20 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
       fillIfIdle("stroke-w", sel.stroke ? fmt(sel.stroke.width, 1) : "0");
       el("stroke-well").style.background = sel.stroke ? rgbaCss(sel.stroke.color) : "transparent";
     }
+
+    // Effects — drop shadow of the selected layer.
+    const shadow = sel?.effects?.find((e) => e.type === "drop-shadow") ?? null;
+    const shadowOn = !!shadow && shadow.enabled;
+    el<HTMLInputElement>("fx-shadow-on").checked = shadowOn;
+    fillIfIdle("fx-shadow-x", shadow ? fmt(shadow.offsetX, 0) : "6");
+    fillIfIdle("fx-shadow-y", shadow ? fmt(shadow.offsetY, 0) : "8");
+    fillIfIdle("fx-shadow-blur", shadow ? fmt(shadow.blur, 0) : "12");
+    fillIfIdle("fx-shadow-opacity", shadow ? fmt(shadow.opacity, 2) : "0.45");
+    if (shadow) el<HTMLInputElement>("fx-shadow-color").value = rgbaToHex(shadow.color);
+    setDisabled(["fx-shadow-on"], !sel);
+    setDisabled(["fx-shadow-x", "fx-shadow-y", "fx-shadow-blur", "fx-shadow-opacity", "fx-shadow-color"], !shadowOn);
+    const fxEmpty = document.getElementById("fx-empty");
+    if (fxEmpty) fxEmpty.hidden = !!sel;
 
     el("fg-swatch").style.background = rgbaCss(state.fg);
     el("bg-swatch").style.background = rgbaCss(state.bg);

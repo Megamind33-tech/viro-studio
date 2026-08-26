@@ -29,6 +29,8 @@ const SCRIPTS = [
   "recovery.spec.mjs",
   // local-first platform (ADR 0004) - projects library + real thumbnails
   "projects.spec.mjs",
+  // layer effects - drop shadow actually renders (pixel diff)
+  "effects.spec.mjs",
 ];
 
 function run(script) {

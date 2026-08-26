@@ -114,6 +114,7 @@
             <button type="button" data-cmd="win-color"><span class="check" data-check="g-color">✓</span>Color</button>
             <button type="button" data-cmd="win-type"><span class="check" data-check="g-type">✓</span>Character / Paragraph</button>
             <button type="button" data-cmd="win-transform"><span class="check" data-check="g-transform">✓</span>Transform</button>
+            <button type="button" data-cmd="win-effects"><span class="check" data-check="g-effects">✓</span>Effects</button>
             <button type="button" data-cmd="win-layers"><span class="check" data-check="g-layers">✓</span>Layers</button>
             <button type="button" data-cmd="win-pages"><span class="check" data-check="g-pages">✓</span>Pages</button>
             <button type="button" data-cmd="win-nav"><span class="check" data-check="g-nav">✓</span>Navigator / History</button>
@@ -326,6 +327,28 @@
               <span class="grow"></span>
               <label class="check"><input type="checkbox" id="tr-constrain" checked />Constrain</label>
             </div>
+          </div>
+        </section>
+
+        <section class="group" id="g-effects">
+          <div class="tabs">
+            <button type="button" class="is-on">Effects</button>
+          </div>
+          <div class="pane" id="fx-pane">
+            <div class="row">
+              <label class="check"><input type="checkbox" id="fx-shadow-on" />Drop Shadow</label>
+              <span class="grow"></span>
+              <input type="color" id="fx-shadow-color" value="#000000" aria-label="Shadow color" />
+            </div>
+            <div class="row fill">
+              <label class="field"><span>X</span><input class="num" id="fx-shadow-x" inputmode="numeric" /></label>
+              <label class="field"><span>Y</span><input class="num" id="fx-shadow-y" inputmode="numeric" /></label>
+            </div>
+            <div class="row fill">
+              <label class="field"><span>Blur</span><input class="num" id="fx-shadow-blur" inputmode="numeric" /></label>
+              <label class="field"><span>Opacity</span><input class="num" id="fx-shadow-opacity" inputmode="decimal" /></label>
+            </div>
+            <p class="fx-empty hint" id="fx-empty" hidden>Select a layer to add effects.</p>
           </div>
         </section>
 

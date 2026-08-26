@@ -1,5 +1,5 @@
 import { migrateDocument } from "./document/migrate";
-import type { BlendMode, ImageFit, PressDocument, ResampleAlgo, Rgba, ToolId } from "./document/types";
+import type { BlendMode, DropShadowEffect, ImageFit, PressDocument, ResampleAlgo, Rgba, ToolId } from "./document/types";
 import {
   addImageFrame,
   addTypeFrame,
@@ -37,6 +37,7 @@ import {
   setImageCrop,
   setImageFit,
   setLayerBlend,
+  setLayerDropShadow,
   setLayerLocked,
   setLayerOpacity,
   setLayerTransform,
@@ -1215,6 +1216,24 @@ export class PressApp {
 
   setLocked(id: string, v: boolean): void {
     this.run({ type: "layer.locked", params: { layerId: id, locked: v } });
+  }
+
+  /** Set or clear (null) the drop-shadow effect on a layer. One undo step. */
+  setDropShadow(id: string, shadow: DropShadowEffect | null): void {
+    this.commit("Drop shadow", setLayerDropShadow(this.doc, id, shadow));
+  }
+
+  /** A sensible default drop shadow, used when the effect is first enabled. */
+  static defaultDropShadow(): DropShadowEffect {
+    return {
+      type: "drop-shadow",
+      enabled: true,
+      color: { r: 0, g: 0, b: 0, a: 1 },
+      offsetX: 6,
+      offsetY: 8,
+      blur: 12,
+      opacity: 0.45,
+    };
   }
 
   setFg(r: number, g: number, b: number): void {

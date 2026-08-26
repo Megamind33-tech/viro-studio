@@ -1,6 +1,7 @@
 import type { Canvas, CanvasKit, Font, Image as SkImage, Paint, Surface, Typeface } from "canvaskit-wasm";
 import type {
   AdjustmentLayer,
+  DropShadowEffect,
   Layer,
   Page,
   PressDocument,
@@ -17,6 +18,14 @@ import { destWindow, sourceWindow } from "../document/image-fit";
 import { activePage } from "../document/factory";
 import { composeFrame, drawTypeFrame, nearestCaretOffset, type CaretStop, type FacePack } from "./type";
 import type { FontRegistry } from "./font-registry";
+
+/** The layer's enabled drop shadow, if any. */
+function dropShadowOf(layer: Layer): DropShadowEffect | null {
+  const fx = layer.effects;
+  if (!fx) return null;
+  for (const e of fx) if (e.type === "drop-shadow" && e.enabled) return e;
+  return null;
+}
 
 /** Ruler band thickness in CSS px. Chrome imports this for its own hit maths. */
 export const RULER = 18;
@@ -1523,6 +1532,30 @@ export class Compositor {
       }
       sk.restore();
       return;
+    }
+    this.drawLayerWithEffects(ck, sk, doc, layer);
+  }
+
+  /**
+   * Draw a leaf layer, applying any enabled non-destructive effects. A drop
+   * shadow is a Photoshop-style pre-pass: the layer is rendered once through a
+   * shadow-only image filter (so the shadow takes the layer's exact silhouette),
+   * then again normally on top. Absent effects cost nothing.
+   */
+  private drawLayerWithEffects(ck: CanvasKit, sk: Canvas, doc: PressDocument, layer: Layer): void {
+    const shadow = dropShadowOf(layer);
+    if (shadow && shadow.blur >= 0) {
+      const paint = new ck.Paint();
+      const a = Math.min(1, Math.max(0, shadow.color.a * shadow.opacity));
+      const c = ck.Color4f(shadow.color.r, shadow.color.g, shadow.color.b, a);
+      const sigma = Math.max(0, shadow.blur) * 0.5;
+      const filter = ck.ImageFilter.MakeDropShadowOnly(shadow.offsetX, shadow.offsetY, sigma, sigma, c, null);
+      paint.setImageFilter(filter);
+      sk.saveLayer(paint);
+      this.drawLayer(ck, sk, doc, layer);
+      sk.restore();
+      filter.delete();
+      paint.delete();
     }
     this.drawLayer(ck, sk, doc, layer);
   }
