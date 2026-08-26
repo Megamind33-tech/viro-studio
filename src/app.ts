@@ -1151,7 +1151,7 @@ export class PressApp {
     if (lower.endsWith(".vdj") || lower.endsWith(".json")) {
       const text = new TextDecoder().decode(bytes);
       const json = JSON.parse(text);
-      if (typeof json.version === "number" && json.version >= 1 && json.version <= 3 && json.pages && json.stories) {
+      if (typeof json.version === "number" && json.version >= 1 && json.version <= 4 && json.pages && json.stories) {
         // A v1 file holds ABSOLUTE child coordinates. v2 composes group
         // transforms, so it MUST be rebased on the way in or every grouped
         // document would open shifted by its own group origin.
