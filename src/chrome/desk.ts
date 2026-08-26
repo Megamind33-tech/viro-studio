@@ -9,6 +9,7 @@ import {
   selectedLayers,
 } from "../document/factory";
 import { setLayerLocked, setLayerVisible } from "../document/ops";
+import { listUserAssets, type UserAsset } from "../library/store";
 import type { Preset, PresetCategory, PresetMargin, PresetUnit } from "../document/presets";
 import {
   DEFAULT_PRESET_ID,
@@ -153,6 +154,7 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
     fg: { r: 0.12, g: 0.12, b: 0.12, a: 1 },
     bg: { r: 1, g: 1, b: 1, a: 1 },
   };
+  let listedAssets: UserAsset[] = [];
 
   const blend = el<HTMLSelectElement>("blend");
   blend.innerHTML = (Object.keys(BLEND_LABEL) as BlendMode[])
@@ -221,7 +223,13 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
         void openDocument();
         return;
       case "place":
-        el<HTMLInputElement>("file-place").click();
+        void placeFiles();
+        return;
+      case "import-fonts":
+        el<HTMLInputElement>("file-fonts").click();
+        return;
+      case "import-assets":
+        el<HTMLInputElement>("file-assets").click();
         return;
       case "export-png":
         app.exportPng();
@@ -326,6 +334,9 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
       case "win-nav":
         toggle("g-nav");
         return;
+      case "win-library":
+        toggle("g-library");
+        return;
       case "win-anchor":
         toggle("g-anchor");
         return;
@@ -357,6 +368,26 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
       await app.openBytes(name, opened.bytes);
     } catch (err) {
       app.status = `Open failed — ${err instanceof Error ? err.message : String(err)}`;
+      paint();
+    }
+  }
+
+  async function placeFiles(): Promise<void> {
+    const bridge = window.viroPress;
+    if (!bridge) {
+      el<HTMLInputElement>("file-place").click();
+      return;
+    }
+    try {
+      const opened = await bridge.openFile([
+        { name: "Images", extensions: ["png", "jpg", "jpeg", "webp", "gif", "bmp"] },
+        { name: "Fonts", extensions: ["ttf", "otf", "woff"] },
+      ]);
+      if (!opened) return;
+      const name = opened.path.split(/[\\/]/).pop() || opened.path;
+      await app.openBytes(name, opened.bytes);
+    } catch (err) {
+      app.status = `Place failed — ${err instanceof Error ? err.message : String(err)}`;
       paint();
     }
   }
@@ -503,9 +534,18 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
       ["opt-size", "size"],
       ["opt-lead", "leading"],
       ["opt-track", "tracking"],
+      ["ch-size", "size"],
+      ["ch-lead", "leading"],
+      ["ch-track", "tracking"],
     ] as const) {
       el(id).addEventListener("change", () => applyType({ [key]: parseNum(el<HTMLInputElement>(id).value) ?? undefined }));
     }
+    el<HTMLSelectElement>("opt-font").addEventListener("change", () => {
+      void app.setFont(el<HTMLSelectElement>("opt-font").value);
+    });
+    el<HTMLSelectElement>("ch-font").addEventListener("change", () => {
+      void app.setFont(el<HTMLSelectElement>("ch-font").value);
+    });
     el<HTMLInputElement>("opt-feather").addEventListener("change", (e) => {
       state.feather = parseNum((e.target as HTMLInputElement).value) ?? 0;
     });
@@ -629,6 +669,30 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
       if (al?.dataset.align) {
         app.setAlign(al.dataset.align as Align);
       }
+      const fontBtn = t.closest<HTMLElement>("[data-font]");
+      if (fontBtn?.dataset.font) {
+        void app.setFont(fontBtn.dataset.font);
+      }
+      const assetBtn = t.closest<HTMLElement>("[data-asset]");
+      if (assetBtn?.dataset.asset) {
+        const asset = listedAssets.find((a) => a.id === assetBtn.dataset.asset);
+        if (asset) {
+          app.run({
+            type: "image.place",
+            params: {
+              asset: {
+                name: asset.name,
+                mime: asset.mime,
+                dataUrl: asset.dataUrl,
+                width: asset.width,
+                height: asset.height,
+              },
+              x: 48,
+              y: 48,
+            },
+          });
+        }
+      }
     });
 
     el("layer-list").addEventListener("click", (e) => {
@@ -714,9 +778,19 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
       el<HTMLInputElement>("file-open").value = "";
     });
     el<HTMLInputElement>("file-place").addEventListener("change", () => {
-      const f = el<HTMLInputElement>("file-place").files?.[0];
-      if (f) void app.placeImage(f);
+      const files = [...(el<HTMLInputElement>("file-place").files ?? [])];
+      if (files.length) void app.ingestFiles(files);
       el<HTMLInputElement>("file-place").value = "";
+    });
+    el<HTMLInputElement>("file-fonts").addEventListener("change", () => {
+      const files = [...(el<HTMLInputElement>("file-fonts").files ?? [])];
+      if (files.length) void app.ingestFiles(files);
+      el<HTMLInputElement>("file-fonts").value = "";
+    });
+    el<HTMLInputElement>("file-assets").addEventListener("change", () => {
+      const files = [...(el<HTMLInputElement>("file-assets").files ?? [])];
+      if (files.length) void app.ingestFiles(files);
+      el<HTMLInputElement>("file-assets").value = "";
     });
     bindNewDialog();
     document.querySelectorAll("[data-dlg]").forEach((b) => {
@@ -1319,6 +1393,9 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
     renderPages();
     renderHistory();
     renderNav(page, z);
+    fillFontSelects(story?.character.fontId);
+    renderFontList(story?.character.fontId);
+    void renderLibrary();
 
     document.querySelectorAll<HTMLElement>("[data-ch]").forEach((b) => {
       b.classList.toggle("is-on", b.dataset.ch === state.channel);
@@ -1359,11 +1436,57 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
       "g-layers": !el("g-layers").hidden,
       "g-pages": !el("g-pages").hidden,
       "g-nav": !el("g-nav").hidden,
+      "g-library": !el("g-library").hidden,
       "g-anchor": !el("g-anchor").hidden,
     };
     document.querySelectorAll<HTMLElement>("[data-check]").forEach((n) => {
       n.textContent = checks[n.dataset.check!] ? "✓" : "";
     });
+  }
+
+  function fillFontSelects(fontId?: string): void {
+    const faces = app.fonts.list();
+    const html = faces
+      .map((f) => `<option value="${esc(f.id)}">${esc(f.name)}</option>`)
+      .join("");
+    for (const id of ["opt-font", "ch-font"] as const) {
+      const sel = el<HTMLSelectElement>(id);
+      if (sel.innerHTML !== html) sel.innerHTML = html || `<option value="">No fonts loaded</option>`;
+      const pick = fontId && faces.some((f) => f.id === fontId) ? fontId : app.fonts.defaultId();
+      if (pick && sel.value !== pick) sel.value = pick;
+    }
+  }
+
+  function renderFontList(fontId?: string): void {
+    const host = document.getElementById("lib-fonts");
+    if (!host) return;
+    const faces = app.fonts.list();
+    host.innerHTML = faces.length
+      ? faces
+          .map(
+            (f) =>
+              `<button type="button" class="lib-font${f.id === fontId ? " is-on" : ""}" data-font="${esc(f.id)}">${esc(f.name)}<span>${esc(f.source)}</span></button>`,
+          )
+          .join("")
+      : `<p class="empty">No faces yet — import a TTF or OTF.</p>`;
+  }
+
+  async function renderLibrary(): Promise<void> {
+    const host = document.getElementById("lib-assets");
+    if (!host) return;
+    try {
+      listedAssets = await listUserAssets();
+    } catch {
+      listedAssets = [];
+    }
+    host.innerHTML = listedAssets.length
+      ? listedAssets
+          .map(
+            (a) =>
+              `<button type="button" class="lib-card" data-asset="${esc(a.id)}" title="${esc(a.name)}"><img src="${esc(a.dataUrl)}" alt=""><span>${esc(a.name)}</span></button>`,
+          )
+          .join("")
+      : `<p class="empty">No imported pictures yet.</p>`;
   }
 
   function renderLayers(page: ReturnType<typeof activePage>): void {
@@ -1386,7 +1509,7 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
           ? `<span class="thumb"><img src="${url}" alt="" draggable="false" /></span>`
           : `<span class="thumb is-empty">${layerKindMark(layer.kind)}</span>`;
         rows.push(
-          `<div class="ly${on ? " is-on" : ""}${depth ? " child" : ""}${layer.kind === "group" ? " group-row" : ""}" data-id="${layer.id}" style="padding-left:${4 + depth * 10}px">
+          `<div class="ly${on ? " is-on" : ""}${depth ? " child" : ""}${layer.kind === "group" ? " group-row" : ""}" data-id="${layer.id}" style="--depth:${depth}">
             <button type="button" class="eye${layer.visible ? " is-on" : ""}" data-act="vis" title="Visibility" aria-label="Visibility"></button>
             <button type="button" class="lk" data-act="lock" title="Lock">${layer.locked ? "L" : ""}</button>
             ${cell}
@@ -1597,7 +1720,7 @@ const TRANSFORM_FIELDS = [
   "tr-x", "tr-y", "tr-w", "tr-h", "tr-r",
 ] as const;
 const STORY_FIELDS = [
-  "opt-size", "opt-lead", "opt-track",
+  "opt-font", "opt-size", "opt-lead", "opt-track",
   "ch-font", "ch-size", "ch-lead", "ch-track",
   "para-first", "para-after",
 ] as const;

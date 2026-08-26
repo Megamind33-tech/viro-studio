@@ -21,6 +21,8 @@
             <button type="button" data-cmd="new">New…<span class="kbd">Ctrl+N</span></button>
             <button type="button" data-cmd="open">Open…</button>
             <button type="button" data-cmd="place">Place…<span class="kbd">Shift+Ctrl+P</span></button>
+            <button type="button" data-cmd="import-fonts">Import Fonts…</button>
+            <button type="button" data-cmd="import-assets">Import Assets…</button>
             <div class="sep"></div>
             <button type="button" data-cmd="export-png">Export PNG…</button>
             <button type="button" data-cmd="export-pdf">Export PDF…</button>
@@ -71,6 +73,10 @@
             <button type="button" data-cmd="type-center">Align Center</button>
             <button type="button" data-cmd="type-right">Align Right</button>
             <button type="button" data-cmd="type-justify">Justify</button>
+            <div class="sep"></div>
+            <button type="button" data-cmd="font-upload">Upload Font…</button>
+            <div class="sep"></div>
+            <button type="button" data-cmd="import-fonts">Import Fonts…</button>
           </div>
         </div>
         <div class="menu">
@@ -109,6 +115,7 @@
             <button type="button" data-cmd="win-layers"><span class="check" data-check="g-layers">✓</span>Layers</button>
             <button type="button" data-cmd="win-pages"><span class="check" data-check="g-pages">✓</span>Pages</button>
             <button type="button" data-cmd="win-nav"><span class="check" data-check="g-nav">✓</span>Navigator / History</button>
+            <button type="button" data-cmd="win-library"><span class="check" data-check="g-library"></span>Library</button>
             <div class="sep"></div>
             <button type="button" data-cmd="win-anchor"><span class="check" data-check="g-anchor"></span>Anchor</button>
           </div>
@@ -137,10 +144,9 @@
         </div>
         <div class="opt-strip" data-for="type" hidden>
           <label class="field"><span>Font</span>
-            <select class="ctrl" id="opt-font">
-              <option value="noto-sans">Noto Sans</option>
-            </select>
+            <select class="ctrl" id="opt-font"></select>
           </label>
+          <button type="button" class="btn" id="opt-font-upload">Upload…</button>
           <label class="field"><span>Size</span><input class="num w3" id="opt-size" inputmode="decimal" /></label>
           <label class="field"><span>Leading</span><input class="num w3" id="opt-lead" inputmode="decimal" /></label>
           <label class="field"><span>Tracking</span><input class="num w3" id="opt-track" inputmode="decimal" /></label>
@@ -268,9 +274,8 @@
           </div>
           <div class="pane" data-pane="character" hidden>
             <div class="row">
-              <select class="ctrl grow" id="ch-font">
-                <option value="noto-sans">Noto Sans</option>
-              </select>
+              <select class="ctrl grow" id="ch-font"></select>
+              <button type="button" class="lock-btn" data-cmd="import-fonts" title="Import fonts" aria-label="Import fonts">+</button>
             </div>
             <div class="row fill">
               <label class="field"><span>Size</span><input class="num w3" id="ch-size" /></label>
@@ -280,6 +285,9 @@
             <div class="row">
               <span class="lbl">Color</span>
               <span class="well" id="ch-well"></span>
+            </div>
+            <div class="row">
+              <textarea class="ctrl grow story-edit" id="ch-story" rows="4" placeholder="Type tool: click the page, then type. Or edit here."></textarea>
             </div>
           </div>
           <div class="pane" data-pane="paragraph" hidden>
@@ -381,6 +389,28 @@
           </div>
         </section>
 
+        <section class="group" id="g-library">
+          <div class="tabs" data-tabs="library">
+            <button type="button" class="is-on" data-tab="assets">Assets</button>
+            <button type="button" data-tab="fonts">Fonts</button>
+          </div>
+          <div class="pane" data-pane="assets">
+            <div class="row">
+              <button type="button" class="ctrl" data-cmd="place">Place image…</button>
+              <button type="button" class="ctrl" data-cmd="import-assets">Import…</button>
+            </div>
+            <p class="hint">Drop a PNG, JPEG, WebP, GIF or BMP on the pasteboard, or paste from the clipboard.</p>
+            <div class="lib-grid" id="lib-assets"></div>
+          </div>
+          <div class="pane" data-pane="fonts" hidden>
+            <div class="row">
+              <button type="button" class="ctrl" data-cmd="import-fonts">Import fonts…</button>
+            </div>
+            <p class="hint">Bundled, imported, and system faces. Pick a type frame, then a face.</p>
+            <div class="lib-fonts" id="lib-fonts"></div>
+          </div>
+        </section>
+
         <!--
           Anchor is a docked studio (Window > Anchor), never menu/toolbox/options chrome.
           See DESK-CHROME.md. Hidden until the operator opens it.
@@ -422,8 +452,10 @@
       </footer>
     </div>
 
-    <input type="file" id="file-place" accept="image/*" hidden />
-    <input type="file" id="file-open" accept=".psd,.vdj,.json,.png,.jpg,.jpeg,.webp,.press.json" hidden />
+    <input type="file" id="file-place" accept="image/png,image/jpeg,image/webp,image/gif,image/bmp,.png,.jpg,.jpeg,.webp,.gif,.bmp" multiple hidden />
+    <input type="file" id="file-font" accept=".ttf,.otf,.woff,.woff2,.ttc,font/ttf,font/otf" multiple hidden />
+    <input type="file" id="file-open" accept=".psd,.vdj,.json,.png,.jpg,.jpeg,.webp,.gif,.bmp,.press.json,.ttf,.otf" hidden />
+    <textarea id="type-input" class="type-input" tabindex="-1" autocomplete="off" spellcheck="false" aria-label="Type"></textarea>
 
     <div class="dialog-back" id="dlg-image" hidden>
       <div class="dialog" role="dialog" aria-labelledby="dlg-image-title">

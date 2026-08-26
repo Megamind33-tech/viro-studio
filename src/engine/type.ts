@@ -12,6 +12,7 @@
  */
 import type { Canvas, CanvasKit, Path } from "canvaskit-wasm";
 import type { Story, TypeFrameLayer } from "../document/types";
+import { graphemeBoundaries } from "../document/text-model";
 
 type Hb = typeof import("harfbuzzjs");
 type HbFont = InstanceType<Hb["Font"]>;
@@ -193,6 +194,15 @@ function outlineOf(face: FacePack, gid: number): string {
  * Composition
  * ------------------------------------------------------------------ */
 
+export interface CaretStop {
+  /** UTF-16 offset into `story.text`. */
+  offset: number;
+  x: number;
+  /** Baseline y, frame-local px. */
+  y: number;
+  height: number;
+}
+
 export interface ComposeResult {
   glyphs: ShapedGlyph[];
   /** True when a line had to be dropped because it fell past the frame's foot. */
@@ -202,6 +212,23 @@ export interface ComposeResult {
   heightPx: number;
   /** px from the frame top to the first baseline. The frame's optical top edge. */
   firstBaselinePx: number;
+  caretStops: CaretStop[];
+}
+
+export function nearestCaretOffset(stops: CaretStop[], x: number, y: number): number {
+  if (!stops.length) return 0;
+  let best = stops[0]!;
+  let bestD = Infinity;
+  for (const stop of stops) {
+    const dy = y - (stop.y - stop.height * 0.8);
+    const linePenalty = dy < -2 || dy > stop.height ? Math.abs(dy) * 6 : 0;
+    const d = Math.abs(x - stop.x) + linePenalty;
+    if (d < bestD) {
+      bestD = d;
+      best = stop;
+    }
+  }
+  return best.offset;
 }
 
 /** Everything one story contributes to the shaper, resolved once per compose. */
@@ -305,6 +332,22 @@ function breakParagraph(
   return lines;
 }
 
+function linePen(face: FacePack, text: string, x0: number, last: boolean, m: Metrics, measure: number, align: Story["paragraph"]["align"]): { pen: number; gap: number; lineW: number } {
+  const run = shapeRun(face, text, m.key);
+  const lineW = run.width * m.scale + m.track * run.glyphs.length;
+  const room = Math.max(0, measure - x0);
+  const slack = room - lineW;
+  let pen = x0;
+  let gap = 0;
+  if (align === "right") pen = x0 + Math.max(0, slack);
+  else if (align === "center") pen = x0 + Math.max(0, slack / 2);
+  else if (align === "justify" && !last && slack > 0) {
+    const gaps = run.glyphs.reduce((n, g) => n + (g.gid === face.spaceGid ? 1 : 0), 0);
+    if (gaps > 0) gap = slack / gaps;
+  }
+  return { pen, gap, lineW };
+}
+
 export function composeFrame(face: FacePack, story: Story, frameW: number, frameH: number): ComposeResult {
   const m = metricsFor(face, story);
   const measure = Math.max(1, frameW);
@@ -313,6 +356,7 @@ export function composeFrame(face: FacePack, story: Story, frameW: number, frame
   const align = story.paragraph.align;
 
   const glyphs: ShapedGlyph[] = [];
+  const caretStops: CaretStop[] = [];
   let y = m.ascent;
   let overflow = false;
   let lineCount = 0;
@@ -325,18 +369,8 @@ export function composeFrame(face: FacePack, story: Story, frameW: number, frame
       return;
     }
     const run = shapeRun(face, text, m.key);
-    const lineW = run.width * m.scale + m.track * run.glyphs.length;
-    const room = Math.max(0, measure - x0);
-    const slack = room - lineW;
-
-    let pen = x0;
-    let gap = 0;
-    if (align === "right") pen = x0 + Math.max(0, slack);
-    else if (align === "center") pen = x0 + Math.max(0, slack / 2);
-    else if (align === "justify" && !last && slack > 0) {
-      const gaps = run.glyphs.reduce((n, g) => n + (g.gid === face.spaceGid ? 1 : 0), 0);
-      if (gaps > 0) gap = slack / gaps;
-    }
+    const { pen: startPen, gap } = linePen(face, text, x0, last, m, measure, align);
+    let pen = startPen;
 
     for (const g of run.glyphs) {
       const path = outlineOf(face, g.gid);
@@ -357,15 +391,47 @@ export function composeFrame(face: FacePack, story: Story, frameW: number, frame
     lineCount += 1;
   };
 
-  const paras = story.text.replace(/\r\n/g, "\n").split("\n");
+  const text = story.text.replace(/\r\n/g, "\n");
+  const paras = text.split("\n");
+  let storyAt = 0;
+
+  const emitStops = (line: string, lineStart: number, x0: number, last: boolean, baseline: number) => {
+    const { pen: startPen } = linePen(face, line, x0, last, m, measure, align);
+    const bounds = graphemeBoundaries(line);
+    for (const local of bounds) {
+      const prefix = line.slice(0, local);
+      caretStops.push({
+        offset: lineStart + local,
+        x: startPen + (prefix ? advanceOf(face, prefix, m) : 0),
+        y: baseline,
+        height: m.leading,
+      });
+    }
+  };
+
   for (let p = 0; p < paras.length; p++) {
-    const lines = breakParagraph(face, paras[p]!, measure - indent, measure, m);
+    const para = paras[p]!;
+    const paraStart = storyAt;
+    const lines = breakParagraph(face, para, measure - indent, measure, m);
+    let searchFrom = 0;
     for (let i = 0; i < lines.length; i++) {
-      setLine(lines[i]!, i === 0 ? indent : 0, i === lines.length - 1);
+      const line = lines[i]!;
+      const x0 = i === 0 ? indent : 0;
+      const last = i === lines.length - 1;
+      let lineStart = line.length ? para.indexOf(line, searchFrom) : searchFrom;
+      if (lineStart < 0) lineStart = searchFrom;
+      emitStops(line, paraStart + lineStart, x0, last, y);
+      setLine(line, x0, last);
+      searchFrom = lineStart + line.length;
       if (overflow) break;
     }
     if (overflow) break;
+    storyAt = paraStart + para.length + 1;
     if (p < paras.length - 1) y += spaceAfter;
+  }
+
+  if (!caretStops.length) {
+    caretStops.push({ offset: 0, x: indent, y: m.ascent, height: m.leading });
   }
 
   return {
@@ -374,6 +440,7 @@ export function composeFrame(face: FacePack, story: Story, frameW: number, frame
     lineCount,
     heightPx: lineCount ? lastBaseline + m.descent : 0,
     firstBaselinePx: m.ascent,
+    caretStops,
   };
 }
 

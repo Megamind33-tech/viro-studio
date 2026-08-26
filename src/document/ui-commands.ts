@@ -102,6 +102,7 @@ function define<P>(spec: {
   validate: (raw: unknown, doc: PressDocument) => P;
   apply: (p: P, doc: PressDocument) => PressDocument;
   summary?: (p: P, before: PressDocument, after: PressDocument) => string;
+  coalesceKey?: (p: P) => string | null;
 }): CommandDef<P> {
   return {
     type: spec.type,
@@ -110,6 +111,7 @@ function define<P>(spec: {
     affects: () => [],
     apply: (p, doc) => ({ doc: spec.apply(p, doc) }),
     invertAfter: (p, before, after) => deriveInverse(spec.type, before, after),
+    coalesceKey: spec.coalesceKey,
   };
 }
 
@@ -333,13 +335,18 @@ const DEFS: CommandDef<never>[] = [
     label: "Type frame",
     validate: (raw) => {
       const o = v.obj(raw, "type.addFrame");
+      const w = v.num(o, "w", "type.addFrame", SIZE);
+      const h = v.num(o, "h", "type.addFrame", SIZE);
       return {
         fontId: v.str(o, "fontId", "type.addFrame"),
         x: reqNum(o, "x", "type.addFrame"),
         y: reqNum(o, "y", "type.addFrame"),
+        w,
+        h,
+        text: typeof o.text === "string" ? o.text : undefined,
       };
     },
-    apply: (p, doc) => addTypeFrame(doc, p.fontId, p.x, p.y),
+    apply: (p, doc) => addTypeFrame(doc, p.fontId, p.x, p.y, { w: p.w, h: p.h, text: p.text }),
   }),
   define({
     type: "image.place",
@@ -373,9 +380,11 @@ const DEFS: CommandDef<never>[] = [
       const layerId = v.str(o, "layerId", "story.setText");
       v.requireLayer(doc, layerId, "story.setText", { kind: "type-frame" });
       if (typeof o.text !== "string") throw new CommandError(`story.setText: "text" must be a string`);
-      return { layerId, text: o.text };
+      const session = o.session === undefined ? undefined : v.str(o, "session", "story.setText");
+      return { layerId, text: o.text, session };
     },
     apply: (p, doc) => setStoryText(doc, p.layerId, p.text),
+    coalesceKey: (p) => (p.session ? `story.setText:${p.layerId}:${p.session}` : null),
   }),
   define({
     type: "story.replaceRange",
@@ -462,7 +471,7 @@ const DEFS: CommandDef<never>[] = [
       const o = v.obj(raw, "type.character");
       const layerId = v.str(o, "layerId", "type.character");
       v.requireLayer(doc, layerId, "type.character", { kind: "type-frame" });
-      const patch: { size?: number; leading?: number; tracking?: number; fill?: Rgba } = {};
+      const patch: { size?: number; leading?: number; tracking?: number; fill?: Rgba; fontId?: string } = {};
       const size = v.num(o, "size", "type.character", SIZE);
       const leading = v.num(o, "leading", "type.character", SIZE);
       const tracking = v.num(o, "tracking", "type.character", { min: -1000, max: 1000 });
@@ -470,8 +479,9 @@ const DEFS: CommandDef<never>[] = [
       if (leading !== undefined) patch.leading = leading;
       if (tracking !== undefined) patch.tracking = tracking;
       if (o.fill !== undefined) patch.fill = rgba(o.fill, "type.character", "fill");
+      if (o.fontId !== undefined) patch.fontId = v.str(o, "fontId", "type.character");
       if (!Object.keys(patch).length) {
-        throw new CommandError(`type.character: give at least one of "size", "leading", "tracking", "fill"`);
+        throw new CommandError(`type.character: give at least one of "size", "leading", "tracking", "fill", "fontId"`);
       }
       return { layerId, patch };
     },

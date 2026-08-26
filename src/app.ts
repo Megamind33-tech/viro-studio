@@ -1,5 +1,5 @@
 import { migrateDocument } from "./document/migrate";
-import type { BlendMode, ImageFit, PressDocument, ResampleAlgo, ToolId } from "./document/types";
+import type { BlendMode, ImageFit, PressDocument, ResampleAlgo, Rgba, ToolId } from "./document/types";
 import {
   addImageFrame,
   addTypeFrame,
@@ -7,6 +7,7 @@ import {
   addVectorLine,
   addVectorRect,
   applyImageSize,
+  activePage,
   cloneDoc,
   hitTest,
   selectedLayers,
@@ -54,10 +55,15 @@ import { loadCanvasKit } from "./engine/canvaskit";
 import { Compositor, type Engines, type HandleId } from "./engine/compositor";
 import { colourStackLabel, loadLcms, rgb8ToLab, type Lcms } from "./engine/lcms";
 import { cutoutAvailable, cutoutDataUrl } from "./engine/cutout";
-import { loadFace, type FacePack } from "./engine/type";
+import { nearestCaretOffset, type FacePack } from "./engine/type";
+import { fontRegistry, type FontRegistry } from "./engine/font-registry";
+import { makeFallbackFace } from "./engine/latin-fallback";
+import { mimeForImageFile, sniffBytes } from "./engine/sniff";
 import type { PdfExportReport } from "./export/pdf";
 import { documentFromPsd } from "./import/psd";
 import { documentFromVdj } from "./import/vdj";
+import { pageToLocal } from "./document/transform";
+import { putUserAsset } from "./library/store";
 
 /** Smallest edge a layer may be scaled to, in page px. */
 const MIN_SIZE = 4;
@@ -88,7 +94,14 @@ export class PressApp {
   compositor: Compositor | null = null;
   engines: Engines | null = null;
   lcms: Lcms | null = null;
+  fonts: FontRegistry = fontRegistry();
   face: FacePack | null = null;
+  /**
+   * Live type-edit. The hidden textarea is the IME/keyboard surface; the
+   * compositor paints the caret from the same offsets.
+   */
+  textSession: { layerId: string; session: string } | null = null;
+  private editor: HTMLTextAreaElement | null = null;
   labSample: { L: number; a: number; b: number } | null = null;
   ckSource = "";
   status = "Booting engines…";
@@ -105,7 +118,7 @@ export class PressApp {
   /** What the last PDF export actually emitted — vector counts and any raster fallbacks. */
   lastPdfReport: PdfExportReport | null = null;
   drag: {
-    mode: "move" | "marquee" | "pan" | "rect" | "ellipse" | "line" | "crop" | "resize";
+    mode: "move" | "marquee" | "pan" | "rect" | "ellipse" | "line" | "crop" | "resize" | "type";
     x: number;
     y: number;
     lx: number;
@@ -197,10 +210,30 @@ export class PressApp {
     const { ck, source } = await loadCanvasKit();
     this.ckSource = source;
 
-    this.status = "Loading HarfBuzz…";
+    this.status = "Loading fonts…";
     this.emit();
-    const fontBytes = await (await fetch("/fonts/NotoSans-Regular.ttf")).arrayBuffer();
-    this.face = await loadFace("noto-sans", "Noto Sans", fontBytes);
+    await this.fonts.loadBundled();
+    await this.fonts.loadUserFonts();
+    if (window.viroPress?.listFonts) {
+      try {
+        this.fonts.registerSystem(await window.viroPress.listFonts());
+      } catch (err) {
+        console.warn("[fonts] system list failed", err);
+      }
+    }
+    if (!this.fonts.resolve(undefined)) {
+      const fallback = await makeFallbackFace();
+      this.fonts.add({
+        id: fallback.id,
+        family: "Viro Fallback",
+        style: "Regular",
+        name: "Viro Fallback",
+        source: "bundled",
+        face: fallback,
+      });
+      this.fonts.fallbackId = fallback.id;
+    }
+    this.face = this.fonts.resolve(undefined);
 
     this.status = "Loading LittleCMS…";
     this.emit();
@@ -209,7 +242,7 @@ export class PressApp {
 
     this.hasCutout = await cutoutAvailable();
 
-    this.engines = { ck, backend: "webgl", face: this.face };
+    this.engines = { ck, backend: "webgl", face: this.face, fonts: this.fonts };
     this.compositor = new Compositor(this.engines, canvas);
     const host = canvas.parentElement!;
     const fit = () => {
@@ -220,12 +253,14 @@ export class PressApp {
     new ResizeObserver(fit).observe(host);
     this.bindCanvas(canvas);
     this.bindKeys();
-    this.status = `Skia ${this.engines.backend} · HarfBuzz · ${colourStackLabel()}`;
+    this.bindPasteboard(canvas);
+    this.status = `Skia ${this.engines.backend} · HarfBuzz · ${this.fonts.list().filter((f) => f.face).length} face(s) · ${colourStackLabel()}`;
     this.emit();
   }
 
   setTool(tool: ToolId): void {
     if (!this.compositor) return;
+    if (tool !== "type") this.exitTypeEdit();
     this.compositor.view.tool = tool;
     this.emit();
   }
@@ -242,6 +277,7 @@ export class PressApp {
       }
       if (e.key === "Escape") {
         this.dialog = null;
+        this.exitTypeEdit();
         this.emit();
         return;
       }
@@ -261,6 +297,7 @@ export class PressApp {
         return;
       }
       if (e.key === "Delete" || e.key === "Backspace") {
+        if (this.textSession) return;
         this.run({ type: "layer.delete", params: {} });
         return;
       }
@@ -424,6 +461,7 @@ export class PressApp {
         return;
       }
       if (tool === "move") {
+        if (this.textSession) this.exitTypeEdit();
         // Handles first: they sit on top of the layer they belong to, and a
         // grab on one must scale or rotate rather than start a move. Without
         // this the eight handles the compositor paints are pure decoration.
@@ -483,7 +521,20 @@ export class PressApp {
         return;
       }
       if (tool === "type") {
-        this.run({ type: "type.addFrame", params: { fontId: this.face?.id ?? "noto-sans", x: p.x, y: p.y } });
+        const hit = hitTest(this.doc, p.x, p.y);
+        if (hit?.kind === "type-frame" && !hit.locked) {
+          this.doc = setActiveLayers(this.doc, [hit.id]);
+          const local = pageToLocal(activePage(this.doc), hit, p.x, p.y);
+          const layout = this.compositor.typeLayout(this.doc, hit.id);
+          const offset =
+            local && layout ? nearestCaretOffset(layout.stops, local.x, local.y) : 0;
+          this.enterTypeEdit(hit.id, offset);
+          return;
+        }
+        this.exitTypeEdit();
+        this.drag = { mode: "type", x: p.x, y: p.y, lx: p.x, ly: p.y };
+        this.compositor.view.shapePreview = { kind: "rect", x: p.x, y: p.y, w: 0, h: 0 };
+        return;
       }
       if (tool === "zoom") {
         const factor = e.altKey ? 1 / 1.25 : 1.25;
@@ -577,7 +628,7 @@ export class PressApp {
         this.emitSoon();
         return;
       }
-      if (this.drag.mode === "rect" || this.drag.mode === "ellipse" || this.drag.mode === "line") {
+      if (this.drag.mode === "rect" || this.drag.mode === "ellipse" || this.drag.mode === "line" || this.drag.mode === "type") {
         // A line keeps its true endpoints (w/h may be negative); a box shape is
         // normalised. Both run through the same constrain helpers pointerup
         // uses, so the preview shows exactly the geometry that will commit.
@@ -591,7 +642,7 @@ export class PressApp {
             h: end.y - this.drag.y,
           };
         } else {
-          this.compositor.view.shapePreview = { kind: this.drag.mode, ...this.shapeBox(p.x, p.y, e.shiftKey) };
+          this.compositor.view.shapePreview = { kind: this.drag.mode === "type" ? "rect" : this.drag.mode, ...this.shapeBox(p.x, p.y, e.shiftKey) };
         }
         // Overlay-only: the document has not changed. A full emit() here would
         // re-composite the page on every pointer move and exhaust the heap.
@@ -635,6 +686,23 @@ export class PressApp {
           });
         }
       }
+      if (this.drag.mode === "type") {
+        const b = this.shapeBox(p.x, p.y, e.shiftKey);
+        const fontId = this.fonts.defaultId();
+        if (b.w >= 8 && b.h >= 8) {
+          this.run({
+            type: "type.addFrame",
+            params: { fontId, x: b.x, y: b.y, w: b.w, h: b.h, text: "" },
+          });
+        } else {
+          this.run({
+            type: "type.addFrame",
+            params: { fontId, x: this.drag.x, y: this.drag.y, text: "Type" },
+          });
+        }
+        const id = this.doc.activeLayerIds[0];
+        if (id) this.enterTypeEdit(id, 0, true);
+      }
       if (this.drag.mode === "marquee" && this.compositor.view.marquee) {
         this.doc = selectIntersecting(this.doc, this.compositor.view.marquee);
         this.compositor.view.marquee = null;
@@ -645,6 +713,20 @@ export class PressApp {
       // The drag repaints through a frame-coalesced path, so the last pointer
       // position may still be unpainted when the button comes up.
       if (wasResize) this.emit();
+    });
+    canvas.addEventListener("dblclick", (e) => {
+      if (!this.compositor) return;
+      const rect = canvas.getBoundingClientRect();
+      const p = this.compositor.screenToPage(e.clientX - rect.left, e.clientY - rect.top);
+      const hit = hitTest(this.doc, p.x, p.y);
+      if (hit?.kind === "type-frame" && !hit.locked) {
+        this.doc = setActiveLayers(this.doc, [hit.id]);
+        const local = pageToLocal(activePage(this.doc), hit, p.x, p.y);
+        const layout = this.compositor.typeLayout(this.doc, hit.id);
+        const offset = local && layout ? nearestCaretOffset(layout.stops, local.x, local.y) : 0;
+        this.setTool("type");
+        this.enterTypeEdit(hit.id, offset);
+      }
     });
     canvas.addEventListener("wheel", (e) => {
       if (!this.compositor) return;
@@ -706,21 +788,96 @@ export class PressApp {
   }
 
   deselect(): void {
+    this.exitTypeEdit();
     this.doc = setActiveLayers(this.doc, []);
     this.emit();
   }
 
-  async placeImage(file: File): Promise<void> {
-    const dataUrl = await fileToDataUrl(file);
-    const dims = await imageSize(dataUrl);
+  async placeImage(file: File, at?: { x: number; y: number }): Promise<void> {
+    try {
+      const mime = mimeForImageFile(file);
+      const blob = file.type === mime ? file : new Blob([await file.arrayBuffer()], { type: mime });
+      const dataUrl = await blobToDataUrl(blob);
+      const dims = await imageSize(dataUrl);
+      this.run({
+        type: "image.place",
+        params: {
+          asset: { name: file.name, mime, dataUrl, width: dims.w, height: dims.h },
+          x: at?.x ?? 48,
+          y: at?.y ?? 48,
+        },
+      });
+      try {
+        await putUserAsset({
+          id: uid("lib"),
+          name: file.name,
+          mime,
+          dataUrl,
+          width: dims.w,
+          height: dims.h,
+          addedAt: Date.now(),
+        });
+      } catch {
+        // IndexedDB is optional; the layer is already on the page.
+      }
+    } catch (err) {
+      this.status = `Place failed — ${err instanceof Error ? err.message : String(err)}`;
+      this.emit();
+    }
+  }
+
+  async ingestFiles(files: File[], at?: { x: number; y: number }): Promise<void> {
+    for (const file of files) {
+      const bytes = await file.arrayBuffer();
+      const sniff = sniffBytes(file.name, bytes);
+      if (sniff.kind === "font") {
+        await this.importFontBytes(file.name, bytes);
+        continue;
+      }
+      if (sniff.kind === "image") {
+        await this.placeImage(new File([bytes], file.name, { type: sniff.mime }), at);
+        continue;
+      }
+      if (sniff.kind === "document" || /\.(psd|vdj|json)$/i.test(file.name)) {
+        await this.openBytes(file.name, bytes);
+        continue;
+      }
+      this.status = `Cannot place “${file.name}” — drop a PNG, JPEG, WebP, GIF, BMP, TTF/OTF, PSD or Press JSON`;
+      this.emit();
+    }
+  }
+
+  async importFontBytes(fileName: string, bytes: ArrayBuffer): Promise<void> {
+    try {
+      const rec = await this.fonts.importBytes(fileName, bytes, true);
+      this.status = `Imported font ${rec.name}`;
+      const layer = selectedLayers(this.doc).find((l) => l.kind === "type-frame");
+      if (layer) this.setFont(rec.id);
+      else this.emit();
+    } catch (err) {
+      this.status = `Font import failed — ${err instanceof Error ? err.message : String(err)}`;
+      this.emit();
+    }
+  }
+
+  async setFont(fontId: string): Promise<void> {
+    await this.fonts.ensureLoaded(fontId);
+    const layer = selectedLayers(this.doc).find((l) => l.kind === "type-frame");
+    if (!layer) {
+      this.emit();
+      return;
+    }
+    this.run({ type: "type.character", params: { layerId: layer.id, fontId } });
+  }
+
+  typeText(text: string): void {
+    const layer = selectedLayers(this.doc).find((l) => l.kind === "type-frame");
+    if (!layer) return;
     this.run({
-      type: "image.place",
-      params: {
-        asset: { name: file.name, mime: file.type || "image/png", dataUrl, width: dims.w, height: dims.h },
-        x: 48,
-        y: 48,
-      },
+      type: "story.setText",
+      params: { layerId: layer.id, text, session: this.textSession?.session },
     });
+    if (this.textSession) this.syncEditorFromStory();
   }
 
   imageSize(w: number, h: number, ppi: number, resample: boolean, algo: ResampleAlgo = this.resampleAlgo): void {
@@ -751,12 +908,6 @@ export class PressApp {
     this.dialog = null;
     this.run({ type: "doc.imageSize", params: { w, h, ppi, resample, assets } });
     for (const id of Object.keys(assets)) this.compositor?.invalidateAsset(id);
-  }
-
-  typeText(text: string): void {
-    const layer = selectedLayers(this.doc).find((l) => l.kind === "type-frame");
-    if (!layer) return;
-    this.run({ type: "story.setText", params: { layerId: layer.id, text } });
   }
 
   setTransform(patch: { x?: number; y?: number; w?: number; h?: number; rotation?: number; scaleX?: number; scaleY?: number }): void {
@@ -792,9 +943,10 @@ export class PressApp {
     else this.emit();
   }
 
-  setCharacter(patch: { size?: number; leading?: number; tracking?: number }): void {
+  setCharacter(patch: { size?: number; leading?: number; tracking?: number; fill?: Rgba; fontId?: string }): void {
     const layer = selectedLayers(this.doc).find((l) => l.kind === "type-frame");
     if (!layer) return;
+    if (patch.fontId) void this.fonts.ensureLoaded(patch.fontId);
     this.run({ type: "type.character", params: { layerId: layer.id, ...patch } });
   }
 
@@ -964,7 +1116,8 @@ export class PressApp {
     try {
       const { bytes, report } = await exportPagePdf({
         doc: this.doc,
-        face: this.face,
+        face: this.fonts.resolve(undefined) ?? this.face,
+        fonts: this.fonts,
         rasterise: (doc) => compositor.snapshotPagePng(doc),
       });
       download(bytes, `${this.doc.name}.pdf`, "application/pdf");
@@ -1027,10 +1180,14 @@ export class PressApp {
       }
       return;
     }
-    if (/\.(png|jpe?g|webp)$/i.test(name)) {
+    if (/\.(png|jpe?g|webp|gif|bmp)$/i.test(name)) {
       const blob = new Blob([bytes]);
       const file = new File([blob], name);
       await this.placeImage(file);
+      return;
+    }
+    if (/\.(ttf|otf|woff)$/i.test(name)) {
+      await this.importFontBytes(name, bytes);
     }
   }
 
@@ -1062,6 +1219,138 @@ export class PressApp {
     this.bus.nameSnapshot(label, this.doc);
     this.emit();
   }
+
+  enterTypeEdit(layerId: string, offset = 0, selectAll = false): void {
+    const layer = selectedLayers(this.doc).find((l) => l.id === layerId) ??
+      activePage(this.doc).layers.find((l) => l.id === layerId);
+    if (!layer || layer.kind !== "type-frame" || layer.locked) return;
+    this.doc = setActiveLayers(this.doc, [layerId]);
+    const story = this.doc.stories.find((s) => s.id === layer.storyId);
+    if (!story) return;
+    this.textSession = { layerId, session: uid("type") };
+    const editor = this.ensureEditor();
+    editor.value = story.text;
+    const start = selectAll ? 0 : Math.max(0, Math.min(offset, story.text.length));
+    const end = selectAll ? story.text.length : start;
+    editor.setSelectionRange(start, end);
+    this.pushTextEditView(start, end);
+    this.placeEditor();
+    editor.focus();
+    this.emit();
+  }
+
+  exitTypeEdit(): void {
+    if (!this.textSession) return;
+    this.textSession = null;
+    if (this.compositor) this.compositor.view.textEdit = null;
+    this.editor?.blur();
+  }
+
+  private ensureEditor(): HTMLTextAreaElement {
+    if (this.editor) return this.editor;
+    const el = document.createElement("textarea");
+    el.id = "type-editor";
+    el.setAttribute("aria-label", "Type editor");
+    el.autocomplete = "off";
+    el.spellcheck = false;
+    el.style.cssText =
+      "position:fixed;z-index:40;margin:0;padding:0;border:0;outline:none;resize:none;overflow:hidden;background:transparent;color:transparent;caret-color:transparent;font:16px sans-serif;line-height:1;width:12px;height:24px;opacity:0.01;";
+    el.addEventListener("input", () => {
+      if (!this.textSession) return;
+      this.run(
+        {
+          type: "story.setText",
+          params: { layerId: this.textSession.layerId, text: el.value, session: this.textSession.session },
+        },
+        { soon: true },
+      );
+      this.pushTextEditView(el.selectionStart, el.selectionEnd);
+      this.placeEditor();
+    });
+    const syncCaret = () => {
+      if (!this.textSession) return;
+      this.pushTextEditView(el.selectionStart, el.selectionEnd);
+      this.placeEditor();
+      this.compositor?.requestOverlayRepaint();
+    };
+    el.addEventListener("keyup", syncCaret);
+    el.addEventListener("click", syncCaret);
+    el.addEventListener("select", syncCaret);
+    document.body.appendChild(el);
+    this.editor = el;
+    return el;
+  }
+
+  private syncEditorFromStory(): void {
+    const el = this.editor;
+    const session = this.textSession;
+    if (!el || !session) return;
+    const layer = activePage(this.doc).layers.find((l) => l.id === session.layerId);
+    if (!layer || layer.kind !== "type-frame") return;
+    const story = this.doc.stories.find((s) => s.id === layer.storyId);
+    if (!story) return;
+    if (el.value !== story.text) {
+      const start = el.selectionStart;
+      el.value = story.text;
+      el.setSelectionRange(start, start);
+    }
+    this.pushTextEditView(el.selectionStart, el.selectionEnd);
+  }
+
+  private pushTextEditView(anchor: number, focus: number): void {
+    if (!this.compositor || !this.textSession) return;
+    this.compositor.view.textEdit = { layerId: this.textSession.layerId, anchor, focus };
+  }
+
+  private placeEditor(): void {
+    const el = this.editor;
+    const session = this.textSession;
+    if (!el || !session || !this.compositor) return;
+    const layer = activePage(this.doc).layers.find((l) => l.id === session.layerId);
+    if (!layer) return;
+    const layout = this.compositor.typeLayout(this.doc, layer.id);
+    const caret = layout?.stops.find((s) => s.offset === el.selectionStart) ?? layout?.stops[0];
+    const localX = (caret?.x ?? 0) + layer.transform.x;
+    const localY = (caret?.y ?? 0) + layer.transform.y;
+    const screen = this.compositor.pageToScreen(localX, localY);
+    const box = this.compositor.canvas.getBoundingClientRect();
+    el.style.left = `${box.left + screen.x}px`;
+    el.style.top = `${box.top + screen.y - 16}px`;
+  }
+
+  private bindPasteboard(canvas: HTMLCanvasElement): void {
+    const host = canvas.parentElement ?? canvas;
+    host.addEventListener("dragover", (e) => {
+      if (![...e.dataTransfer?.types ?? []].includes("Files")) return;
+      e.preventDefault();
+      if (e.dataTransfer) e.dataTransfer.dropEffect = "copy";
+    });
+    host.addEventListener("drop", (e) => {
+      e.preventDefault();
+      const files = [...(e.dataTransfer?.files ?? [])];
+      if (!files.length || !this.compositor) return;
+      const rect = canvas.getBoundingClientRect();
+      const p = this.compositor.screenToPage(e.clientX - rect.left, e.clientY - rect.top);
+      void this.ingestFiles(files, p);
+    });
+    window.addEventListener("paste", (e) => {
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable) && t !== this.editor) {
+        return;
+      }
+      const items = [...(e.clipboardData?.items ?? [])];
+      const files: File[] = [];
+      for (const item of items) {
+        if (item.kind === "file") {
+          const f = item.getAsFile();
+          if (f) files.push(f);
+        }
+      }
+      if (!files.length) return;
+      e.preventDefault();
+      void this.ingestFiles(files);
+    });
+  }
 }
 
 function download(bytes: Uint8Array, name: string, mime: string): void {
@@ -1075,13 +1364,17 @@ function download(bytes: Uint8Array, name: string, mime: string): void {
   URL.revokeObjectURL(a.href);
 }
 
-function fileToDataUrl(file: File): Promise<string> {
+function blobToDataUrl(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
     const r = new FileReader();
     r.onload = () => resolve(String(r.result));
     r.onerror = () => reject(r.error);
-    r.readAsDataURL(file);
+    r.readAsDataURL(blob);
   });
+}
+
+function fileToDataUrl(file: File): Promise<string> {
+  return blobToDataUrl(file);
 }
 
 function imageSize(dataUrl: string): Promise<{ w: number; h: number }> {

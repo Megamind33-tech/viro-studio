@@ -15,7 +15,8 @@ import { SKIA_BLEND } from "../document/types";
 import { applyPt, localMatrix } from "../document/transform";
 import { destWindow, sourceWindow } from "../document/image-fit";
 import { activePage } from "../document/factory";
-import { drawTypeFrame, type FacePack } from "./type";
+import { composeFrame, drawTypeFrame, nearestCaretOffset, type CaretStop, type FacePack } from "./type";
+import type { FontRegistry } from "./font-registry";
 
 /** Ruler band thickness in CSS px. Chrome imports this for its own hit maths. */
 export const RULER = 18;
@@ -40,6 +41,7 @@ export interface Engines {
   ck: CanvasKit;
   backend: "webgl" | "skia-cpu";
   face: FacePack | null;
+  fonts?: FontRegistry;
 }
 
 /** Desk tokens (DESK-CHROME.md). Copper is reserved for the active tool and selection. */
@@ -307,6 +309,7 @@ class PressView implements ViewState {
    * without this a shape drag gives no feedback at all until pointerup.
    */
   shapePreview: { kind: "rect" | "ellipse" | "line"; x: number; y: number; w: number; h: number } | null = null;
+  textEdit: { layerId: string; anchor: number; focus: number } | null = null;
 
   constructor(private readonly owner: Compositor) {}
 
@@ -645,6 +648,32 @@ export class Compositor {
   pageToScreen(x: number, y: number): { x: number; y: number } {
     const r = this.rulerSize;
     return { x: r + this.panX + x * this.zoomValue, y: r + this.panY + y * this.zoomValue };
+  }
+
+  faceFor(fontId: string | undefined): FacePack | null {
+    return this.engines.fonts?.resolve(fontId) ?? this.engines.face;
+  }
+
+  typeLayout(doc: PressDocument, layerId: string): { stops: CaretStop[]; firstBaselinePx: number } | null {
+    const page = activePage(doc);
+    const layer = page.layers.find((l) => l.id === layerId);
+    if (!layer || layer.kind !== "type-frame") return null;
+    const story = doc.stories.find((s) => s.id === layer.storyId);
+    if (!story) return null;
+    const face = this.faceFor(story.character.fontId);
+    if (!face) return null;
+    const composed = composeFrame(face, story, layer.transform.w, layer.transform.h);
+    return { stops: composed.caretStops, firstBaselinePx: composed.firstBaselinePx };
+  }
+
+  hitTypeOffset(doc: PressDocument, layerId: string, pageX: number, pageY: number): number | null {
+    const page = activePage(doc);
+    const layer = page.layers.find((l) => l.id === layerId);
+    if (!layer || layer.kind !== "type-frame") return null;
+    const layout = this.typeLayout(doc, layerId);
+    if (!layout?.stops.length) return 0;
+    const t = layer.transform;
+    return nearestCaretOffset(layout.stops, pageX - t.x, pageY - t.y);
   }
 
   // ── selection geometry ──────────────────────────────────────────────────────
@@ -1071,10 +1100,72 @@ export class Compositor {
     }
   }
 
+  private paintTextEdit(
+    ck: CanvasKit,
+    sk: Canvas,
+    doc: PressDocument,
+    g: Geom,
+    edit: { layerId: string; anchor: number; focus: number },
+  ): void {
+    const page = activePage(doc);
+    const layer = page.layers.find((l) => l.id === edit.layerId);
+    if (!layer || layer.kind !== "type-frame") return;
+    const layout = this.typeLayout(doc, layer.id);
+    const t = layer.transform;
+    const q = quadOf(t).map((p) => ({ x: g.dx(p.x), y: g.dy(p.y) }));
+    const h = g.hair;
+    const line = new ck.Paint();
+    line.setColor(rgb(ck, TOKEN.accent, 1));
+    this.polyline(ck, sk, line, q, h);
+    line.delete();
+    if (!layout) return;
+
+    const a = Math.min(edit.anchor, edit.focus);
+    const b = Math.max(edit.anchor, edit.focus);
+    const stopAt = (offset: number) =>
+      layout.stops.find((s) => s.offset === offset) ??
+      layout.stops.reduce((best, s) => (Math.abs(s.offset - offset) < Math.abs(best.offset - offset) ? s : best), layout.stops[0]!);
+
+    if (a !== b) {
+      const fill = new ck.Paint();
+      fill.setColor(rgb(ck, TOKEN.accent, 0.28));
+      const starts = layout.stops.filter((s) => s.offset >= a && s.offset < b);
+      for (const s of starts) {
+        const next = layout.stops.find((n) => n.offset > s.offset && n.y === s.y) ?? {
+          ...s,
+          x: s.x + 6,
+        };
+        const x0 = g.dx(t.x + Math.min(s.x, next.x));
+        const x1 = g.dx(t.x + Math.max(s.x, next.x, s.x + 4));
+        const y0 = g.dy(t.y + s.y - s.height * 0.85);
+        const y1 = g.dy(t.y + s.y + s.height * 0.2);
+        sk.drawRect(ck.LTRBRect(x0, y0, x1, y1), fill);
+      }
+      fill.delete();
+    }
+
+    const caret = stopAt(edit.focus);
+    if (caret) {
+      const ink = new ck.Paint();
+      ink.setColor(rgb(ck, TOKEN.accent, 1));
+      const x = g.dx(t.x + caret.x);
+      const y0 = g.dy(t.y + caret.y - caret.height * 0.85);
+      const y1 = g.dy(t.y + caret.y + caret.height * 0.2);
+      sk.drawRect(ck.LTRBRect(x, y0, x + Math.max(1, h), y1), ink);
+      ink.delete();
+    }
+  }
+
   private paintSelection(ck: CanvasKit, sk: Canvas, doc: PressDocument, g: Geom): void {
     const page = activePage(doc);
     const picked = page.layers.filter((l) => doc.activeLayerIds.includes(l.id));
     if (picked.length === 0) return;
+
+    const edit = this.view.textEdit;
+    if (edit) {
+      this.paintTextEdit(ck, sk, doc, g, edit);
+      return;
+    }
     const h = g.hair;
 
     if (picked.length > 1) {
@@ -1463,8 +1554,9 @@ export class Compositor {
     if (layer.kind === "vector") this.drawVector(ck, sk, layer, paint);
     else if (layer.kind === "type-frame") {
       const story = doc.stories.find((s) => s.id === layer.storyId);
-      if (story && this.engines.face) {
-        const composed = drawTypeFrame(ck, sk, layer, story, this.engines.face);
+      const face = story ? this.faceFor(story.character.fontId) : null;
+      if (story && face) {
+        const composed = drawTypeFrame(ck, sk, layer, story, face);
         if (composed.overflow) {
           const plus = new ck.Paint();
           plus.setColor(ck.Color4f(0.84, 0.18, 0.18, 1));

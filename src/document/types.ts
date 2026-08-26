@@ -351,6 +351,8 @@ export interface ViewState {
   marquee: { x: number; y: number; w: number; h: number } | null;
   /** Live shape-tool feedback mid-drag, in page px. Null when not dragging. */
   shapePreview: { kind: "rect" | "ellipse" | "line"; x: number; y: number; w: number; h: number } | null;
+  /** Live type-edit caret. Painted by the overlay; null when not editing. */
+  textEdit: { layerId: string; anchor: number; focus: number } | null;
 }
 
 export const SKIA_BLEND: Record<BlendMode, string> = {

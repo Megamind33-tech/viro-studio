@@ -752,22 +752,32 @@ export function makeStory(text: string, fontId: string, sizePx = ptToPx(DEFAULT_
  * a legitimate place to park a frame, and Anchor addresses this function with
  * coordinates it means.
  */
-export function addTypeFrame(doc: PressDocument, fontId: string, x: number, y: number): PressDocument {
+export function addTypeFrame(
+  doc: PressDocument,
+  fontId: string,
+  x: number,
+  y: number,
+  extras: { w?: number; h?: number; text?: string } = {},
+): PressDocument {
   const next = cloneDoc(doc);
   const page = activePage(next);
   const size = defaultTypeSizePx(next.ppi);
-  const story = makeStory("Type", fontId, size);
+  const story = makeStory(extras.text ?? "Type", fontId, size);
   next.stories.push(story);
 
   const grid = pageGrid(page);
   const room = page.widthPx - Math.max(0, Math.min(x, page.widthPx));
   const w = Math.round(
-    Math.max(
-      Math.min(size * 4, page.widthPx),
-      Math.min(size * DEFAULT_MEASURE_EM, grid.columnWidth, room || page.widthPx),
-    ),
+    extras.w && extras.w >= 4
+      ? extras.w
+      : Math.max(
+          Math.min(size * 4, page.widthPx),
+          Math.min(size * DEFAULT_MEASURE_EM, grid.columnWidth, room || page.widthPx),
+        ),
   );
-  const h = Math.round(frameHeightFor(2, size, story.character.leading));
+  const h = Math.round(
+    extras.h && extras.h >= 4 ? extras.h : frameHeightFor(2, size, story.character.leading),
+  );
 
   const layer: Layer = {
     id: uid("ly"),

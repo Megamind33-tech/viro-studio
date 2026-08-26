@@ -113,7 +113,7 @@ export function setStoryText(doc: PressDocument, layerId: string, text: string):
 export function setCharacter(
   doc: PressDocument,
   layerId: string,
-  patch: { size?: number; leading?: number; tracking?: number; fill?: Rgba },
+  patch: { size?: number; leading?: number; tracking?: number; fill?: Rgba; fontId?: string },
 ): PressDocument {
   const next = cloneDoc(doc);
   const layer = findLayer(activePage(next), layerId);
@@ -124,6 +124,7 @@ export function setCharacter(
   if (patch.leading != null) story.character.leading = patch.leading;
   if (patch.tracking != null) story.character.tracking = patch.tracking;
   if (patch.fill) story.character.fill = patch.fill;
+  if (patch.fontId) story.character.fontId = patch.fontId;
   return next;
 }
 

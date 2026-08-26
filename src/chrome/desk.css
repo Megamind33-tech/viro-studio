@@ -5,3 +5,98 @@
 [hidden] {
   display: none !important;
 }
+
+.hint {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.35;
+  margin: 0 0 var(--space-3);
+}
+
+.lib-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.lib-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--hair);
+  background: var(--raised);
+  color: var(--ink);
+  text-align: left;
+}
+
+.lib-card img {
+  width: 100%;
+  height: 56px;
+  object-fit: cover;
+  background: #1a1a1a;
+}
+
+.lib-card span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+}
+
+.lib-fonts {
+  display: flex;
+  flex-direction: column;
+  max-height: 220px;
+  overflow: auto;
+}
+
+.lib-font {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 6px;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  text-align: left;
+}
+
+.lib-font span {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.lib-font.is-on {
+  background: var(--sel);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
+.story-edit {
+  min-height: 64px;
+  width: 100%;
+  resize: vertical;
+}
+
+/* IME/keyboard surface for the Type tool. Invisible, never intercepts clicks. */
+.type-input {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 12px;
+  height: 24px;
+  z-index: 40;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  outline: none;
+  resize: none;
+  overflow: hidden;
+  background: transparent;
+  color: transparent;
+  caret-color: transparent;
+  font: 16px sans-serif;
+  line-height: 1;
+  opacity: 0.01;
+  pointer-events: none;
+}

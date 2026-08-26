@@ -26,6 +26,9 @@
   --space-4: 8px;
   --space-5: 12px;
   --space-6: 14px;
+  --layer-indent-base: 4px;
+  --layer-indent-step: 10px;
+  --range-track: 9px;
   --font: "Segoe UI Variable", "Segoe UI", "SegoeUI", Tahoma, sans-serif;
   --mono: "Cascadia Mono", "Consolas", "Segoe UI Mono", monospace;
 }
@@ -493,10 +496,15 @@ select.ctrl {
    * above it. That is what sliced "Weight" and "Folio" in half and swallowed
    * the Color panel's G, B and hex rows. Because the children shrank instead
    * of overflowing, `.studios { overflow }` never engaged and nothing scrolled.
+   *
+   * Clip only on the x axis: range thumbs and labels can extend a hairline
+   * below their row box; overflow-y: hidden on the group was shearing that
+   * paint against the next panel's tab strip.
    */
   flex: 0 0 auto;
   min-height: 0;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: visible;
 }
 
 .group.grow {
@@ -528,7 +536,7 @@ select.ctrl {
 }
 
 .pane {
-  padding: var(--space-3) var(--space-4);
+  padding: var(--space-3) var(--space-4) calc(var(--space-3) + var(--space-2));
   background: var(--panel);
 }
 
@@ -542,7 +550,7 @@ select.ctrl {
   padding: 0;
   display: flex;
   flex-direction: column;
-  min-height: 140px;
+  min-height: 0;
   flex: 1;
 }
 
@@ -574,9 +582,10 @@ select.ctrl {
 }
 
 .layer-list {
-  flex: 1;
-  overflow: auto;
+  flex: 1 1 0;
   min-height: 88px;
+  overflow: auto;
+  padding-bottom: var(--space-2);
   background: #282828;
 }
 
@@ -587,7 +596,8 @@ select.ctrl {
   grid-template-columns: 16px 16px 38px minmax(0, 1fr) 28px;
   align-items: center;
   height: 38px;
-  padding-right: 4px;
+  padding-left: var(--layer-indent-base);
+  padding-right: var(--space-2);
   border-bottom: 1px solid rgba(0, 0, 0, 0.35);
   color: var(--ink);
 }
@@ -624,6 +634,7 @@ select.ctrl {
   display: grid;
   place-items: center;
   justify-self: center;
+  margin-left: calc(var(--depth, 0) * var(--layer-indent-step));
   /* Photoshop's transparency checker is LIGHT. A dark checker looks tidier
      against the panel but swallows exactly what these thumbnails mostly hold —
      near-black type and hairline rules — so every row reads empty. */
@@ -659,6 +670,7 @@ select.ctrl {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  padding-left: calc(var(--depth, 0) * var(--layer-indent-step));
 }
 
 .ly .fx {
@@ -668,7 +680,7 @@ select.ctrl {
 }
 
 .ly.child .nm {
-  padding-left: 10px;
+  padding-left: calc(10px + var(--depth, 0) * var(--layer-indent-step));
 }
 
 .ly.group-row .nm {
@@ -815,6 +827,7 @@ select.ctrl {
   grid-template-columns: 12px 1fr 36px;
   gap: var(--space-3);
   align-items: center;
+  min-height: 18px;
   margin-bottom: var(--space-2);
 }
 
@@ -1785,7 +1798,7 @@ input[type="range"] {
   --track-a: #1e1e1e;
   --track-b: #1e1e1e;
   width: 100%;
-  height: 14px;
+  height: 18px;
   margin: 0;
   padding: 0;
   background: transparent;
@@ -1796,7 +1809,7 @@ input[type="range"] {
 }
 
 input[type="range"]::-webkit-slider-runnable-track {
-  height: 5px;
+  height: var(--range-track);
   border: 1px solid var(--hair);
   border-radius: 0;
   background-color: var(--input);
@@ -1809,7 +1822,7 @@ input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
   width: 9px;
   height: 13px;
-  margin-top: -4px;
+  margin-top: calc((var(--range-track) - 13px) / 2);
   border: 1px solid #141414;
   border-radius: 0;
   background: #c8c8c8;
@@ -1841,7 +1854,7 @@ input[type="range"]:disabled::-webkit-slider-thumb {
 
 /* Gecko fallbacks. The QA harness is Chromium; these are belt and braces. */
 input[type="range"]::-moz-range-track {
-  height: 5px;
+  height: var(--range-track);
   border: 1px solid var(--hair);
   border-radius: 0;
   background-color: var(--input);

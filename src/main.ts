@@ -19,7 +19,14 @@ app.onChange(() => {
   if (statusEl) statusEl.textContent = app.status;
 });
 
-const canvas = mountDesk(desk, app);
+let canvas: HTMLCanvasElement;
+try {
+  canvas = mountDesk(desk, app);
+} catch (err) {
+  console.error("[desk] mount failed — engines will still boot", err);
+  canvas = document.getElementById("skia") as HTMLCanvasElement;
+  if (!canvas) throw err;
+}
 
 /**
  * The Anchor studio populates the docked `#g-anchor` panel that index.html
@@ -66,6 +73,8 @@ app
     desk.hidden = false;
   })
   .catch((err) => {
+    boot.hidden = false;
+    boot.classList.remove("gone");
     if (statusEl) statusEl.textContent = String(err);
     throw err;
   });

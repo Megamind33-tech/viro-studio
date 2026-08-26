@@ -79,6 +79,7 @@ import type {
 import { localMatrix } from "../document/transform";
 import { destWindow, sourceWindow } from "../document/image-fit";
 import { composeFrame, type FacePack, type ShapedGlyph } from "../engine/type";
+import type { FontRegistry } from "../engine/font-registry";
 
 /* ------------------------------------------------------------------ *
  * Report — what the file actually turned out to be
@@ -248,6 +249,8 @@ export interface PdfExportOptions {
   doc: PressDocument;
   /** The very face HarfBuzz shaped with. Without it, type frames cannot be emitted. */
   face: FacePack | null;
+  /** Optional registry so stories can embed the face they were actually set in. */
+  fonts?: FontRegistry;
   /**
    * Flatten a document to a page-sized PNG. Only ever called for the sub-stack
    * beneath an adjustment layer, which is a pixel operation on the accumulated
@@ -272,7 +275,8 @@ function emitLocalMatrix(ops: unknown[], t: Transform): void {
 export async function exportPagePdf(
   opts: PdfExportOptions,
 ): Promise<{ bytes: Uint8Array; report: PdfExportReport }> {
-  const { doc, face } = opts;
+  const { doc, fonts } = opts;
+  let face = opts.face;
   const page = doc.pages.find((p) => p.id === doc.activePageId) ?? doc.pages[0];
   if (!page) throw new Error("document has no page");
 
@@ -315,9 +319,12 @@ export async function exportPagePdf(
   };
 
   let embedded: EmbeddedFace | null = null;
-  const faceFor = async (): Promise<EmbeddedFace | null> => {
-    if (embedded) return embedded;
-    if (!face) return null;
+  const embeddedById = new Map<string, EmbeddedFace>();
+  const faceFor = async (pack: FacePack | null): Promise<EmbeddedFace | null> => {
+    if (!pack) return null;
+    const cached = embeddedById.get(pack.id);
+    if (cached) return cached;
+    if (embedded && pack.id === face?.id) return embedded;
     // The package ships a UMD bundle; depending on the bundler's CJS interop the
     // module object is either the fontkit instance itself or hangs off `default`.
     const mod = (await import("@pdf-lib/fontkit")) as unknown as {
@@ -326,14 +333,16 @@ export async function exportPagePdf(
     };
     const kit = typeof mod.create === "function" ? mod : mod.default;
     pdf.registerFontkit(kit as Parameters<PDFDocument["registerFontkit"]>[0]);
-    const pdfFont = await pdf.embedFont(new Uint8Array(face.bytes.slice(0)), {
+    const pdfFont = await pdf.embedFont(new Uint8Array(pack.bytes.slice(0)), {
       subset: true,
-      customName: face.name.replace(/\s+/g, ""),
+      customName: pack.name.replace(/\s+/g, ""),
     });
     const emb = (pdfFont as unknown as { embedder: SubsetEmbedder }).embedder;
     const resource = pdfPage.node.newFontDictionary("F", pdfFont.ref);
-    embedded = new EmbeddedFace(emb, resource, face.upem);
-    return embedded;
+    const next = new EmbeddedFace(emb, resource, pack.upem);
+    embeddedById.set(pack.id, next);
+    if (!embedded) embedded = next;
+    return next;
   };
 
   const imageCache = new Map<string, PDFName | null>();
@@ -452,10 +461,11 @@ export async function exportPagePdf(
       emitVector(ops, layer, inheritedAlpha, gsName, report);
     } else if (layer.kind === "type-frame") {
       const story = doc.stories.find((s) => s.id === layer.storyId);
-      const ef = story ? await faceFor() : null;
-      if (story && ef && face) {
-        emitType(ops, layer, story, face, ef, inheritedAlpha, gsName, report);
-      } else if (story && !face) {
+      const pack = story ? (fonts?.resolve(story.character.fontId) ?? face) : null;
+      const ef = pack ? await faceFor(pack) : null;
+      if (story && ef && pack) {
+        emitType(ops, layer, story, pack, ef, inheritedAlpha, gsName, report);
+      } else if (story && !pack) {
         report.notes.push(`Type frame "${layer.name}" was skipped: no face was loaded.`);
       }
     } else if (layer.kind === "image-frame" || layer.kind === "raster") {

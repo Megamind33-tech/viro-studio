@@ -1,4 +1,5 @@
 import type { CanvasKit } from "canvaskit-wasm";
+import { publicAsset } from "./public-url";
 
 type InitFn = (opts?: { locateFile?: (file: string) => string }) => Promise<CanvasKit>;
 
@@ -46,8 +47,8 @@ function loadClassicScript(src: string): Promise<void> {
  * Browser path: classic script from /wasm (copied from canvaskit-wasm/bin/full).
  */
 export async function loadCanvasKit(): Promise<{ ck: CanvasKit; source: string }> {
-  const wasmUrl = "/wasm/canvaskit.wasm";
-  const jsUrl = "/wasm/canvaskit.js";
+  const wasmUrl = publicAsset("wasm/canvaskit.wasm");
+  const jsUrl = publicAsset("wasm/canvaskit.js");
   const locate = (file: string) => (file.endsWith(".wasm") ? wasmUrl : file);
 
   if (typeof document !== "undefined") {

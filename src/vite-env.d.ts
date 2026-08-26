@@ -32,6 +32,34 @@ declare module "lcms-wasm/lib/constants.js" {
 interface ViroPressBridge {
   openFile: (filters?: { name: string; extensions: string[] }[]) => Promise<{ path: string; bytes: ArrayBuffer } | null>;
   saveFile: (opts: { defaultPath: string; bytes: ArrayBuffer }) => Promise<string | null>;
+  listFonts?: () => Promise<
+    { id: string; family: string; style: string; name: string; path: string }[]
+  >;
+  readFont?: (path: string) => Promise<{ path: string; bytes: ArrayBuffer } | null>;
+}
+
+declare module "opentype.js" {
+  class Path {
+    moveTo(x: number, y: number): void;
+    lineTo(x: number, y: number): void;
+    close(): void;
+  }
+  class Glyph {
+    constructor(opts: { name: string; unicode: number; advanceWidth: number; path: Path });
+  }
+  class Font {
+    constructor(opts: {
+      familyName: string;
+      styleName: string;
+      unitsPerEm: number;
+      ascender: number;
+      descender: number;
+      glyphs: Glyph[];
+    });
+    toArrayBuffer(): ArrayBuffer;
+  }
+  const opentype: { Path: typeof Path; Glyph: typeof Glyph; Font: typeof Font };
+  export default opentype;
 }
 
 interface Window {
