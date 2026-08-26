@@ -12,14 +12,26 @@
  */
 import test from "node:test";
 import assert from "node:assert/strict";
+import { existsSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { CommandBus } from "../src/document/command-bus.ts";
 import { commandTypes } from "../src/document/commands.ts";
 import { diffDocuments, applyPatch, patchWeight } from "../src/document/patch.ts";
 import { installAnchorCommands, anchorCommands, PatchScopeError } from "../src/anchor/anchor-command.ts";
 import { ANCHOR_TOOLS } from "../src/anchor/tools.ts";
 import { documentFromPreset, PRESETS } from "../src/document/presets.ts";
+import { setBooleanEngineProvider } from "../src/document/boolean-ops.ts";
 
 installAnchorCommands();
+
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
+const ckWasm = join(ROOT, "node_modules", "canvaskit-wasm", "bin", "full", "canvaskit.wasm");
+const ckJs = join(ROOT, "node_modules", "canvaskit-wasm", "bin", "full", "canvaskit.js");
+assert.ok(existsSync(ckWasm), "canvaskit.wasm missing");
+const CanvasKitInit = (await import(pathToFileURL(ckJs).href)).default;
+const ck = await CanvasKitInit({ locateFile: (f) => (f.endsWith(".wasm") ? ckWasm : f) });
+setBooleanEngineProvider(() => ck);
 
 const PNG =
   "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
@@ -44,6 +56,7 @@ function makeDoc() {
   });
   page.layers.push(
     { ...base(), id: "ly_rect", name: "Rect", kind: "vector", transform: { x: 100, y: 100, w: 200, h: 100, rotation: 0 }, closed: true, nodes: [{ x: 0, y: 0, inX: 0, inY: 0, outX: 0, outY: 0 }, { x: 10, y: 10, inX: 0, inY: 0, outX: 0, outY: 0 }], fill: { r: 1, g: 0, b: 0, a: 1 }, stroke: null },
+    { ...base(), id: "ly_bool_b", name: "BoolB", kind: "vector", transform: { x: 400, y: 100, w: 120, h: 80, rotation: 0 }, closed: true, nodes: [{ x: 0, y: 0, inX: 0, inY: 0, outX: 0, outY: 0 }, { x: 10, y: 10, inX: 0, inY: 0, outX: 0, outY: 0 }], fill: { r: 0, g: 0.5, b: 1, a: 1 }, stroke: null },
     { ...base(), id: "ly_path", name: "Path", kind: "vector", transform: { x: 300, y: 300, w: 200, h: 200, rotation: 0 }, closed: false, nodes: [{ x: 0, y: 0, inX: 0, inY: 0, outX: 0, outY: 0 }, { x: 50, y: 50, inX: 0, inY: 0, outX: 0, outY: 0 }], fill: null, stroke: { color: { r: 0, g: 0, b: 0, a: 1 }, width: 2 } },
     { ...base(), id: "ly_img", name: "Pic", kind: "image-frame", transform: { x: 500, y: 500, w: 300, h: 150, rotation: 0 }, assetId: "as_1", fit: "cover", focal: { x: 0.5, y: 0.5 }, crop: null },
     { ...base(), id: "ly_type", name: "Type", kind: "type-frame", transform: { x: 700, y: 900, w: 600, h: 300, rotation: 0 }, storyId: "st_1", nextFrameId: null },
@@ -137,6 +150,7 @@ const OVERRIDES = {
   "press.add_path": { closed: true, fill: "#E07A2F" },
   "press.set_image_crop": { crop: { x: 4, y: 4, w: 32, h: 24 } },
   "press.apply_fill": { color: "#E07A2F" },
+  "press.boolean": { op: "union", layerIds: ["ly_rect", "ly_bool_b"] },
 };
 
 /** Synthesise a valid op envelope for a tool from its schema. */

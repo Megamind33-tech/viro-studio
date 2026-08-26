@@ -175,6 +175,7 @@ const FAMILY_OF: Record<string, string> = {
   "press.add_path": "Vector",
   "press.append_path_node": "Vector",
   "press.close_path": "Vector",
+  "press.boolean": "Vector",
   "press.place_image": "Image",
   "press.set_image_fit": "Image",
   "press.set_image_focal": "Image",

@@ -212,6 +212,47 @@ const single = await page.evaluate(async () => {
 check("a fresh rect is still a single-contour vector (no contours[])", single.isSingle === true);
 check("single-contour vector still renders filled (legacy path intact)", single.centre && single.centre[1] > 120 && single.centre[0] < 140, `centre=${JSON.stringify(single.centre)}`);
 
+// Union of two disjoint rects — ADR 0005 Phase A acceptance criterion.
+const unionOut = await page.evaluate(async () => {
+  const P = window.__press;
+  const pg = P.doc.pages[0];
+  const sample = (dataUrl, fx, fy) =>
+    new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const c = document.createElement("canvas");
+        c.width = img.width;
+        c.height = img.height;
+        const g = c.getContext("2d");
+        g.drawImage(img, 0, 0);
+        const px = g.getImageData(Math.round(fx * img.width), Math.round(fy * img.height), 1, 1).data;
+        resolve([px[0], px[1], px[2], px[3]]);
+      };
+      img.onerror = () => resolve(null);
+      img.src = dataUrl;
+    });
+  window.viroAnchor.applyDetailed([
+    { op: "press.add_rect", params: { x: pg.widthPx * 0.15, y: pg.heightPx * 0.2, w: pg.widthPx * 0.12, h: pg.heightPx * 0.12, fill: "#E07A2F" }, reason: "union left" },
+    { op: "press.add_rect", params: { x: pg.widthPx * 0.65, y: pg.heightPx * 0.2, w: pg.widthPx * 0.12, h: pg.heightPx * 0.12, fill: "#E07A2F" }, reason: "union right" },
+  ]);
+  const layers = P.doc.pages[0].layers;
+  const a = layers[layers.length - 2].id;
+  const b = layers[layers.length - 1].id;
+  P.doc.activeLayerIds = [a, b];
+  const ok = P.booleanSelected("union");
+  const result = P.doc.pages[0].layers[P.doc.pages[0].layers.length - 1];
+  const thumb = P.compositor.thumbnailDataUrl(P.doc, 512);
+  const leftPx = await sample(thumb, 0.21, 0.26);
+  const rightPx = await sample(thumb, 0.71, 0.26);
+  const gapPx = await sample(thumb, 0.5, 0.26);
+  return { ok, contours: result?.contours?.length ?? 0, leftPx, rightPx, gapPx };
+});
+check("unionSelected succeeded", unionOut.ok === true);
+check("union of disjoint rects yields two contours", unionOut.contours === 2, `contours=${unionOut.contours}`);
+check("union left piece is filled", isFill(unionOut.leftPx), `left=${JSON.stringify(unionOut.leftPx)}`);
+check("union right piece is filled", isFill(unionOut.rightPx), `right=${JSON.stringify(unionOut.rightPx)}`);
+check("union gap between pieces is background", isBackground(unionOut.gapPx), `gap=${JSON.stringify(unionOut.gapPx)}`);
+
 check("no page errors", pageErrors.length === 0, pageErrors.join(" | "));
 
 console.log(`\n${results.length - failed}/${results.length} checks passed`);

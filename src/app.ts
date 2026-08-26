@@ -1,6 +1,6 @@
 import { migrateDocument } from "./document/migrate";
 import type { BlendMode, DropShadowEffect, GradientOverlayEffect, ImageFit, Layer, OuterGlowEffect, PressDocument, ResampleAlgo, Rgba, StrokeEffect, ToolId, VectorLayer } from "./document/types";
-import { subtractVectors } from "./document/boolean-ops";
+import { setBooleanEngineProvider, type BooleanOp } from "./document/boolean-ops";
 import {
   addImageFrame,
   addTypeFrame,
@@ -563,6 +563,7 @@ export class PressApp {
 
     this.engines = { ck, backend: "webgl", face: this.face, fonts: this.fonts };
     this.compositor = new Compositor(this.engines, canvas);
+    setBooleanEngineProvider(() => this.compositor?.engines.ck ?? null);
     const host = canvas.parentElement!;
     const fit = () => {
       this.compositor?.resize(host.clientWidth, host.clientHeight);
@@ -1447,47 +1448,26 @@ export class PressApp {
   }
 
   /**
-   * ADR 0005 Phase-0 proof boolean. Subtract the vector beneath the topmost of
-   * the two selected vector layers, consuming both operands into ONE multi-
-   * contour result layer in a single history step (undo restores both operands).
-   * The full boolean UI (union/intersect/exclude, a Pathfinder cluster) is
-   * Phase A; this minimal command exists only to prove the model + render.
+   * ADR 0005 Phase A Pathfinder. Combine 2+ selected vector layers with the
+   * given boolean op, consuming operands into one multi-contour result layer in a
+   * single derived-inverse history step (undo restores all operands).
    */
+  booleanSelected(op: BooleanOp): boolean {
+    const ok = this.run({ type: "vector.boolean", params: { op } });
+    if (ok) {
+      const result = selectedLayers(this.doc).find((l) => l.kind === "vector");
+      if (result?.kind === "vector") {
+        const n = result.contours?.length ?? 1;
+        this.status = `Pathfinder ${op} → "${result.name}" (${n} contour${n === 1 ? "" : "s"})`;
+        this.emit();
+      }
+    }
+    return ok;
+  }
+
+  /** Minus Front — topmost minus the one beneath. */
   subtractSelected(): boolean {
-    const ck = this.compositor?.engines.ck;
-    if (!ck) {
-      this.status = "Subtract needs the compositor to be ready";
-      this.emit();
-      return false;
-    }
-    const page = activePage(this.doc);
-    const selected = new Set(this.doc.activeLayerIds);
-    // Operands in draw order: the last is topmost. Subtract = top minus beneath.
-    const vectors = page.layers.filter(
-      (l): l is VectorLayer => l.kind === "vector" && selected.has(l.id),
-    );
-    if (vectors.length < 2) {
-      this.status = "Subtract needs two selected vector layers";
-      this.emit();
-      return false;
-    }
-    const top = vectors[vectors.length - 1]!;
-    const bottom = vectors[vectors.length - 2]!;
-    const result = subtractVectors(ck, page, top, bottom);
-    if (!result) {
-      this.status = "Subtract produced an empty shape — nothing changed";
-      this.emit();
-      return false;
-    }
-    const next = cloneDoc(this.doc);
-    const nextPage = next.pages.find((p) => p.id === page.id)!;
-    const consumed = new Set([top.id, bottom.id]);
-    nextPage.layers = nextPage.layers.filter((l) => !consumed.has(l.id));
-    nextPage.layers.push(result);
-    next.activeLayerIds = [result.id];
-    this.status = `Subtracted "${bottom.name}" from "${top.name}" — ${result.contours?.length ?? 0} contour(s)`;
-    this.commit(`Subtract ${bottom.name} from ${top.name}`, next);
-    return true;
+    return this.booleanSelected("subtract");
   }
 
   selectLayer(id: string, additive: boolean): void {

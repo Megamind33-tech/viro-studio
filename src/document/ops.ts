@@ -12,6 +12,7 @@ import type {
   Rgba,
   StrokeEffect,
   Transform,
+  VectorLayer,
   VectorStroke,
 } from "./types";
 import { replaceStoryRange } from "./text-model";
@@ -315,6 +316,24 @@ export function applyFill(doc: PressDocument, color: Rgba): PressDocument {
       if (story) story.character.fill = { ...color };
     }
   }
+  return next;
+}
+
+/**
+ * Replace boolean operands with one compound-path result layer. Selection becomes
+ * the result. Pure document mutation — Skia work lives in `boolean-ops.ts`.
+ */
+export function applyBooleanCombine(
+  doc: PressDocument,
+  operandIds: readonly string[],
+  result: VectorLayer,
+): PressDocument {
+  const next = cloneDoc(doc);
+  const page = activePage(next);
+  const consumed = new Set(operandIds);
+  page.layers = page.layers.filter((l) => !consumed.has(l.id));
+  page.layers.push(result);
+  next.activeLayerIds = [result.id];
   return next;
 }
 
