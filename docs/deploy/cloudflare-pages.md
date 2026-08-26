@@ -170,7 +170,7 @@ Lenco Pay phases land (P1–P3 in ADR 0004):
    Worker config.
 3. **Resolve the ONNX 25 MiB blocker** (see "Known blocker" above) — otherwise the deploy
    stops at `Asset too large`.
-4. (Optional) Confirm/rename the Worker name (default `viro-press`; lowercase,
+4. (Optional) Confirm/rename the Worker name (default `viro-studio`; lowercase,
    alphanumeric + dashes).
 5. (Optional) Attach a custom domain to the Worker.
 6. Verify the live site loads the editor and that `.wasm`/model/font assets return `200`

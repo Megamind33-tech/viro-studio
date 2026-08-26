@@ -20,7 +20,7 @@
   // `npx wrangler` per docs/deploy/cloudflare-pages.md, so a local schema path would
   // dangle. Add "$schema": "./node_modules/wrangler/config-schema.json" if you later
   // install wrangler as a devDependency.)
-  "name": "viro-press",
+  "name": "viro-studio",
   // Bump when adopting newer Workers runtime features (only relevant if/when a Worker
   // script is added for the Supabase/Lenco backend per ADR 0004 — the current SPA ships
   // no Worker code, only static assets).
