@@ -4,14 +4,17 @@ import type {
   BlendMode,
   DropShadowEffect,
   GradientOverlayEffect,
+  InnerShadowEffect,
   LayerEffect,
   Layer,
+  LongShadowEffect,
   OuterGlowEffect,
   Page,
   PressDocument,
   Rgba,
   StrokeEffect,
   Transform,
+  VectorLayer,
   VectorStroke,
 } from "./types";
 import { replaceStoryRange } from "./text-model";
@@ -180,6 +183,36 @@ export function setLayerOuterGlow(
   return next;
 }
 
+/** Set (or clear, with null) a layer's inner-shadow effect. */
+export function setLayerInnerShadow(
+  doc: PressDocument,
+  id: string,
+  shadow: InnerShadowEffect | null,
+): PressDocument {
+  const next = cloneDoc(doc);
+  const layer = findLayer(activePage(next), id);
+  if (!layer) return next;
+  const effects: LayerEffect[] = (layer.effects ?? []).filter((e) => e.type !== "inner-shadow");
+  if (shadow) effects.push(shadow);
+  layer.effects = effects;
+  return next;
+}
+
+/** Set (or clear, with null) a layer's long/3D-extrusion shadow. */
+export function setLayerLongShadow(
+  doc: PressDocument,
+  id: string,
+  shadow: LongShadowEffect | null,
+): PressDocument {
+  const next = cloneDoc(doc);
+  const layer = findLayer(activePage(next), id);
+  if (!layer) return next;
+  const effects: LayerEffect[] = (layer.effects ?? []).filter((e) => e.type !== "long-shadow");
+  if (shadow) effects.push(shadow);
+  layer.effects = effects;
+  return next;
+}
+
 /**
  * Merge a stroke patch onto an existing stroke (or a fresh one born from
  * `fallbackColor`), preserving fields the patch does not name. An empty
@@ -315,6 +348,24 @@ export function applyFill(doc: PressDocument, color: Rgba): PressDocument {
       if (story) story.character.fill = { ...color };
     }
   }
+  return next;
+}
+
+/**
+ * Replace boolean operands with one compound-path result layer. Selection
+ * becomes the result. Pure document mutation — Skia work lives in `boolean-ops.ts`.
+ */
+export function applyBooleanCombine(
+  doc: PressDocument,
+  operandIds: readonly string[],
+  result: VectorLayer,
+): PressDocument {
+  const next = cloneDoc(doc);
+  const page = activePage(next);
+  const consumed = new Set(operandIds);
+  page.layers = page.layers.filter((l) => !consumed.has(l.id));
+  page.layers.push(result);
+  next.activeLayerIds = [result.id];
   return next;
 }
 

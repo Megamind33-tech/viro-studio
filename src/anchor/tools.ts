@@ -21,9 +21,15 @@ import type {
   PathNode,
   PressDocument,
   Rgba,
+  VectorLayer,
   VectorStroke,
 } from "../document/types";
 import { SKIA_BLEND } from "../document/types";
+import {
+  booleanCombineVectors,
+  requireBooleanEngine,
+  type BooleanOp,
+} from "../document/boolean-ops";
 import {
   activePage,
   addGuide,
@@ -34,10 +40,13 @@ import {
   ellipseNodes,
   findLayer,
   lineNodes,
+  polygonNodes,
+  roundRectNodes,
 } from "../document/factory";
 import {
   addAdjustment,
   addPage,
+  applyBooleanCombine,
   appendPathNode,
   applyFill,
   closePath,
@@ -155,6 +164,7 @@ const LAYER_KINDS = ["raster", "image-frame", "type-frame", "vector", "group", "
 assertCovers<Exclude<Layer["kind"], (typeof LAYER_KINDS)[number]>>();
 
 const REORDER_DIRECTIONS = ["forward", "backward", "front", "back"] as const;
+const BOOLEAN_OPS = ["union", "subtract", "intersect", "exclude"] as const;
 
 /** Nothing sane in this document model is larger than this; beyond it the input is garbage. */
 const MAX_COORD = 1_000_000;
@@ -827,6 +837,47 @@ const OPS: Record<string, AnchorOpDef> = {
     },
   },
 
+  "press.boolean": {
+    description:
+      "Combine 2+ vector layers with a Pathfinder boolean (union, subtract, intersect, exclude). " +
+      "Operands are consumed into ONE multi-contour result layer on the active page — destructive, like " +
+      "Illustrator's shape modes. Subtract = topmost minus the one beneath (or minus the union of all " +
+      "beneath when >2 are selected). Union of disjoint shapes yields one layer with multiple visible " +
+      "pieces. Undo restores all operands as one history step. Only unlocked vector layers count.",
+    params: {
+      op: pEnum("Pathfinder operation.", BOOLEAN_OPS),
+      layerIds: pLayerIds("vector operands — draw order is preserved; last id is topmost"),
+    },
+    required: ["op"],
+    run: (doc, p) => {
+      const sel = resolveSelection(doc, p);
+      const page = activePage(sel.doc);
+      const idSet = new Set(sel.layers.map((l) => l.id));
+      const ordered = page.layers.filter(
+        (l): l is VectorLayer => l.kind === "vector" && idSet.has(l.id) && !l.locked,
+      );
+      if (ordered.length < 2) {
+        fail(
+          `boolean needs at least 2 unlocked vector layers — got ${ordered.length} ` +
+            `(target was ${sel.layers.map((l) => `${l.kind} "${l.name}"`).join(", ")})`,
+        );
+      }
+      const op = reqEnum(p, "op", BOOLEAN_OPS) as BooleanOp;
+      const ck = requireBooleanEngine();
+      const result = booleanCombineVectors(ck, page, ordered, op);
+      if (!result) {
+        fail(`press.boolean ${op}: produced an empty shape — operands unchanged`);
+      }
+      const ids = ordered.map((l) => l.id);
+      const next = applyBooleanCombine(sel.doc, ids, result);
+      return {
+        doc: next,
+        summary: `${op} ${ordered.length} vector(s) → "${result.name}" (${result.contours?.length ?? 1} contour(s))`,
+        created: [result.id],
+      };
+    },
+  },
+
   "press.ungroup": {
     description:
       "Dissolve groups, re-parenting their children to the group's own parent and deleting the group layer. " +
@@ -1225,6 +1276,66 @@ const OPS: Record<string, AnchorOpDef> = {
       const label = readStr(p, "name", { minLength: 1, maxLength: 120 }) ?? "Ellipse";
       const next = addVectorLayer(doc, label, x, y, w, h, ellipseNodes(w, h), { closed: true, fill, stroke });
       return { doc: next, summary: `ellipse ${newestLayerId(next)} ${round(w)}×${round(h)} at ${round(x)},${round(y)}` };
+    },
+  },
+
+  "press.add_round_rect": {
+    description:
+      "Create a rounded rectangle as an editable closed vector path of eight cubic-bezier nodes. " +
+      "Corner radius is clamped to half the shorter edge so the path never self-intersects.",
+    params: {
+      x: pNumber("Left edge in page px.", GEOMETRY),
+      y: pNumber("Top edge in page px.", GEOMETRY),
+      w: pNumber("Width in page px.", SIZE),
+      h: pNumber("Height in page px.", SIZE),
+      radius: pNumber("Corner radius in page px.", { min: 0, max: 200_000 }),
+      fill: pRgba("Fill colour. Omit for an unfilled (outline-only) shape."),
+      stroke: pStroke(),
+      name: pString('Layer name. Defaults to "Rounded rectangle".', { minLength: 1, maxLength: 120 }),
+    },
+    required: ["x", "y", "w", "h"],
+    run: (doc, p) => {
+      const x = reqNum(p, "x", GEOMETRY);
+      const y = reqNum(p, "y", GEOMETRY);
+      const w = reqNum(p, "w", SIZE);
+      const h = reqNum(p, "h", SIZE);
+      const radius = readNum(p, "radius") ?? Math.min(w, h) * 0.2;
+      const fill = readRgba(p, "fill") ?? null;
+      const stroke = readStroke(p, "stroke") ?? null;
+      if (!fill && !stroke) fail('a rounded rectangle needs a "fill", a "stroke", or both — otherwise nothing paints');
+      const label = readStr(p, "name", { minLength: 1, maxLength: 120 }) ?? "Rounded rectangle";
+      const next = addVectorLayer(doc, label, x, y, w, h, roundRectNodes(w, h, radius), { closed: true, fill, stroke });
+      return { doc: next, summary: `rounded rect ${newestLayerId(next)} ${round(w)}×${round(h)} r=${round(radius)}` };
+    },
+  },
+
+  "press.add_polygon": {
+    description:
+      "Create a regular n-gon inscribed in the given box as an editable closed vector path. " +
+      "sides defaults to 6. First vertex is at 12 o'clock.",
+    params: {
+      x: pNumber("Bounding box left edge in page px.", GEOMETRY),
+      y: pNumber("Bounding box top edge in page px.", GEOMETRY),
+      w: pNumber("Bounding box width in page px.", SIZE),
+      h: pNumber("Bounding box height in page px.", SIZE),
+      sides: pNumber("Number of sides (3–24). Default 6.", { min: 3, max: 24 }),
+      fill: pRgba("Fill colour. Omit for an unfilled (outline-only) polygon."),
+      stroke: pStroke(),
+      name: pString('Layer name. Defaults to "n-gon".', { minLength: 1, maxLength: 120 }),
+    },
+    required: ["x", "y", "w", "h"],
+    run: (doc, p) => {
+      const x = reqNum(p, "x", GEOMETRY);
+      const y = reqNum(p, "y", GEOMETRY);
+      const w = reqNum(p, "w", SIZE);
+      const h = reqNum(p, "h", SIZE);
+      const sides = Math.round(readNum(p, "sides") ?? 6);
+      const fill = readRgba(p, "fill") ?? null;
+      const stroke = readStroke(p, "stroke") ?? null;
+      if (!fill && !stroke) fail('a polygon needs a "fill", a "stroke", or both — otherwise nothing paints');
+      const label = readStr(p, "name", { minLength: 1, maxLength: 120 }) ?? (sides === 3 ? "Triangle" : `${sides}-gon`);
+      const next = addVectorLayer(doc, label, x, y, w, h, polygonNodes(w, h, sides), { closed: true, fill, stroke });
+      return { doc: next, summary: `${sides}-gon ${newestLayerId(next)} ${round(w)}×${round(h)}` };
     },
   },
 

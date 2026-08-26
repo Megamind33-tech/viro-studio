@@ -10,6 +10,8 @@ import {
 } from "../document/factory";
 import { setLayerLocked, setLayerVisible } from "../document/ops";
 import { listUserAssets, type UserAsset } from "../library/store";
+import { authAvailable, currentUser, signIn, signUp } from "../platform/auth";
+import { loadFontCatalog, searchCatalog, type CatalogFamily } from "../engine/font-catalog";
 import type { Preset, PresetCategory, PresetMargin, PresetUnit } from "../document/presets";
 import {
   DEFAULT_PRESET_ID,
@@ -63,7 +65,21 @@ const PAGE_THUMB_PX = 64;
  * only belongs here once it is wired end to end in `PressApp`, so a button that
  * slipped into the markup early cannot become theatre.
  */
-const TOOLS: ToolId[] = ["move", "marquee", "crop", "type", "pen", "rect", "ellipse", "line", "hand", "zoom"];
+const TOOLS: ToolId[] = [
+  "move",
+  "marquee",
+  "crop",
+  "eyedropper",
+  "type",
+  "pen",
+  "rect",
+  "ellipse",
+  "line",
+  "roundrect",
+  "polygon",
+  "hand",
+  "zoom",
+];
 
 type DeskState = {
   tool: ToolId;
@@ -123,6 +139,7 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
     bg: { r: 1, g: 1, b: 1, a: 1 },
   };
   let listedAssets: UserAsset[] = [];
+  let fontCatalog: CatalogFamily[] | null = null;
 
   const blend = el<HTMLSelectElement>("blend");
   blend.innerHTML = (Object.keys(BLEND_LABEL) as BlendMode[])
@@ -327,6 +344,105 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
     for (const id of ["fx-glow-blur", "fx-glow-opacity", "fx-glow-color"]) {
       el(id).addEventListener("change", commitGlow);
     }
+
+    const currentInner = () => selectedLayers(app.doc)[0]?.effects?.find((e) => e.type === "inner-shadow") ?? null;
+    const defaultInner = () => ({
+      type: "inner-shadow" as const,
+      enabled: true,
+      color: { r: 0, g: 0, b: 0, a: 1 },
+      offsetX: 2,
+      offsetY: 4,
+      blur: 8,
+      opacity: 0.55,
+    });
+    el<HTMLInputElement>("fx-inner-on").addEventListener("change", () => {
+      const sel = selectedLayers(app.doc)[0];
+      if (!sel) {
+        render();
+        return;
+      }
+      const on = el<HTMLInputElement>("fx-inner-on").checked;
+      const cur = currentInner();
+      if (on) app.setInnerShadow(sel.id, cur ? { ...cur, enabled: true } : defaultInner());
+      else if (cur) app.setInnerShadow(sel.id, { ...cur, enabled: false });
+    });
+    const commitInner = () => {
+      const sel = selectedLayers(app.doc)[0];
+      if (!sel) return;
+      const cur = currentInner() ?? defaultInner();
+      app.setInnerShadow(sel.id, {
+        ...cur,
+        enabled: true,
+        offsetX: parseNum(el<HTMLInputElement>("fx-inner-x").value) ?? cur.offsetX,
+        offsetY: parseNum(el<HTMLInputElement>("fx-inner-y").value) ?? cur.offsetY,
+        blur: Math.max(0, parseNum(el<HTMLInputElement>("fx-inner-blur").value) ?? cur.blur),
+        opacity: Math.min(1, Math.max(0, parseNum(el<HTMLInputElement>("fx-inner-opacity").value) ?? cur.opacity)),
+        color: hexToRgba(el<HTMLInputElement>("fx-inner-color").value),
+      });
+    };
+    for (const id of ["fx-inner-x", "fx-inner-y", "fx-inner-blur", "fx-inner-opacity", "fx-inner-color"]) {
+      el(id).addEventListener("change", commitInner);
+    }
+
+    const currentLong = () => selectedLayers(app.doc)[0]?.effects?.find((e) => e.type === "long-shadow") ?? null;
+    const defaultLong = () => ({
+      type: "long-shadow" as const,
+      enabled: true,
+      color: { r: 0.1, g: 0.1, b: 0.1, a: 1 },
+      angle: 135,
+      length: 28,
+      opacity: 0.55,
+    });
+    el<HTMLInputElement>("fx-long-on").addEventListener("change", () => {
+      const sel = selectedLayers(app.doc)[0];
+      if (!sel) {
+        render();
+        return;
+      }
+      const on = el<HTMLInputElement>("fx-long-on").checked;
+      const cur = currentLong();
+      if (on) app.setLongShadow(sel.id, cur ? { ...cur, enabled: true } : defaultLong());
+      else if (cur) app.setLongShadow(sel.id, { ...cur, enabled: false });
+    });
+    const commitLong = () => {
+      const sel = selectedLayers(app.doc)[0];
+      if (!sel) return;
+      const cur = currentLong() ?? defaultLong();
+      app.setLongShadow(sel.id, {
+        ...cur,
+        enabled: true,
+        angle: parseNum(el<HTMLInputElement>("fx-long-angle").value) ?? cur.angle,
+        length: Math.max(1, parseNum(el<HTMLInputElement>("fx-long-length").value) ?? cur.length),
+        opacity: Math.min(1, Math.max(0, parseNum(el<HTMLInputElement>("fx-long-opacity").value) ?? cur.opacity)),
+        color: hexToRgba(el<HTMLInputElement>("fx-long-color").value),
+      });
+    };
+    for (const id of ["fx-long-angle", "fx-long-length", "fx-long-opacity", "fx-long-color"]) {
+      el(id).addEventListener("change", commitLong);
+    }
+  }
+
+  function submitAuth(signup: boolean): void {
+    const email = el<HTMLInputElement>("auth-email").value.trim();
+    const password = el<HTMLInputElement>("auth-pass").value;
+    const status = el("auth-status");
+    if (!email || !password) {
+      status.textContent = "Email and password are required.";
+      return;
+    }
+    status.textContent = signup ? "Creating account…" : "Signing in…";
+    status.dataset.busy = "1";
+    void (async () => {
+      try {
+        const session = signup ? await signUp(email, password) : await signIn(email, password);
+        status.textContent = session.user.email ? `Signed in as ${session.user.email}` : "Signed in.";
+        delete status.dataset.busy;
+        app.closeDialog();
+      } catch (err) {
+        status.textContent = err instanceof Error ? err.message : String(err);
+        delete status.dataset.busy;
+      }
+    })();
   }
 
   function bindRecovery(): void {
@@ -492,14 +608,45 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
       case "cutout":
         void app.cutoutSelected();
         return;
+      case "enhance-details":
+        void app.enhanceSelected("sharpen");
+        return;
+      case "improve-lighting":
+        void app.enhanceSelected("lighting");
+        return;
+      case "type-size-up":
+        app.bumpTypeSize(2);
+        return;
+      case "type-size-down":
+        app.bumpTypeSize(-2);
+        return;
+      case "sign-in":
+        if (currentUser()) {
+          app.signOutSession();
+        } else {
+          app.openAuthDialog();
+        }
+        return;
       case "group":
         app.group();
         return;
       case "ungroup":
         app.ungroup();
         return;
+      case "boolean-union":
+        app.booleanSelected("union");
+        return;
+      case "boolean-subtract":
+        app.booleanSelected("subtract");
+        return;
+      case "boolean-intersect":
+        app.booleanSelected("intersect");
+        return;
+      case "boolean-exclude":
+        app.booleanSelected("exclude");
+        return;
       case "subtract-vectors":
-        app.subtractSelected();
+        app.booleanSelected("subtract");
         return;
       case "bring-forward":
         app.reorder(1);
@@ -804,6 +951,18 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
     el<HTMLInputElement>("opt-aa").addEventListener("change", (e) => {
       state.antiAlias = (e.target as HTMLInputElement).checked;
     });
+    const fontSearch = document.getElementById("lib-font-search") as HTMLInputElement | null;
+    fontSearch?.addEventListener("input", () => renderFontList());
+    const radiusEl = document.getElementById("opt-rr-radius") as HTMLInputElement | null;
+    radiusEl?.addEventListener("change", () => {
+      const n = parseNum(radiusEl.value);
+      if (n != null) app.roundRectRadius = Math.max(0, n);
+    });
+    const sidesEl = document.getElementById("opt-poly-sides") as HTMLInputElement | null;
+    sidesEl?.addEventListener("change", () => {
+      const n = parseNum(sidesEl.value);
+      if (n != null) app.polygonSides = Math.max(3, Math.min(24, Math.round(n)));
+    });
   }
 
   function applyTransform(src: "opt" | "tr"): void {
@@ -924,6 +1083,11 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
       const fontBtn = t.closest<HTMLElement>("[data-font]");
       if (fontBtn?.dataset.font) {
         void app.setFont(fontBtn.dataset.font);
+      }
+      const catalogBtn = t.closest<HTMLElement>("[data-catalog]");
+      if (catalogBtn?.dataset.catalog) {
+        const fam = fontCatalog?.find((f) => f.id === catalogBtn.dataset.catalog);
+        if (fam) void app.applyCatalogFont(fam);
       }
       const assetBtn = t.closest<HTMLElement>("[data-asset]");
       if (assetBtn?.dataset.asset) {
@@ -1076,7 +1240,7 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
     document.querySelectorAll("[data-dlg]").forEach((b) => {
       b.addEventListener("click", () => {
         const n = (b as HTMLElement).dataset.dlg;
-        if (n === "image-cancel" || n === "new-cancel" || n === "bc-cancel") app.closeDialog();
+        if (n === "image-cancel" || n === "new-cancel" || n === "bc-cancel" || n === "auth-cancel") app.closeDialog();
         if (n === "image-ok") applyImageSizeDlg();
         if (n === "new-ok") createFromNewDialog();
         if (n === "bc-ok") {
@@ -1084,6 +1248,7 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
           const ct = Number(el<HTMLInputElement>("bc-c").value);
           app.brightnessContrast(br, ct);
         }
+        if (n === "auth-in" || n === "auth-up") void submitAuth(n === "auth-up");
       });
     });
     el("img-w").addEventListener("input", () => syncImageDims("w"));
@@ -1587,6 +1752,20 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
     el("dlg-image").hidden = app.dialog !== "image-size";
     el("dlg-new").hidden = app.dialog !== "new";
     el("dlg-bc").hidden = app.dialog !== "brightness";
+    el("dlg-auth").hidden = app.dialog !== "auth";
+    const signBtn = document.querySelector<HTMLElement>('[data-cmd="sign-in"]');
+    const who = currentUser();
+    if (signBtn) signBtn.textContent = who ? `Sign out (${who.email || "session"})` : "Sign in / Create account…";
+    if (app.dialog === "auth") {
+      const status = el("auth-status");
+      if (!status.dataset.busy) {
+        status.textContent = who
+          ? `Signed in as ${who.email}. Sign out from File, or create another account.`
+          : authAvailable()
+            ? "Sign in or create an account. Session tokens stay on this device."
+            : "Cloud accounts need a provisioned Supabase project (ADR 0004). Until then this editor stays local-first — nothing here is faked.";
+      }
+    }
     const recoverBar = document.getElementById("recover-bar");
     if (recoverBar) {
       const snap = app.pendingRecovery;
@@ -1706,6 +1885,30 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
     setDisabled(["fx-glow-on"], !sel);
     setDisabled(["fx-glow-blur", "fx-glow-opacity", "fx-glow-color"], !glowOn);
 
+    const inner = sel?.effects?.find((e) => e.type === "inner-shadow") ?? null;
+    const innerOn = !!inner && inner.enabled;
+    el<HTMLInputElement>("fx-inner-on").checked = innerOn;
+    fillIfIdle("fx-inner-x", inner ? fmt(inner.offsetX, 0) : "2");
+    fillIfIdle("fx-inner-y", inner ? fmt(inner.offsetY, 0) : "4");
+    fillIfIdle("fx-inner-blur", inner ? fmt(inner.blur, 0) : "8");
+    fillIfIdle("fx-inner-opacity", inner ? fmt(inner.opacity, 2) : "0.55");
+    if (inner) el<HTMLInputElement>("fx-inner-color").value = rgbaToHex(inner.color);
+    setDisabled(["fx-inner-on"], !sel);
+    setDisabled(["fx-inner-x", "fx-inner-y", "fx-inner-blur", "fx-inner-opacity", "fx-inner-color"], !innerOn);
+
+    const longFx = sel?.effects?.find((e) => e.type === "long-shadow") ?? null;
+    const longOn = !!longFx && longFx.enabled;
+    el<HTMLInputElement>("fx-long-on").checked = longOn;
+    fillIfIdle("fx-long-angle", longFx ? fmt(longFx.angle, 0) : "135");
+    fillIfIdle("fx-long-length", longFx ? fmt(longFx.length, 0) : "28");
+    fillIfIdle("fx-long-opacity", longFx ? fmt(longFx.opacity, 2) : "0.55");
+    if (longFx) el<HTMLInputElement>("fx-long-color").value = rgbaToHex(longFx.color);
+    setDisabled(["fx-long-on"], !sel);
+    setDisabled(["fx-long-angle", "fx-long-length", "fx-long-opacity", "fx-long-color"], !longOn);
+
+    fillIfIdle("opt-rr-radius", fmt(app.roundRectRadius, 0));
+    fillIfIdle("opt-poly-sides", String(app.polygonSides));
+
     const fxEmpty = document.getElementById("fx-empty");
     if (fxEmpty) fxEmpty.hidden = !!sel;
 
@@ -1820,14 +2023,48 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
     const host = document.getElementById("lib-fonts");
     if (!host) return;
     const faces = app.fonts.list();
-    host.innerHTML = faces.length
-      ? faces
-          .map(
-            (f) =>
-              `<button type="button" class="lib-font${f.id === fontId ? " is-on" : ""}" data-font="${esc(f.id)}">${esc(f.name)}<span>${esc(f.source)}</span></button>`,
-          )
-          .join("")
-      : `<p class="empty">No faces yet — import a TTF or OTF.</p>`;
+    const loaded = faces
+      .map(
+        (f) =>
+          `<button type="button" class="lib-font${f.id === fontId ? " is-on" : ""}" data-font="${esc(f.id)}">${esc(f.name)}<span>${esc(f.source)}</span></button>`,
+      )
+      .join("");
+    const q = (document.getElementById("lib-font-search") as HTMLInputElement | null)?.value ?? "";
+    if (!fontCatalog) {
+      host.innerHTML =
+        (loaded || `<p class="empty">No faces yet — import a TTF or OTF, or wait for the Google catalog.</p>`) +
+        `<p class="hint">Loading Google Fonts catalog…</p>`;
+      void loadFontCatalog()
+        .then((list) => {
+          fontCatalog = list;
+          renderFontList(fontId);
+        })
+        .catch((err) => {
+          const hint = document.getElementById("lib-font-hint");
+          if (hint) hint.textContent = err instanceof Error ? err.message : String(err);
+        });
+      return;
+    }
+    const loadedIds = new Set(faces.map((f) => f.id));
+    const hits = searchCatalog(fontCatalog, q, 80);
+    const catalogHtml = hits
+      .filter((f) => !loadedIds.has(`gf-${f.id}-400-n`) && !loadedIds.has(f.id))
+      .map(
+        (f) =>
+          `<button type="button" class="lib-font" data-catalog="${esc(f.id)}">${esc(f.family)}<span>${esc(f.category)}</span></button>`,
+      )
+      .join("");
+    const hint = document.getElementById("lib-font-hint");
+    if (hint) {
+      hint.textContent = q.trim()
+        ? `${hits.length} match${hits.length === 1 ? "" : "es"} in ${fontCatalog.length} Google families — click to fetch the real TTF.`
+        : `${fontCatalog.length} Google families indexed. Search, then click to install a real TTF. Loaded faces listed first.`;
+    }
+    host.innerHTML =
+      (loaded ? `<p class="hint">Loaded ${faces.length} face${faces.length === 1 ? "" : "s"}</p>${loaded}` : "") +
+      (catalogHtml
+        ? `<p class="hint">Catalog</p>${catalogHtml}`
+        : `<p class="empty">${q.trim() ? "No catalog matches." : "Catalog empty."}</p>`);
   }
 
   async function renderLibrary(): Promise<void> {

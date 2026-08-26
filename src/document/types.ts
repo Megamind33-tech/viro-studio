@@ -140,7 +140,44 @@ export interface OuterGlowEffect {
   opacity: number;
 }
 
-export type LayerEffect = DropShadowEffect | GradientOverlayEffect | StrokeEffect | OuterGlowEffect;
+/**
+ * A shadow cast *inside* the layer's silhouette (Photoshop "Inner Shadow").
+ * Same fields as drop shadow; compositor clips the blurred offset to the
+ * layer's own alpha so it never spills outside. Additive — no schema bump.
+ */
+export interface InnerShadowEffect {
+  type: "inner-shadow";
+  enabled: boolean;
+  color: Rgba;
+  offsetX: number;
+  offsetY: number;
+  blur: number;
+  opacity: number;
+}
+
+/**
+ * A long/extruded shadow that reads as 3D on a 2D page (Material "long shadow",
+ * isometric extrusion). Drawn as stacked zero-blur offsets along `angle` for
+ * `length` page px. Additive — no schema bump.
+ */
+export interface LongShadowEffect {
+  type: "long-shadow";
+  enabled: boolean;
+  color: Rgba;
+  /** Degrees clockwise from +x. 135° is down-right, the usual 3D-on-2D cast. */
+  angle: number;
+  /** Extrusion length in page px. */
+  length: number;
+  opacity: number;
+}
+
+export type LayerEffect =
+  | DropShadowEffect
+  | GradientOverlayEffect
+  | StrokeEffect
+  | OuterGlowEffect
+  | InnerShadowEffect
+  | LongShadowEffect;
 
 export interface LayerBase {
   id: string;
@@ -479,7 +516,15 @@ export interface ViewState {
   bg: Rgba;
   marquee: { x: number; y: number; w: number; h: number } | null;
   /** Live shape-tool feedback mid-drag, in page px. Null when not dragging. */
-  shapePreview: { kind: "rect" | "ellipse" | "line"; x: number; y: number; w: number; h: number } | null;
+  shapePreview: {
+    kind: "rect" | "ellipse" | "line" | "roundrect" | "polygon";
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+    radius?: number;
+    sides?: number;
+  } | null;
   /** Live type-edit caret. Painted by the overlay; null when not editing. */
   textEdit: { layerId: string; anchor: number; focus: number } | null;
   /**

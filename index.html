@@ -29,6 +29,8 @@
             <button type="button" data-cmd="export-png">Export PNG…</button>
             <button type="button" data-cmd="export-pdf">Export PDF…</button>
             <button type="button" data-cmd="save-json">Save Press JSON…</button>
+            <div class="sep"></div>
+            <button type="button" data-cmd="sign-in">Sign in / Create account…</button>
           </div>
         </div>
         <div class="menu">
@@ -64,7 +66,10 @@
             <button type="button" data-cmd="bring-forward">Bring Forward<span class="kbd">Ctrl+]</span></button>
             <button type="button" data-cmd="send-backward">Send Backward<span class="kbd">Ctrl+[</span></button>
             <div class="sep"></div>
-            <button type="button" data-cmd="subtract-vectors">Subtract Shapes</button>
+            <button type="button" data-cmd="boolean-union">Unite</button>
+            <button type="button" data-cmd="boolean-subtract">Minus Front</button>
+            <button type="button" data-cmd="boolean-intersect">Intersect</button>
+            <button type="button" data-cmd="boolean-exclude">Exclude</button>
             <div class="sep"></div>
             <button type="button" data-cmd="lock">Lock / Unlock</button>
             <button type="button" data-cmd="hide">Hide / Show</button>
@@ -94,6 +99,8 @@
           <button type="button" class="menu-btn" data-menu="filter">Filter</button>
           <div class="flyout" data-flyout="filter" hidden>
             <button type="button" data-cmd="adj-bc">Brightness/Contrast…</button>
+            <button type="button" data-cmd="enhance-details">Enhance Details</button>
+            <button type="button" data-cmd="improve-lighting">Improve Lighting</button>
             <button type="button" data-cmd="cutout" id="filter-cutout">Cutout background</button>
           </div>
         </div>
@@ -154,6 +161,8 @@
           </label>
           <button type="button" class="btn" id="opt-font-upload">Upload…</button>
           <label class="field"><span>Size</span><input class="num w3" id="opt-size" inputmode="decimal" /></label>
+          <button type="button" class="btn" data-cmd="type-size-down" title="Smaller (Ctrl+Shift+,)">−</button>
+          <button type="button" class="btn" data-cmd="type-size-up" title="Larger (Ctrl+Shift+.)">+</button>
           <label class="field"><span>Leading</span><input class="num w3" id="opt-lead" inputmode="decimal" /></label>
           <label class="field"><span>Tracking</span><input class="num w3" id="opt-track" inputmode="decimal" /></label>
         </div>
@@ -165,13 +174,36 @@
         <div class="opt-strip" data-for="crop" hidden>
           <span class="lbl">Drag on an image frame to reframe</span>
         </div>
+        <div class="opt-strip" data-for="eyedropper" hidden>
+          <span class="lbl">Click the page to sample a colour into Foreground</span>
+        </div>
         <div class="opt-strip" data-for="pen" hidden>
           <span class="lbl">Click to add nodes · Enter closes path</span>
         </div>
         <div class="opt-strip" data-for="rect" hidden>
           <span class="lbl">Rectangle</span>
           <span class="div"></span>
+          <span class="lbl">Fill from foreground · Shift constrains square</span>
+        </div>
+        <div class="opt-strip" data-for="ellipse" hidden>
+          <span class="lbl">Ellipse</span>
+          <span class="div"></span>
+          <span class="lbl">Fill from foreground · Shift constrains circle</span>
+        </div>
+        <div class="opt-strip" data-for="line" hidden>
+          <span class="lbl">Line</span>
+          <span class="div"></span>
+          <span class="lbl">Stroke from foreground · Shift snaps to 45°</span>
+        </div>
+        <div class="opt-strip" data-for="roundrect" hidden>
+          <span class="lbl">Rounded rectangle</span>
+          <label class="field"><span>Radius</span><input class="num w3" id="opt-rr-radius" inputmode="numeric" /></label>
           <span class="lbl">Fill from foreground</span>
+        </div>
+        <div class="opt-strip" data-for="polygon" hidden>
+          <span class="lbl">Polygon</span>
+          <label class="field"><span>Sides</span><input class="num w3" id="opt-poly-sides" inputmode="numeric" /></label>
+          <span class="lbl">3–24 · Fill from foreground</span>
         </div>
         <div class="opt-strip" data-for="hand" hidden>
           <span class="lbl">Drag pasteboard · Space also pans</span>
@@ -192,6 +224,9 @@
         <button type="button" class="tool" data-tool="crop" title="Crop / Reframe (C)" aria-label="Crop" aria-pressed="false">
           <svg viewBox="0 0 16 16"><path d="M4 2v10h10M2 4h10v10"/></svg>
         </button>
+        <button type="button" class="tool" data-tool="eyedropper" title="Eyedropper (I)" aria-label="Eyedropper" aria-pressed="false">
+          <svg viewBox="0 0 16 16"><path d="M12.5 2.5 5 10l-.8 2.8L7 12l7.5-7.5a1.4 1.4 0 0 0-2-2z"/><path d="M4.2 11.2 2.5 13.5"/></svg>
+        </button>
         <div class="tool-sep" role="separator"></div>
         <button type="button" class="tool" data-tool="type" title="Type (T)" aria-label="Type" aria-pressed="false">
           <svg viewBox="0 0 16 16"><path d="M3 3.5h10M8 3.5V13M5.5 13h5"/></svg>
@@ -207,6 +242,12 @@
         </button>
         <button type="button" class="tool" data-tool="line" title="Line (Shift+U)" aria-label="Line" aria-pressed="false">
           <svg viewBox="0 0 16 16"><path d="M2.5 13.5 13.5 2.5"/></svg>
+        </button>
+        <button type="button" class="tool" data-tool="roundrect" title="Rounded Rectangle (Shift+U)" aria-label="Rounded rectangle" aria-pressed="false">
+          <svg viewBox="0 0 16 16"><rect x="2.5" y="3.5" width="11" height="9" rx="2.5"/></svg>
+        </button>
+        <button type="button" class="tool" data-tool="polygon" title="Polygon (Shift+U)" aria-label="Polygon" aria-pressed="false">
+          <svg viewBox="0 0 16 16"><path d="M8 1.5 14.5 6.2 12 14.5H4L1.5 6.2z"/></svg>
         </button>
         <div class="tool-sep" role="separator"></div>
         <button type="button" class="tool" data-tool="hand" title="Hand (H)" aria-label="Hand" aria-pressed="false">
@@ -414,6 +455,33 @@
               <label class="field"><span>Blur</span><input class="num" id="fx-glow-blur" inputmode="numeric" /></label>
               <label class="field"><span>Opacity</span><input class="num" id="fx-glow-opacity" inputmode="decimal" /></label>
             </div>
+            <div class="fx-sep"></div>
+            <div class="row">
+              <label class="check"><input type="checkbox" id="fx-inner-on" />Inner Shadow</label>
+              <span class="grow"></span>
+              <input type="color" id="fx-inner-color" value="#000000" aria-label="Inner shadow color" />
+            </div>
+            <div class="row fill">
+              <label class="field"><span>X</span><input class="num" id="fx-inner-x" inputmode="numeric" /></label>
+              <label class="field"><span>Y</span><input class="num" id="fx-inner-y" inputmode="numeric" /></label>
+            </div>
+            <div class="row fill">
+              <label class="field"><span>Blur</span><input class="num" id="fx-inner-blur" inputmode="numeric" /></label>
+              <label class="field"><span>Opacity</span><input class="num" id="fx-inner-opacity" inputmode="decimal" /></label>
+            </div>
+            <div class="fx-sep"></div>
+            <div class="row">
+              <label class="check"><input type="checkbox" id="fx-long-on" />3D Long Shadow</label>
+              <span class="grow"></span>
+              <input type="color" id="fx-long-color" value="#1a1a1a" aria-label="Long shadow color" />
+            </div>
+            <div class="row fill">
+              <label class="field"><span>Angle</span><input class="num" id="fx-long-angle" inputmode="numeric" /></label>
+              <label class="field"><span>Length</span><input class="num" id="fx-long-length" inputmode="numeric" /></label>
+            </div>
+            <div class="row fill">
+              <label class="field"><span>Opacity</span><input class="num" id="fx-long-opacity" inputmode="decimal" /></label>
+            </div>
             <p class="fx-empty hint" id="fx-empty" hidden>Select a layer to add effects.</p>
           </div>
         </section>
@@ -497,7 +565,8 @@
             <div class="row">
               <button type="button" class="ctrl" data-cmd="import-fonts">Import fonts…</button>
             </div>
-            <p class="hint">Bundled, imported, and system faces. Pick a type frame, then a face.</p>
+            <input class="ctrl" id="lib-font-search" type="search" placeholder="Search 1,900+ Google Fonts…" aria-label="Search font catalog" />
+            <p class="hint" id="lib-font-hint">Bundled, imported, system, and on-demand Google Fonts. A face is registered only after its TTF loads.</p>
             <div class="lib-fonts" id="lib-fonts"></div>
           </div>
         </section>
@@ -731,6 +800,24 @@
         <div class="dialog-foot">
           <button type="button" class="btn" data-dlg="bc-cancel">Cancel</button>
           <button type="button" class="btn default" data-dlg="bc-ok">OK</button>
+        </div>
+      </div>
+    </div>
+
+    </div>
+
+    <div class="dialog-back" id="dlg-auth" hidden>
+      <div class="dialog" role="dialog" aria-labelledby="dlg-auth-title">
+        <div class="dialog-title" id="dlg-auth-title">Sign in</div>
+        <div class="dialog-body">
+          <p class="hint" id="auth-status">Cloud accounts need a provisioned Supabase project (ADR 0004). Until then this editor stays local-first — nothing here is faked.</p>
+          <label class="field"><span>Email</span><input class="ctrl" id="auth-email" type="email" autocomplete="username" /></label>
+          <label class="field"><span>Password</span><input class="ctrl" id="auth-pass" type="password" autocomplete="current-password" /></label>
+        </div>
+        <div class="dialog-foot">
+          <button type="button" class="btn" data-dlg="auth-cancel">Cancel</button>
+          <button type="button" class="btn" data-dlg="auth-up">Create account</button>
+          <button type="button" class="btn default" data-dlg="auth-in">Sign in</button>
         </div>
       </div>
     </div>

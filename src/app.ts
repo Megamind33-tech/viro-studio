@@ -1,6 +1,6 @@
 import { migrateDocument } from "./document/migrate";
-import type { BlendMode, DropShadowEffect, GradientOverlayEffect, ImageFit, Layer, OuterGlowEffect, PressDocument, ResampleAlgo, Rgba, StrokeEffect, ToolId, VectorLayer } from "./document/types";
-import { subtractVectors } from "./document/boolean-ops";
+import type { BlendMode, DropShadowEffect, GradientOverlayEffect, ImageFit, InnerShadowEffect, Layer, LongShadowEffect, OuterGlowEffect, PressDocument, ResampleAlgo, Rgba, StrokeEffect, ToolId } from "./document/types";
+import { setBooleanEngineProvider, type BooleanOp } from "./document/boolean-ops";
 import {
   addImageFrame,
   addTypeFrame,
@@ -43,6 +43,8 @@ import {
   setLayerBlend,
   setLayerDropShadow,
   setLayerGradientOverlay,
+  setLayerInnerShadow,
+  setLayerLongShadow,
   setLayerOuterGlow,
   setLayerStrokeEffect,
   setLayerLocked,
@@ -63,6 +65,8 @@ import { loadCanvasKit } from "./engine/canvaskit";
 import { Compositor, type Engines, type HandleId } from "./engine/compositor";
 import { colourStackLabel, loadLcms, rgb8ToLab, type Lcms } from "./engine/lcms";
 import { cutoutAvailable, cutoutDataUrl } from "./engine/cutout";
+import { enhanceDataUrl, type EnhanceKind } from "./engine/enhance";
+import { type CatalogFamily } from "./engine/font-catalog";
 import { nearestCaretOffset, type FacePack } from "./engine/type";
 import { fontRegistry, type FontRegistry } from "./engine/font-registry";
 import { makeFallbackFace } from "./engine/latin-fallback";
@@ -88,6 +92,7 @@ import {
   type RecoverySnapshot,
 } from "./library/store";
 import { flag } from "./platform/flags";
+import { signOut } from "./platform/auth";
 import { projects, type ProjectRecord, type ProjectSummary } from "./platform/projects";
 
 /** Smallest edge a layer may be scaled to, in page px. */
@@ -167,14 +172,18 @@ export class PressApp {
   private lastThumbAt = 0;
   /** Regenerate the page thumbnail at most this often during active editing. */
   private static THUMB_MS = 4000;
-  dialog: "image-size" | "new" | "brightness" | null = null;
+  dialog: "image-size" | "new" | "brightness" | "auth" | null = null;
   channelThumbs: { r: string; g: string; b: string; rgb: string } | null = null;
   /** Per-op audit trail from the last Anchor batch, for the queue surface. */
   anchorResults: AnchorOpResult[] = [];
   /** What the last PDF export actually emitted — vector counts and any raster fallbacks. */
   lastPdfReport: PdfExportReport | null = null;
+  /** Corner radius in page px for the rounded-rectangle tool. */
+  roundRectRadius = 24;
+  /** Side count for the polygon tool (3–24). */
+  polygonSides = 6;
   drag: {
-    mode: "move" | "marquee" | "pan" | "rect" | "ellipse" | "line" | "crop" | "resize" | "type";
+    mode: "move" | "marquee" | "pan" | "rect" | "ellipse" | "line" | "roundrect" | "polygon" | "crop" | "resize" | "type";
     x: number;
     y: number;
     lx: number;
@@ -568,6 +577,7 @@ export class PressApp {
 
     this.engines = { ck, backend: "webgl", face: this.face, fonts: this.fonts };
     this.compositor = new Compositor(this.engines, canvas);
+    setBooleanEngineProvider(() => this.compositor?.engines.ck ?? null);
     const host = canvas.parentElement!;
     const fit = () => {
       this.compositor?.resize(host.clientWidth, host.clientHeight);
@@ -636,6 +646,11 @@ export class PressApp {
         this.run({ type: "layer.delete", params: {} });
         return;
       }
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === ">" || e.key === "." || e.key === "<" || e.key === ",")) {
+        e.preventDefault();
+        this.bumpTypeSize(e.key === ">" || e.key === "." ? 2 : -2);
+        return;
+      }
       if (e.key === "Enter" && this.compositor?.view.tool === "pen") {
         const id = this.doc.activeLayerIds[0];
         if (id) this.run({ type: "path.close", params: { layerId: id } });
@@ -644,12 +659,12 @@ export class PressApp {
       const key = e.key.toLowerCase();
       if (key === "u" && !e.ctrlKey && !e.metaKey) {
         // U picks the shape tool; Shift+U cycles the group, as Photoshop does.
-        const group: ToolId[] = ["rect", "ellipse", "line"];
+        const group: ToolId[] = ["rect", "ellipse", "line", "roundrect", "polygon"];
         const at = group.indexOf(this.compositor?.view.tool ?? "rect");
         this.setTool(e.shiftKey && at >= 0 ? group[(at + 1) % group.length]! : group[at >= 0 ? at : 0]!);
         return;
       }
-      const map: Record<string, ToolId> = { v: "move", m: "marquee", t: "type", p: "pen", c: "crop", h: "hand", z: "zoom" };
+      const map: Record<string, ToolId> = { v: "move", m: "marquee", t: "type", p: "pen", c: "crop", h: "hand", z: "zoom", i: "eyedropper" };
       const tool = map[key];
       if (tool && !e.ctrlKey && !e.metaKey) this.setTool(tool);
     });
@@ -834,6 +849,15 @@ export class PressApp {
       const sy = e.clientY - rect.top;
       const p = this.compositor.screenToPage(sx, sy);
       const tool = this.compositor.view.tool;
+      if (tool === "eyedropper") {
+        const sampled = this.compositor.samplePageColor(p.x, p.y);
+        if (sampled) {
+          this.compositor.view.fg = sampled;
+          this.status = `Eyedropper ${(sampled.r * 255) | 0},${(sampled.g * 255) | 0},${(sampled.b * 255) | 0}`;
+          this.emit(true);
+        }
+        return;
+      }
       if (tool === "hand" || e.button === 1) {
         this.drag = { mode: "pan", x: sx, y: sy, lx: this.compositor.view.panX, ly: this.compositor.view.panY };
         return;
@@ -898,9 +922,17 @@ export class PressApp {
         this.emit();
         return;
       }
-      if (tool === "rect" || tool === "ellipse" || tool === "line") {
+      if (tool === "rect" || tool === "ellipse" || tool === "line" || tool === "roundrect" || tool === "polygon") {
         this.drag = { mode: tool, x: p.x, y: p.y, lx: p.x, ly: p.y };
-        this.compositor.view.shapePreview = { kind: tool, x: p.x, y: p.y, w: 0, h: 0 };
+        this.compositor.view.shapePreview = {
+          kind: tool,
+          x: p.x,
+          y: p.y,
+          w: 0,
+          h: 0,
+          radius: this.roundRectRadius,
+          sides: this.polygonSides,
+        };
         return;
       }
       if (tool === "pen") {
@@ -1010,7 +1042,14 @@ export class PressApp {
         this.emitSoon();
         return;
       }
-      if (this.drag.mode === "rect" || this.drag.mode === "ellipse" || this.drag.mode === "line" || this.drag.mode === "type") {
+      if (
+        this.drag.mode === "rect" ||
+        this.drag.mode === "ellipse" ||
+        this.drag.mode === "line" ||
+        this.drag.mode === "roundrect" ||
+        this.drag.mode === "polygon" ||
+        this.drag.mode === "type"
+      ) {
         // A line keeps its true endpoints (w/h may be negative); a box shape is
         // normalised. Both run through the same constrain helpers pointerup
         // uses, so the preview shows exactly the geometry that will commit.
@@ -1024,7 +1063,13 @@ export class PressApp {
             h: end.y - this.drag.y,
           };
         } else {
-          this.compositor.view.shapePreview = { kind: this.drag.mode === "type" ? "rect" : this.drag.mode, ...this.shapeBox(p.x, p.y, e.shiftKey) };
+          const kind = this.drag.mode === "type" ? "rect" : this.drag.mode;
+          this.compositor.view.shapePreview = {
+            kind,
+            ...this.shapeBox(p.x, p.y, e.shiftKey),
+            radius: this.roundRectRadius,
+            sides: this.polygonSides,
+          };
         }
         // Overlay-only: the document has not changed. A full emit() here would
         // re-composite the page on every pointer move and exhaust the heap.
@@ -1041,16 +1086,28 @@ export class PressApp {
         this.compositor.view.shapePreview = null;
         this.compositor.requestOverlayRepaint();
       }
-      if (this.drag.mode === "rect" || this.drag.mode === "ellipse") {
+      if (this.drag.mode === "rect" || this.drag.mode === "ellipse" || this.drag.mode === "roundrect" || this.drag.mode === "polygon") {
         const b = this.shapeBox(p.x, p.y, e.shiftKey);
         // Below the minimum this was a stray click, not a drag. Photoshop opens
         // a size dialog here; we simply decline rather than drop a 4px artefact.
         if (b.w >= 4 && b.h >= 4) {
           const fg = this.compositor.view.fg;
-          this.run({
-            type: this.drag.mode === "rect" ? "vector.addRect" : "vector.addEllipse",
-            params: { x: b.x, y: b.y, w: b.w, h: b.h, fill: fg },
-          });
+          if (this.drag.mode === "roundrect") {
+            this.run({
+              type: "vector.addRoundRect",
+              params: { x: b.x, y: b.y, w: b.w, h: b.h, fill: fg, radius: this.roundRectRadius },
+            });
+          } else if (this.drag.mode === "polygon") {
+            this.run({
+              type: "vector.addPolygon",
+              params: { x: b.x, y: b.y, w: b.w, h: b.h, fill: fg, sides: this.polygonSides },
+            });
+          } else {
+            this.run({
+              type: this.drag.mode === "rect" ? "vector.addRect" : "vector.addEllipse",
+              params: { x: b.x, y: b.y, w: b.w, h: b.h, fill: fg },
+            });
+          }
         }
       }
       if (this.drag.mode === "line") {
@@ -1358,6 +1415,75 @@ export class PressApp {
     this.commit("Outer glow", setLayerOuterGlow(this.doc, id, glow));
   }
 
+  setInnerShadow(id: string, shadow: InnerShadowEffect | null): void {
+    this.commit("Inner shadow", setLayerInnerShadow(this.doc, id, shadow));
+  }
+
+  setLongShadow(id: string, shadow: LongShadowEffect | null): void {
+    this.commit("3D shadow", setLayerLongShadow(this.doc, id, shadow));
+  }
+
+  /** Photoshop Ctrl+Shift+>/</ — nudge type size on the selected type frame. */
+  bumpTypeSize(delta: number): void {
+    const layer = selectedLayers(this.doc).find((l) => l.kind === "type-frame");
+    if (!layer || layer.kind !== "type-frame") return;
+    const story = this.doc.stories.find((s) => s.id === layer.storyId);
+    if (!story) return;
+    const size = Math.max(4, Math.min(400, story.character.size + delta));
+    this.setCharacter({ size, leading: size * 1.2 });
+  }
+
+  async enhanceSelected(kind: EnhanceKind): Promise<void> {
+    const layer = selectedLayers(this.doc).find((l) => l.kind === "image-frame" || l.kind === "raster");
+    if (!layer || (layer.kind !== "image-frame" && layer.kind !== "raster") || !layer.assetId) {
+      this.status = "Select an image layer to enhance";
+      this.emit();
+      return;
+    }
+    const asset = this.doc.assets[layer.assetId];
+    if (!asset?.dataUrl) return;
+    this.status = kind === "sharpen" ? "Sharpening…" : "Improving lighting…";
+    this.emit();
+    try {
+      const out = await enhanceDataUrl(asset.dataUrl, kind);
+      this.compositor?.invalidateAsset(asset.id);
+      this.run({
+        type: "asset.replace",
+        params: { assetId: asset.id, dataUrl: out.dataUrl, width: out.width, height: out.height },
+      });
+      this.status = kind === "sharpen" ? "Enhanced details (unsharp mask)" : "Lighting stretched (auto levels)";
+    } catch (err) {
+      this.status = err instanceof Error ? err.message : String(err);
+      this.emit();
+    }
+  }
+
+  async applyCatalogFont(family: CatalogFamily, weight = 400, italic = false): Promise<void> {
+    this.status = `Loading ${family.family}…`;
+    this.emit();
+    try {
+      const rec = await this.fonts.installCatalogFamily(family, weight, italic);
+      await this.setFont(rec.id);
+      this.status = `Typeface ${rec.name}`;
+      this.emit();
+    } catch (err) {
+      this.status = err instanceof Error ? err.message : String(err);
+      this.emit();
+    }
+  }
+
+  openAuthDialog(): void {
+    this.dialog = "auth";
+    this.emit(true);
+  }
+
+  /** Honest sign-out: drop the local session token. Never invents a user. */
+  signOutSession(): void {
+    signOut();
+    this.status = "Signed out — editor stays local-first";
+    this.emit(true);
+  }
+
   /** A sensible default stroke/outline used when the effect is first enabled. */
   static defaultStrokeEffect(): StrokeEffect {
     return {
@@ -1456,47 +1582,26 @@ export class PressApp {
   }
 
   /**
-   * ADR 0005 Phase-0 proof boolean. Subtract the vector beneath the topmost of
-   * the two selected vector layers, consuming both operands into ONE multi-
-   * contour result layer in a single history step (undo restores both operands).
-   * The full boolean UI (union/intersect/exclude, a Pathfinder cluster) is
-   * Phase A; this minimal command exists only to prove the model + render.
+   * ADR 0005 Phase A Pathfinder. Combine 2+ selected vector layers with the
+   * given boolean op, consuming operands into one multi-contour result layer in a
+   * single derived-inverse history step (undo restores all operands).
    */
+  booleanSelected(op: BooleanOp): boolean {
+    const ok = this.run({ type: "vector.boolean", params: { op } });
+    if (ok) {
+      const result = selectedLayers(this.doc).find((l) => l.kind === "vector");
+      if (result?.kind === "vector") {
+        const n = result.contours?.length ?? 1;
+        this.status = `Pathfinder ${op} → "${result.name}" (${n} contour${n === 1 ? "" : "s"})`;
+        this.emit();
+      }
+    }
+    return ok;
+  }
+
+  /** Minus Front — topmost minus the one beneath. */
   subtractSelected(): boolean {
-    const ck = this.compositor?.engines.ck;
-    if (!ck) {
-      this.status = "Subtract needs the compositor to be ready";
-      this.emit();
-      return false;
-    }
-    const page = activePage(this.doc);
-    const selected = new Set(this.doc.activeLayerIds);
-    // Operands in draw order: the last is topmost. Subtract = top minus beneath.
-    const vectors = page.layers.filter(
-      (l): l is VectorLayer => l.kind === "vector" && selected.has(l.id),
-    );
-    if (vectors.length < 2) {
-      this.status = "Subtract needs two selected vector layers";
-      this.emit();
-      return false;
-    }
-    const top = vectors[vectors.length - 1]!;
-    const bottom = vectors[vectors.length - 2]!;
-    const result = subtractVectors(ck, page, top, bottom);
-    if (!result) {
-      this.status = "Subtract produced an empty shape — nothing changed";
-      this.emit();
-      return false;
-    }
-    const next = cloneDoc(this.doc);
-    const nextPage = next.pages.find((p) => p.id === page.id)!;
-    const consumed = new Set([top.id, bottom.id]);
-    nextPage.layers = nextPage.layers.filter((l) => !consumed.has(l.id));
-    nextPage.layers.push(result);
-    next.activeLayerIds = [result.id];
-    this.status = `Subtracted "${bottom.name}" from "${top.name}" — ${result.contours?.length ?? 0} contour(s)`;
-    this.commit(`Subtract ${bottom.name} from ${top.name}`, next);
-    return true;
+    return this.booleanSelected("subtract");
   }
 
   selectLayer(id: string, additive: boolean): void {

@@ -3,8 +3,10 @@ import type {
   AdjustmentLayer,
   DropShadowEffect,
   GradientOverlayEffect,
+  InnerShadowEffect,
   Layer,
   LayerEffect,
+  LongShadowEffect,
   OuterGlowEffect,
   Page,
   PressDocument,
@@ -71,6 +73,20 @@ function outerGlowOf(layer: Layer): OuterGlowEffect | null {
   return null;
 }
 
+function innerShadowOf(layer: Layer): InnerShadowEffect | null {
+  const fx = layer.effects;
+  if (!fx) return null;
+  for (const e of fx) if (e.type === "inner-shadow" && e.enabled) return e;
+  return null;
+}
+
+function longShadowOf(layer: Layer): LongShadowEffect | null {
+  const fx = layer.effects;
+  if (!fx) return null;
+  for (const e of fx) if (e.type === "long-shadow" && e.enabled && e.length > 0) return e;
+  return null;
+}
+
 /** Everything that alters how a layer draws, folded into its render hash. */
 function hashEffect(h: number, e: LayerEffect): number {
   h = hashStr(h, e.type);
@@ -91,6 +107,14 @@ function hashEffect(h: number, e: LayerEffect): number {
     case "outer-glow":
       h = hashRgba(h, e.color);
       h = hashNum(hashNum(h, e.blur), e.opacity);
+      break;
+    case "inner-shadow":
+      h = hashRgba(h, e.color);
+      h = hashNum(hashNum(hashNum(hashNum(h, e.offsetX), e.offsetY), e.blur), e.opacity);
+      break;
+    case "long-shadow":
+      h = hashRgba(h, e.color);
+      h = hashNum(hashNum(hashNum(h, e.angle), e.length), e.opacity);
       break;
   }
   return h;
@@ -386,7 +410,15 @@ class PressView implements ViewState {
    * copper outline so the user sees the geometry before it is committed —
    * without this a shape drag gives no feedback at all until pointerup.
    */
-  shapePreview: { kind: "rect" | "ellipse" | "line"; x: number; y: number; w: number; h: number } | null = null;
+  shapePreview: {
+    kind: "rect" | "ellipse" | "line" | "roundrect" | "polygon";
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+    radius?: number;
+    sides?: number;
+  } | null = null;
   textEdit: { layerId: string; anchor: number; focus: number } | null = null;
   smartGuides: { xs: Float64Array; xn: number; ys: Float64Array; yn: number } | null = null;
 
@@ -722,6 +754,24 @@ export class Compositor {
       x: (sx - r - this.panX) / this.zoomValue,
       y: (sy - r - this.panY) / this.zoomValue,
     };
+  }
+
+  /** Sample the composited page at a page-space point. Used by the eyedropper. */
+  samplePageColor(pageX: number, pageY: number): Rgba | null {
+    const ck = this.engines.ck;
+    const img = this.pageCache;
+    if (!img) return null;
+    const x = Math.max(0, Math.min(img.width() - 1, Math.floor(pageX)));
+    const y = Math.max(0, Math.min(img.height() - 1, Math.floor(pageY)));
+    const pixels = img.readPixels(x, y, {
+      width: 1,
+      height: 1,
+      colorType: ck.ColorType.RGBA_8888,
+      alphaType: ck.AlphaType.Unpremul,
+      colorSpace: ck.ColorSpace.SRGB,
+    }) as Uint8Array | Float32Array | null;
+    if (!pixels || pixels.length < 4) return null;
+    return { r: pixels[0]! / 255, g: pixels[1]! / 255, b: pixels[2]! / 255, a: pixels[3]! / 255 };
   }
 
   pageToScreen(x: number, y: number): { x: number; y: number } {
@@ -1175,7 +1225,29 @@ export class Compositor {
       const b = g.dy(s.y + s.h);
       if (s.kind === "line") sk.drawLine(l, t, r, b, ink);
       else if (s.kind === "ellipse") sk.drawOval(ck.LTRBRect(l, t, r, b), ink);
-      else sk.drawRect(ck.LTRBRect(l + h / 2, t + h / 2, r + h / 2, b + h / 2), ink);
+      else if (s.kind === "roundrect") {
+        const rr = Math.max(0, Math.min(s.radius ?? 24, Math.abs(r - l) / 2, Math.abs(b - t) / 2));
+        sk.drawRRect(ck.RRectXY(ck.LTRBRect(l + h / 2, t + h / 2, r + h / 2, b + h / 2), rr, rr), ink);
+      } else if (s.kind === "polygon") {
+        const sides = Math.max(3, Math.min(24, Math.round(s.sides ?? 6)));
+        const cx = (l + r) / 2;
+        const cy = (t + b) / 2;
+        const rx = (r - l) / 2;
+        const ry = (b - t) / 2;
+        const path = new ck.PathBuilder();
+        for (let i = 0; i < sides; i++) {
+          const a = -Math.PI / 2 + (i * 2 * Math.PI) / sides;
+          const x = cx + rx * Math.cos(a);
+          const y = cy + ry * Math.sin(a);
+          if (i === 0) path.moveTo(x, y);
+          else path.lineTo(x, y);
+        }
+        path.close();
+        const drawn = path.detach();
+        sk.drawPath(drawn, ink);
+        drawn.delete();
+        path.delete();
+      } else sk.drawRect(ck.LTRBRect(l + h / 2, t + h / 2, r + h / 2, b + h / 2), ink);
       ink.delete();
     }
   }
@@ -1689,6 +1761,65 @@ export class Compositor {
   }
 
   /**
+   * Inner shadow: invert the silhouette's alpha, offset+blur, tint, then SrcATop
+   * so the result lives only inside the already-drawn pixels.
+   */
+  private withInnerShadow(ck: CanvasKit, sk: Canvas, inner: InnerShadowEffect | null, draw: () => void): void {
+    draw();
+    if (!inner || !inner.enabled) return;
+    const a = Math.min(1, Math.max(0, inner.color.a * inner.opacity));
+    if (a <= 0) return;
+    const c = ck.Color4f(inner.color.r, inner.color.g, inner.color.b, a);
+    const invert = ck.ColorFilter.MakeMatrix([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 1]);
+    const tint = ck.ColorFilter.MakeBlend(c, ck.BlendMode.SrcIn);
+    const offset = ck.ImageFilter.MakeOffset(inner.offsetX, inner.offsetY, null);
+    const sigma = Math.max(0, inner.blur) * 0.5;
+    const blur = ck.ImageFilter.MakeBlur(sigma, sigma, ck.TileMode.Decal, offset);
+    const inverted = ck.ImageFilter.MakeColorFilter(invert, blur);
+    const colored = ck.ImageFilter.MakeColorFilter(tint, inverted);
+    const paint = new ck.Paint();
+    paint.setImageFilter(colored);
+    paint.setBlendMode(ck.BlendMode.SrcATop);
+    sk.saveLayer(paint);
+    draw();
+    sk.restore();
+    colored.delete();
+    inverted.delete();
+    blur.delete();
+    offset.delete();
+    tint.delete();
+    invert.delete();
+    paint.delete();
+  }
+
+  /**
+   * 3D-on-2D extrusion: stacked zero-blur drop-shadows along an angle. Step
+   * count is capped so a 400px extrusion does not issue 400 saveLayers.
+   */
+  private withLongShadow(ck: CanvasKit, sk: Canvas, fx: LongShadowEffect | null, draw: () => void): void {
+    if (fx && fx.enabled && fx.length > 0) {
+      const a = Math.min(1, Math.max(0, fx.color.a * fx.opacity));
+      const rad = (fx.angle * Math.PI) / 180;
+      const steps = Math.max(1, Math.min(32, Math.round(fx.length)));
+      const step = fx.length / steps;
+      const c = ck.Color4f(fx.color.r, fx.color.g, fx.color.b, a);
+      for (let i = steps; i >= 1; i--) {
+        const ox = Math.cos(rad) * step * i;
+        const oy = Math.sin(rad) * step * i;
+        const paint = new ck.Paint();
+        const filter = ck.ImageFilter.MakeDropShadowOnly(ox, oy, 0.4, 0.4, c, null);
+        paint.setImageFilter(filter);
+        sk.saveLayer(paint);
+        draw();
+        sk.restore();
+        filter.delete();
+        paint.delete();
+      }
+    }
+    draw();
+  }
+
+  /**
    * A solid outline around the layer's silhouette (Photoshop "Stroke"). The
    * silhouette is dilated by the stroke width and re-tinted to the stroke
    * colour (SrcIn keeps the dilated alpha), drawn as a pre-pass behind the
@@ -1724,9 +1855,13 @@ export class Compositor {
    * inside `drawLayer` (clipped to the layer's own alpha) and so is not here.
    */
   private withEffects(ck: CanvasKit, sk: Canvas, layer: Layer, draw: () => void): void {
-    this.withDropShadow(ck, sk, dropShadowOf(layer), () =>
-      this.withOuterGlow(ck, sk, outerGlowOf(layer), () =>
-        this.withStrokeEffect(ck, sk, strokeEffectOf(layer), draw),
+    this.withLongShadow(ck, sk, longShadowOf(layer), () =>
+      this.withDropShadow(ck, sk, dropShadowOf(layer), () =>
+        this.withOuterGlow(ck, sk, outerGlowOf(layer), () =>
+          this.withStrokeEffect(ck, sk, strokeEffectOf(layer), () =>
+            this.withInnerShadow(ck, sk, innerShadowOf(layer), draw),
+          ),
+        ),
       ),
     );
   }

@@ -1,8 +1,14 @@
 import { loadFace, type FacePack } from "./type";
 import { publicAsset } from "./public-url";
 import { listUserFonts, putUserFont, type UserFont } from "../library/store";
+import {
+  catalogFaceUrl,
+  catalogRecordId,
+  loadFontCatalog,
+  type CatalogFamily,
+} from "./font-catalog";
 
-export type FontSource = "bundled" | "user" | "system";
+export type FontSource = "bundled" | "user" | "system" | "catalog";
 
 export interface FontRecord {
   id: string;
@@ -126,6 +132,36 @@ export class FontRegistry {
       }
     }
     return this.resolve(undefined);
+  }
+
+  /**
+   * Fetch a catalog family from Fontsource (TTF), register it, and persist as a
+   * user font so the next session does not re-download. Returns the registry id.
+   */
+  async installCatalogFamily(family: CatalogFamily, weight = 400, italic = false): Promise<FontRecord> {
+    const id = catalogRecordId(family, weight, italic);
+    const existing = this.get(id);
+    if (existing?.face) return existing;
+    const url = catalogFaceUrl(family, weight, italic);
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`Could not load ${family.family} (${res.status})`);
+    const bytes = await res.arrayBuffer();
+    if (bytes.byteLength < 1000) throw new Error(`${family.family} file too small`);
+    const style = italic && family.italic ? (weight >= 600 ? "Bold Italic" : "Italic") : weight >= 600 ? "Bold" : "Regular";
+    const name = style === "Regular" ? family.family : `${family.family} ${style}`;
+    const face = await loadFace(id, name, bytes);
+    const rec: FontRecord = { id, family: family.family, style, name, source: "catalog", face };
+    this.upsert(rec);
+    try {
+      await putUserFont({ id, name, family: family.family, style, bytes, addedAt: Date.now() });
+    } catch {
+      /* session-only if IndexedDB is blocked */
+    }
+    return rec;
+  }
+
+  async catalog(): Promise<CatalogFamily[]> {
+    return loadFontCatalog();
   }
 
   install(rec: FontRecord): void {

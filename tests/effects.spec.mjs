@@ -174,6 +174,46 @@ check("outer glow is stored on the layer", glow.stored === true);
 check("outer glow actually renders (not decorative)", glow.changed === true, `before=${glow.beforeLen}B after=${glow.afterLen}B`);
 check("undo removes the outer glow", glow.undoCleared === true);
 
+const inner = await page.evaluate(async () => {
+  const P = window.__press;
+  window.viroAnchor.applyDetailed([
+    { op: "press.add_rect", params: { x: 200, y: 200, w: 700, h: 700, fill: "#f2d4a0" }, reason: "inner-shadow fixture" },
+  ]);
+  const layers = P.doc.pages[0].layers;
+  const id = layers[layers.length - 1].id;
+  const before = P.compositor.thumbnailDataUrl(P.doc, 256);
+  P.setInnerShadow(id, { type: "inner-shadow", enabled: true, color: { r: 0, g: 0, b: 0, a: 1 }, offsetX: 24, offsetY: 32, blur: 28, opacity: 0.85 });
+  const stored = P.doc.pages[0].layers.find((l) => l.id === id)?.effects?.some((e) => e.type === "inner-shadow" && e.enabled);
+  const after = P.compositor.thumbnailDataUrl(P.doc, 256);
+  P.undo();
+  const undoCleared = !P.doc.pages[0].layers.find((l) => l.id === id)?.effects?.some((e) => e.type === "inner-shadow" && e.enabled);
+  return { stored: !!stored, changed: typeof before === "string" && before !== after, undoCleared, beforeLen: (before || "").length, afterLen: (after || "").length };
+});
+
+check("inner shadow is stored on the layer", inner.stored === true);
+check("inner shadow actually renders (not decorative)", inner.changed === true, `before=${inner.beforeLen}B after=${inner.afterLen}B`);
+check("undo removes the inner shadow", inner.undoCleared === true);
+
+const longS = await page.evaluate(async () => {
+  const P = window.__press;
+  window.viroAnchor.applyDetailed([
+    { op: "press.add_rect", params: { x: 400, y: 400, w: 400, h: 400, fill: "#e07a2f" }, reason: "long-shadow fixture" },
+  ]);
+  const layers = P.doc.pages[0].layers;
+  const id = layers[layers.length - 1].id;
+  const before = P.compositor.thumbnailDataUrl(P.doc, 256);
+  P.setLongShadow(id, { type: "long-shadow", enabled: true, color: { r: 0.05, g: 0.05, b: 0.08, a: 1 }, angle: 135, length: 80, opacity: 0.7 });
+  const stored = P.doc.pages[0].layers.find((l) => l.id === id)?.effects?.some((e) => e.type === "long-shadow" && e.enabled);
+  const after = P.compositor.thumbnailDataUrl(P.doc, 256);
+  P.undo();
+  const undoCleared = !P.doc.pages[0].layers.find((l) => l.id === id)?.effects?.some((e) => e.type === "long-shadow" && e.enabled);
+  return { stored: !!stored, changed: typeof before === "string" && before !== after, undoCleared, beforeLen: (before || "").length, afterLen: (after || "").length };
+});
+
+check("3D long shadow is stored on the layer", longS.stored === true);
+check("3D long shadow actually renders (not decorative)", longS.changed === true, `before=${longS.beforeLen}B after=${longS.afterLen}B`);
+check("undo removes the 3D long shadow", longS.undoCleared === true);
+
 check("no page errors", pageErrors.length === 0, pageErrors.join(" | "));
 
 console.log(`\n${results.length - failed}/${results.length} checks passed`);

@@ -522,6 +522,80 @@ export function addVectorEllipse(
 }
 
 /**
+ * Rounded rectangle in a w×h box. Corner radius is clamped so it cannot exceed
+ * half the shorter edge — a 200×80 box with radius 200 is a stadium, not a
+ * self-intersecting path.
+ */
+export function roundRectNodes(w: number, h: number, radius: number): PathNode[] {
+  const r = Math.max(0, Math.min(radius, w / 2, h / 2));
+  if (r < 0.5) return rectNodes(w, h);
+  const k = r * KAPPA;
+  const p = (x: number, y: number, ix: number, iy: number, ox: number, oy: number): PathNode => ({
+    x, y, inX: ix, inY: iy, outX: ox, outY: oy,
+  });
+  return [
+    p(r, 0, r - k, 0, r + k, 0),
+    p(w - r, 0, w - r - k, 0, w - r + k, 0),
+    p(w, r, w, r - k, w, r + k),
+    p(w, h - r, w, h - r - k, w, h - r + k),
+    p(w - r, h, w - r + k, h, w - r - k, h),
+    p(r, h, r + k, h, r - k, h),
+    p(0, h - r, 0, h - r + k, 0, h - r - k),
+    p(0, r, 0, r + k, 0, r - k),
+  ];
+}
+
+/** Regular n-gon inscribed in a w×h box, first vertex at 12 o'clock. */
+export function polygonNodes(w: number, h: number, sides: number): PathNode[] {
+  const count = Math.max(3, Math.min(24, Math.round(sides)));
+  const cx = w / 2;
+  const cy = h / 2;
+  const rx = w / 2;
+  const ry = h / 2;
+  const nodes: PathNode[] = [];
+  for (let i = 0; i < count; i++) {
+    const a = -Math.PI / 2 + (i * 2 * Math.PI) / count;
+    const x = cx + rx * Math.cos(a);
+    const y = cy + ry * Math.sin(a);
+    nodes.push({ x, y, inX: x, inY: y, outX: x, outY: y });
+  }
+  return nodes;
+}
+
+export function addVectorRoundRect(
+  doc: PressDocument,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  fill: Rgba,
+  radius: number,
+): PressDocument {
+  return addVectorLayer(doc, "Rounded rectangle", x, y, w, h, roundRectNodes(w, h, radius), {
+    closed: true,
+    fill,
+    stroke: null,
+  });
+}
+
+export function addVectorPolygon(
+  doc: PressDocument,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  fill: Rgba,
+  sides: number,
+): PressDocument {
+  const n = Math.max(3, Math.min(24, Math.round(sides)));
+  return addVectorLayer(doc, n === 3 ? "Triangle" : `${n}-gon`, x, y, w, h, polygonNodes(w, h, n), {
+    closed: true,
+    fill,
+    stroke: null,
+  });
+}
+
+/**
  * Straight rule between two page points. A line has no fill, so the stroke is
  * what paints — mirrors the requirement `press.add_line` enforces.
  */

@@ -9,12 +9,24 @@
  */
 import test from "node:test";
 import assert from "node:assert/strict";
+import { existsSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { CommandBus } from "../src/document/command-bus.ts";
 import { CommandError } from "../src/document/commands.ts";
 import { installUiCommands, UI_COMMAND_TYPES } from "../src/document/ui-commands.ts";
 import { documentFromPreset, PRESETS } from "../src/document/presets.ts";
+import { setBooleanEngineProvider } from "../src/document/boolean-ops.ts";
 
 installUiCommands();
+
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
+const ckWasm = join(ROOT, "node_modules", "canvaskit-wasm", "bin", "full", "canvaskit.wasm");
+const ckJs = join(ROOT, "node_modules", "canvaskit-wasm", "bin", "full", "canvaskit.js");
+assert.ok(existsSync(ckWasm), "canvaskit.wasm missing");
+const CanvasKitInit = (await import(pathToFileURL(ckJs).href)).default;
+const ck = await CanvasKitInit({ locateFile: (f) => (f.endsWith(".wasm") ? ckWasm : f) });
+setBooleanEngineProvider(() => ck);
 
 const PNG =
   "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
@@ -57,12 +69,29 @@ const sel = (ids) => (doc) => {
   doc.activeLayerIds = ids;
 };
 
+const rectNodes = (w, h) => {
+  const p = (x, y) => ({ x, y, inX: x, inY: y, outX: x, outY: y });
+  return [p(0, 0), p(w, 0), p(w, h), p(0, h)];
+};
+
+const booleanSetup = (doc) => {
+  sel(["ly_rect", "ly_rect2"])(doc);
+  const page = doc.pages[0];
+  for (const layer of page.layers) {
+    if (layer.id === "ly_rect" || layer.id === "ly_rect2") {
+      layer.nodes = rectNodes(layer.transform.w, layer.transform.h);
+      layer.closed = true;
+    }
+  }
+};
+
 /** valid / invalid params for every UI command. `setup` prepares the selection. */
 const CASES = {
   "layer.delete": { valid: {}, invalid: { layerId: "x" }, match: /takes no parameters/ },
   "layer.group": { valid: {}, invalid: { x: 1 }, match: /takes no parameters/, setup: sel(["ly_rect", "ly_rect2"]) },
   "layer.ungroup": { valid: {}, invalid: { x: 1 }, match: /takes no parameters/, setup: sel(["ly_group"]) },
   "layer.duplicate": { valid: {}, invalid: { x: 1 }, match: /takes no parameters/ },
+  "vector.boolean": { valid: { op: "union" }, invalid: { op: "burnify" }, match: /must be one of/, setup: booleanSetup },
   "page.add": { valid: {}, invalid: { x: 1 }, match: /takes no parameters/ },
 
   "layer.opacity": { valid: { layerId: "ly_rect", opacity: 0.4 }, invalid: { layerId: "ly_rect", opacity: 40 }, match: /must be <= 1/ },
@@ -74,6 +103,8 @@ const CASES = {
 
   "vector.addRect": { valid: { x: 10, y: 10, w: 100, h: 50, fill: COPPER }, invalid: { x: 10, y: 10, w: 0, h: 50, fill: COPPER }, match: /greater than 0/ },
   "vector.addEllipse": { valid: { x: 10, y: 10, w: 100, h: 50, fill: COPPER }, invalid: { x: 10, y: 10, w: 100, h: -5, fill: COPPER }, match: /greater than 0/ },
+  "vector.addRoundRect": { valid: { x: 10, y: 10, w: 100, h: 50, fill: COPPER, radius: 12 }, invalid: { x: 10, y: 10, w: 100, h: 50, fill: COPPER, radius: -1 }, match: /must be >= 0/ },
+  "vector.addPolygon": { valid: { x: 10, y: 10, w: 100, h: 50, fill: COPPER, sides: 6 }, invalid: { x: 10, y: 10, w: 100, h: 50, fill: COPPER, sides: 2 }, match: /must be >= 3/ },
   "vector.addLine": { valid: { x1: 0, y1: 0, x2: 100, y2: 100, stroke: { color: COPPER, width: 3 } }, invalid: { x1: 0, y1: 0, x2: 100, y2: 100, stroke: { color: COPPER, width: 0 } }, match: /greater than 0/ },
   "vector.addPath": { valid: { x: 20, y: 30, color: COPPER }, invalid: { x: 20, y: 30 }, match: /required as a float 0-1/ },
   "path.appendNode": { valid: { layerId: "ly_path", x: 90, y: 90 }, invalid: { layerId: "ly_type", x: 1, y: 1 }, match: /needs vector/ },

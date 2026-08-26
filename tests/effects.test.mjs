@@ -8,6 +8,8 @@ import assert from "node:assert/strict";
 import {
   setLayerDropShadow,
   setLayerGradientOverlay,
+  setLayerInnerShadow,
+  setLayerLongShadow,
   setLayerOuterGlow,
   setLayerStrokeEffect,
 } from "../src/document/ops.ts";
@@ -170,4 +172,52 @@ test("stroke and glow survive a JSON round-trip (serializable)", () => {
   const fx = round.pages[0].layers[0].effects;
   assert.deepEqual(fx.find((e) => e.type === "stroke"), STROKE);
   assert.deepEqual(fx.find((e) => e.type === "outer-glow"), GLOW);
+});
+
+const INNER = { type: "inner-shadow", enabled: true, color: { r: 0, g: 0, b: 0, a: 1 }, offsetX: 2, offsetY: 4, blur: 8, opacity: 0.55 };
+const LONG = { type: "long-shadow", enabled: true, color: { r: 0.1, g: 0.1, b: 0.1, a: 1 }, angle: 135, length: 28, opacity: 0.55 };
+
+test("adds an inner-shadow effect to the layer", () => {
+  const next = setLayerInnerShadow(docWithRect(), "L1", INNER);
+  const fx = next.pages[0].layers[0].effects;
+  assert.equal(fx.length, 1);
+  assert.equal(fx[0].type, "inner-shadow");
+  assert.equal(fx[0].offsetY, 4);
+});
+
+test("replaces the existing inner-shadow rather than stacking duplicates", () => {
+  let doc = setLayerInnerShadow(docWithRect(), "L1", INNER);
+  doc = setLayerInnerShadow(doc, "L1", { ...INNER, blur: 22 });
+  const fx = doc.pages[0].layers[0].effects.filter((e) => e.type === "inner-shadow");
+  assert.equal(fx.length, 1);
+  assert.equal(fx[0].blur, 22);
+});
+
+test("null clears the inner-shadow effect", () => {
+  let doc = setLayerInnerShadow(docWithRect(), "L1", INNER);
+  doc = setLayerInnerShadow(doc, "L1", null);
+  assert.equal(doc.pages[0].layers[0].effects.filter((e) => e.type === "inner-shadow").length, 0);
+});
+
+test("adds a long-shadow effect to the layer", () => {
+  const next = setLayerLongShadow(docWithRect(), "L1", LONG);
+  const fx = next.pages[0].layers[0].effects;
+  assert.equal(fx[0].type, "long-shadow");
+  assert.equal(fx[0].length, 28);
+});
+
+test("null clears the long-shadow effect", () => {
+  let doc = setLayerLongShadow(docWithRect(), "L1", LONG);
+  doc = setLayerLongShadow(doc, "L1", null);
+  assert.equal(doc.pages[0].layers[0].effects.filter((e) => e.type === "long-shadow").length, 0);
+});
+
+test("inner and long shadows coexist with drop shadow and survive JSON", () => {
+  let doc = setLayerDropShadow(docWithRect(), "L1", SHADOW);
+  doc = setLayerInnerShadow(doc, "L1", INNER);
+  doc = setLayerLongShadow(doc, "L1", LONG);
+  const fx = doc.pages[0].layers[0].effects;
+  assert.equal(fx.length, 3);
+  const round = JSON.parse(JSON.stringify(doc));
+  assert.deepEqual(round.pages[0].layers[0].effects, fx);
 });
