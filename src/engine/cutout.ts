@@ -31,9 +31,14 @@ export async function cutoutAvailable(): Promise<boolean> {
   }
 }
 
-async function loadOrt(): Promise<typeof import("onnxruntime-web")> {
-  const ort = await import("onnxruntime-web");
-  ort.env.wasm.wasmPaths = WASM_PATHS;
+async function loadOrt(): Promise<typeof import("onnxruntime-web/wasm")> {
+  // Import the CPU-only ("wasm") entry, not the default package entry. The default
+  // bundle ships the WebGPU/JSEP runtime, which loads ort-wasm-simd-threaded.jsep.wasm
+  // (~25.6 MiB) — over Cloudflare's 25 MiB per-asset cap. This build only ever uses the
+  // CPU "wasm" execution provider, so the /wasm entry pulls the smaller non-JSEP
+  // ort-wasm-simd-threaded.wasm (~13.5 MiB) and never references the jsep binary.
+  const ort = await import("onnxruntime-web/wasm");
+  ort.env.wasm.wasmPaths = { wasm: `${WASM_PATHS}ort-wasm-simd-threaded.wasm` };
   ort.env.wasm.numThreads = 1;
   return ort;
 }
