@@ -102,7 +102,7 @@ Hosted platform (approved 2026-08-26 via **ADR 0004**, phased + flag-gated):
 | Feature | Classification | Evidence |
 | --- | --- | --- |
 | Skia compositor / HarfBuzz / LittleCMS | PROVEN_WORKING | `tests/engines.mjs`, editor renders |
-| Document model + migrations (v1..v4) | PROVEN_WORKING | `tests/*`, `migrate.ts` |
+| Document model + migrations (v1..v5) | PROVEN_WORKING | `tests/*`, `migrate.ts` |
 | Command bus + undo/redo | PROVEN_WORKING | 242 unit tests |
 | Editor tools (move/marquee/crop/pen/shape/text/hand/zoom/eyedropper/…) | PROVEN_WORKING | `desk.ts` 1:1 handler map; chrome E2E |
 | New / Open / Place / Save (.press.json) | PROVEN_WORKING | chrome + slice E2E |
@@ -116,6 +116,7 @@ Hosted platform (approved 2026-08-26 via **ADR 0004**, phased + flag-gated):
 | Project thumbnails (rendered from real page) | PROVEN_WORKING (new) | `compositor.thumbnailDataUrl`; projects E2E asserts real PNG |
 | Anchor op API (preview/apply/audit) | PROVEN_WORKING | `tests/anchor-bus.spec.mjs` |
 | Layer effects: stroke/outline + outer glow (leaf + group) | PROVEN_WORKING (new) | `tests/effects.*` pixel-diff + undo, `tests/effects.test.mjs` |
+| Vector stroke styling: dash / cap / join (doc v5) | PROVEN_WORKING (new) | `tests/stroke-style.*` pixel-diff + v5 round-trip, migration invariant in `tests/transform.test.mjs` |
 | Frontend hosting (Cloudflare Pages config) | PROVEN_WORKING (config; deploy owner-gated) | build emits `dist`, boots under CSP, `docs/deploy/cloudflare-pages.md` |
 | Templates/presets + procedural marks | PARTIALLY_IMPLEMENTED | real generators; catalog breadth limited |
 | Accounts / auth / sessions | ABSENT | no code |
@@ -270,6 +271,22 @@ truthful editor release.
   with 0 violations; suite green. Go-live deploy remains an **owner-authenticated** step (Cloudflare
   OAuth/login + own the Pages project + deploy). Migration impact: none (additive config files). Owner:
   engineering (config); owner (deploy auth).
+- 2026-08-26 — Delivered RFC-4 **dashed / styled vector strokes** (dash, cap, join) as document
+  **v4→v5** (`docs/research/0001-next-editor-features.md`). Widened `VectorLayer.stroke` from
+  `{ color, width }` to add optional `dash?`, `dashPhase?`, `cap?` and `join?`, following the
+  four-point serialization contract: `types.ts` (version union `…|5` + `VectorStroke`), `migrate.ts`
+  (`DOC_VERSION=5` with a **widening version stamp** — a v4 stroke is already a valid v5 stroke and
+  renders solid/butt/miter, so nothing is rewritten and only `strokeStylesStamped` is reported),
+  `app.ts` `openBytes` guard raised to `<= 5`, and `factory.validateDocument`/`validateStroke`
+  (even dash intervals, bounded length ≤128, non-negative/finite, valid cap/join enums — new parser
+  surface hardened). `drawVector` applies `PathEffect.MakeDash` + `setStrokeCap`/`setStrokeJoin` and
+  frees the path effect; `hashLayer` folds the styling so thumbnails invalidate. New ops
+  `mergeStroke`/`setVectorStroke`; the `vector.strokeWidth` command now carries cap/join/dash and
+  merges (colour preserved); Anchor `pStroke`/`readStroke` accept styling. Stroke panel gains
+  Cap/Join selects and a Dash field, disabled until the vector carries a stroke. MIGRATION INVARIANT
+  (pixel-identical re-open) asserted in `tests/transform.test.mjs`; proven with pixel-diff E2E
+  (`tests/stroke-style.spec.mjs`: dash + round-cap render, undo restores, v5 round-trip) and units
+  (`tests/stroke-style.test.mjs`). Migration impact: v4→v5 widening stamp, no pixels move. Owner: engineering.
 - 2026-08-26 — Delivered RFC-3 additive layer effects **Stroke/outline** and **Outer glow**
   (`docs/research/0001-next-editor-features.md`), reusing the `effects[]` list and the
   `withDropShadow`/`drawGradientOverlay` composition seam. No schema bump: effects are additive
