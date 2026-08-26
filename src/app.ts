@@ -21,6 +21,9 @@ import { documentFromPreset, PRESETS } from "./document/presets";
 import {
   addAdjustment,
   addPage,
+  alignLayers,
+  distributeLayers,
+  type AlignMode,
   addVectorPath,
   appendPathNode,
   applyFill,
@@ -1216,6 +1219,20 @@ export class PressApp {
 
   setLocked(id: string, v: boolean): void {
     this.run({ type: "layer.locked", params: { layerId: id, locked: v } });
+  }
+
+  /** Align the current multi-selection to its shared bounds. One undo step. */
+  alignSelected(mode: AlignMode): void {
+    const ids = this.doc.activeLayerIds;
+    if (ids.length < 2) return;
+    this.commit(`Align ${mode}`, alignLayers(this.doc, ids, mode));
+  }
+
+  /** Evenly distribute the current selection along an axis. One undo step. */
+  distributeSelected(axis: "h" | "v"): void {
+    const ids = this.doc.activeLayerIds;
+    if (ids.length < 3) return;
+    this.commit(`Distribute ${axis}`, distributeLayers(this.doc, ids, axis));
   }
 
   /** Set or clear (null) the drop-shadow effect on a layer. One undo step. */

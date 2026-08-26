@@ -54,6 +54,63 @@ export function setLayerName(doc: PressDocument, id: string, name: string): Pres
   return next;
 }
 
+export type AlignMode = "left" | "center-h" | "right" | "top" | "center-v" | "bottom";
+
+/**
+ * Align the selected top-level layers to their shared selection bounds, in page
+ * space. Nested layers are skipped (their local axes differ from the page), so
+ * alignment stays geometrically correct. No-op below two eligible layers.
+ */
+export function alignLayers(doc: PressDocument, ids: string[], mode: AlignMode): PressDocument {
+  const next = cloneDoc(doc);
+  const page = activePage(next);
+  const items = ids
+    .map((id) => findLayer(page, id))
+    .filter((l): l is Layer => !!l && l.parentId === null && !l.locked)
+    .map((l) => ({ l, b: worldBounds(page, l) }));
+  if (items.length < 2) return next;
+  const minX = Math.min(...items.map((i) => i.b.x));
+  const maxR = Math.max(...items.map((i) => i.b.x + i.b.w));
+  const minY = Math.min(...items.map((i) => i.b.y));
+  const maxB = Math.max(...items.map((i) => i.b.y + i.b.h));
+  for (const { l, b } of items) {
+    if (mode === "left") l.transform.x += minX - b.x;
+    else if (mode === "right") l.transform.x += maxR - (b.x + b.w);
+    else if (mode === "center-h") l.transform.x += (minX + maxR) / 2 - (b.x + b.w / 2);
+    else if (mode === "top") l.transform.y += minY - b.y;
+    else if (mode === "bottom") l.transform.y += maxB - (b.y + b.h);
+    else if (mode === "center-v") l.transform.y += (minY + maxB) / 2 - (b.y + b.h / 2);
+  }
+  return next;
+}
+
+/**
+ * Evenly distribute the selected top-level layers' centres between the two
+ * outermost, along the given axis. No-op below three eligible layers.
+ */
+export function distributeLayers(doc: PressDocument, ids: string[], axis: "h" | "v"): PressDocument {
+  const next = cloneDoc(doc);
+  const page = activePage(next);
+  const items = ids
+    .map((id) => findLayer(page, id))
+    .filter((l): l is Layer => !!l && l.parentId === null && !l.locked)
+    .map((l) => ({ l, b: worldBounds(page, l) }));
+  if (items.length < 3) return next;
+  const center = (b: { x: number; y: number; w: number; h: number }) =>
+    axis === "h" ? b.x + b.w / 2 : b.y + b.h / 2;
+  items.sort((a, z) => center(a.b) - center(z.b));
+  const first = center(items[0]!.b);
+  const last = center(items[items.length - 1]!.b);
+  const step = (last - first) / (items.length - 1);
+  items.forEach((it, i) => {
+    const target = first + step * i;
+    const delta = target - center(it.b);
+    if (axis === "h") it.l.transform.x += delta;
+    else it.l.transform.y += delta;
+  });
+  return next;
+}
+
 /**
  * Set (or clear, with null) a layer's drop-shadow effect. Effects are stored as
  * a list so future styles (glow, stroke, gradient overlay) coexist; this

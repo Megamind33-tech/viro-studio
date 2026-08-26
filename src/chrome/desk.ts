@@ -179,10 +179,20 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
   bindRecovery();
   bindProjects();
   bindEffects();
+  bindAlign();
 
   app.onChange(() => render());
   render();
   return el<HTMLCanvasElement>("skia");
+
+  function bindAlign(): void {
+    el("align-row").addEventListener("click", (e) => {
+      const btn = (e.target as HTMLElement).closest<HTMLElement>("[data-align],[data-dist]");
+      if (!btn) return;
+      if (btn.dataset.align) app.alignSelected(btn.dataset.align as Parameters<typeof app.alignSelected>[0]);
+      else if (btn.dataset.dist) app.distributeSelected(btn.dataset.dist as "h" | "v");
+    });
+  }
 
   function bindEffects(): void {
     const defaultShadow = () => ({
@@ -1539,6 +1549,15 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
     setDisabled(["fx-shadow-x", "fx-shadow-y", "fx-shadow-blur", "fx-shadow-opacity", "fx-shadow-color"], !shadowOn);
     const fxEmpty = document.getElementById("fx-empty");
     if (fxEmpty) fxEmpty.hidden = !!sel;
+
+    // Align needs 2+ selected layers; distribute needs 3+.
+    const selCount = app.doc.activeLayerIds.length;
+    document.querySelectorAll<HTMLButtonElement>("#align-row [data-align]").forEach((b) => {
+      b.disabled = selCount < 2;
+    });
+    document.querySelectorAll<HTMLButtonElement>("#align-row [data-dist]").forEach((b) => {
+      b.disabled = selCount < 3;
+    });
 
     el("fg-swatch").style.background = rgbaCss(state.fg);
     el("bg-swatch").style.background = rgbaCss(state.bg);

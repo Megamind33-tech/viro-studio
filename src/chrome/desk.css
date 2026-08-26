@@ -78,6 +78,57 @@
   resize: vertical;
 }
 
+/* Align & distribute row in the Transform studio. */
+.align-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-top: 6px;
+}
+
+.align-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid var(--hair);
+  background: var(--raised);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.align-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+.align-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.align-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.align-btn .icon {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1;
+  stroke-linecap: round;
+}
+
+.align-sep {
+  width: 1px;
+  align-self: stretch;
+  margin: 2px 3px;
+  background: var(--hair);
+}
+
 /* Projects (local document library / dashboard). */
 .dialog-wide {
   width: min(880px, 92vw);
