@@ -1,0 +1,20 @@
+{
+  // Cloudflare Pages configuration for the VIRO Press static frontend.
+  // Per ADR 0004 (docs/adr/0004-platform-architecture.md), Cloudflare Pages is the
+  // frontend host for the static Vite/Skia SPA. This file is the source of truth for
+  // the Pages project once deployed via Wrangler (see docs/deploy/cloudflare-pages.md).
+  //
+  // NOTE: "name" is the Cloudflare Pages project name. The owner may rename it to match
+  // their account/branding — it must be lowercase alphanumeric + dashes only.
+  //
+  // (No "$schema" key: wrangler is not a repo dependency — it is invoked on demand via
+  // `npx wrangler` per docs/deploy/cloudflare-pages.md, so a local schema path would
+  // dangle. Add "$schema": "./node_modules/wrangler/config-schema.json" if you later
+  // install wrangler as a devDependency.)
+  "name": "viro-press",
+  "pages_build_output_dir": "./dist",
+  // Required by Pages when a wrangler config is present. Bump when adopting newer
+  // Workers runtime features (only relevant if/when Pages Functions are added for the
+  // Supabase/Lenco backend per ADR 0004 — the current SPA ships no Functions).
+  "compatibility_date": "2026-08-26"
+}

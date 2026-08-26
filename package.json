@@ -14,6 +14,7 @@
     "dev:web": "vite --mode web",
     "build": "vite build",
     "preview": "vite preview --host 127.0.0.1 --port 5173 --strictPort",
+    "deploy:pages": "npm run build && npx wrangler pages deploy dist",
     "test:engines": "node tests/engines.mjs",
     "test:chrome": "playwright test",
     "test": "npm run test:engines && npm run test:unit && npm run test:chrome && npm run test:slices",
