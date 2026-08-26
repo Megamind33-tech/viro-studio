@@ -6,9 +6,11 @@ import type {
   GradientOverlayEffect,
   LayerEffect,
   Layer,
+  OuterGlowEffect,
   Page,
   PressDocument,
   Rgba,
+  StrokeEffect,
   Transform,
 } from "./types";
 import { replaceStoryRange } from "./text-model";
@@ -143,6 +145,36 @@ export function setLayerGradientOverlay(
   if (!layer) return next;
   const effects: LayerEffect[] = (layer.effects ?? []).filter((e) => e.type !== "gradient-overlay");
   if (overlay) effects.push(overlay);
+  layer.effects = effects;
+  return next;
+}
+
+/** Set (or clear, with null) a layer's stroke/outline effect. */
+export function setLayerStrokeEffect(
+  doc: PressDocument,
+  id: string,
+  stroke: StrokeEffect | null,
+): PressDocument {
+  const next = cloneDoc(doc);
+  const layer = findLayer(activePage(next), id);
+  if (!layer) return next;
+  const effects: LayerEffect[] = (layer.effects ?? []).filter((e) => e.type !== "stroke");
+  if (stroke) effects.push(stroke);
+  layer.effects = effects;
+  return next;
+}
+
+/** Set (or clear, with null) a layer's outer-glow effect. */
+export function setLayerOuterGlow(
+  doc: PressDocument,
+  id: string,
+  glow: OuterGlowEffect | null,
+): PressDocument {
+  const next = cloneDoc(doc);
+  const layer = findLayer(activePage(next), id);
+  if (!layer) return next;
+  const effects: LayerEffect[] = (layer.effects ?? []).filter((e) => e.type !== "outer-glow");
+  if (glow) effects.push(glow);
   layer.effects = effects;
   return next;
 }

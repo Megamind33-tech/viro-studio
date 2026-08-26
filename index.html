@@ -371,6 +371,26 @@
               <label class="field"><span>Angle</span><input class="num" id="fx-grad-angle" inputmode="numeric" /></label>
               <label class="field"><span>Opacity</span><input class="num" id="fx-grad-opacity" inputmode="decimal" /></label>
             </div>
+            <div class="fx-sep"></div>
+            <div class="row">
+              <label class="check"><input type="checkbox" id="fx-stroke-on" />Stroke</label>
+              <span class="grow"></span>
+              <input type="color" id="fx-stroke-color" value="#e07a2f" aria-label="Stroke color" />
+            </div>
+            <div class="row fill">
+              <label class="field"><span>Width</span><input class="num" id="fx-stroke-width" inputmode="numeric" /></label>
+              <label class="field"><span>Opacity</span><input class="num" id="fx-stroke-opacity" inputmode="decimal" /></label>
+            </div>
+            <div class="fx-sep"></div>
+            <div class="row">
+              <label class="check"><input type="checkbox" id="fx-glow-on" />Outer Glow</label>
+              <span class="grow"></span>
+              <input type="color" id="fx-glow-color" value="#ffe566" aria-label="Glow color" />
+            </div>
+            <div class="row fill">
+              <label class="field"><span>Blur</span><input class="num" id="fx-glow-blur" inputmode="numeric" /></label>
+              <label class="field"><span>Opacity</span><input class="num" id="fx-glow-opacity" inputmode="decimal" /></label>
+            </div>
             <p class="fx-empty hint" id="fx-empty" hidden>Select a layer to add effects.</p>
           </div>
         </section>

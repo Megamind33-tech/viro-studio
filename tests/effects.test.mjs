@@ -5,7 +5,12 @@
  */
 import test from "node:test";
 import assert from "node:assert/strict";
-import { setLayerDropShadow, setLayerGradientOverlay } from "../src/document/ops.ts";
+import {
+  setLayerDropShadow,
+  setLayerGradientOverlay,
+  setLayerOuterGlow,
+  setLayerStrokeEffect,
+} from "../src/document/ops.ts";
 import { documentFromPreset, PRESETS } from "../src/document/presets.ts";
 
 function docWithRect() {
@@ -94,4 +99,75 @@ test("clearing gradient overlay leaves the drop shadow intact", () => {
   const fx = doc.pages[0].layers[0].effects;
   assert.equal(fx.length, 1);
   assert.equal(fx[0].type, "drop-shadow");
+});
+
+const STROKE = { type: "stroke", enabled: true, color: { r: 0, g: 0, b: 0, a: 1 }, width: 6, opacity: 1 };
+const GLOW = { type: "outer-glow", enabled: true, color: { r: 1, g: 0.9, b: 0.4, a: 1 }, blur: 16, opacity: 0.85 };
+
+test("adds a stroke effect to the layer", () => {
+  const next = setLayerStrokeEffect(docWithRect(), "L1", STROKE);
+  const fx = next.pages[0].layers[0].effects;
+  assert.equal(fx.length, 1);
+  assert.equal(fx[0].type, "stroke");
+  assert.equal(fx[0].width, 6);
+});
+
+test("replaces the existing stroke rather than stacking duplicates", () => {
+  let doc = setLayerStrokeEffect(docWithRect(), "L1", STROKE);
+  doc = setLayerStrokeEffect(doc, "L1", { ...STROKE, width: 20 });
+  const fx = doc.pages[0].layers[0].effects.filter((e) => e.type === "stroke");
+  assert.equal(fx.length, 1);
+  assert.equal(fx[0].width, 20);
+});
+
+test("null clears the stroke effect", () => {
+  let doc = setLayerStrokeEffect(docWithRect(), "L1", STROKE);
+  doc = setLayerStrokeEffect(doc, "L1", null);
+  assert.equal(doc.pages[0].layers[0].effects.filter((e) => e.type === "stroke").length, 0);
+});
+
+test("adds an outer glow effect to the layer", () => {
+  const next = setLayerOuterGlow(docWithRect(), "L1", GLOW);
+  const fx = next.pages[0].layers[0].effects;
+  assert.equal(fx.length, 1);
+  assert.equal(fx[0].type, "outer-glow");
+  assert.equal(fx[0].blur, 16);
+});
+
+test("null clears the outer glow effect", () => {
+  let doc = setLayerOuterGlow(docWithRect(), "L1", GLOW);
+  doc = setLayerOuterGlow(doc, "L1", null);
+  assert.equal(doc.pages[0].layers[0].effects.filter((e) => e.type === "outer-glow").length, 0);
+});
+
+test("all four effects coexist independently in the effects list", () => {
+  let doc = setLayerDropShadow(docWithRect(), "L1", SHADOW);
+  doc = setLayerGradientOverlay(doc, "L1", GRAD);
+  doc = setLayerStrokeEffect(doc, "L1", STROKE);
+  doc = setLayerOuterGlow(doc, "L1", GLOW);
+  const fx = doc.pages[0].layers[0].effects;
+  assert.equal(fx.length, 4);
+  for (const t of ["drop-shadow", "gradient-overlay", "stroke", "outer-glow"]) {
+    assert.ok(fx.find((e) => e.type === t), `missing ${t}`);
+  }
+});
+
+test("clearing the stroke leaves the other three effects intact", () => {
+  let doc = setLayerDropShadow(docWithRect(), "L1", SHADOW);
+  doc = setLayerGradientOverlay(doc, "L1", GRAD);
+  doc = setLayerStrokeEffect(doc, "L1", STROKE);
+  doc = setLayerOuterGlow(doc, "L1", GLOW);
+  doc = setLayerStrokeEffect(doc, "L1", null);
+  const fx = doc.pages[0].layers[0].effects;
+  assert.equal(fx.length, 3);
+  assert.equal(fx.filter((e) => e.type === "stroke").length, 0);
+});
+
+test("stroke and glow survive a JSON round-trip (serializable)", () => {
+  let doc = setLayerStrokeEffect(docWithRect(), "L1", STROKE);
+  doc = setLayerOuterGlow(doc, "L1", GLOW);
+  const round = JSON.parse(JSON.stringify(doc));
+  const fx = round.pages[0].layers[0].effects;
+  assert.deepEqual(fx.find((e) => e.type === "stroke"), STROKE);
+  assert.deepEqual(fx.find((e) => e.type === "outer-glow"), GLOW);
 });

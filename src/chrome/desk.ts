@@ -283,6 +283,82 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
     for (const id of ["fx-grad-a", "fx-grad-b", "fx-grad-angle", "fx-grad-opacity"]) {
       el(id).addEventListener("change", commitGrad);
     }
+
+    const currentStroke = () => {
+      const sel = selectedLayers(app.doc)[0];
+      return sel?.effects?.find((e) => e.type === "stroke") ?? null;
+    };
+    const defaultStroke = () => ({
+      type: "stroke" as const,
+      enabled: true,
+      color: { r: 0.88, g: 0.48, b: 0.18, a: 1 },
+      width: 6,
+      opacity: 1,
+    });
+    el<HTMLInputElement>("fx-stroke-on").addEventListener("change", () => {
+      const sel = selectedLayers(app.doc)[0];
+      if (!sel) {
+        render();
+        return;
+      }
+      const on = el<HTMLInputElement>("fx-stroke-on").checked;
+      const cur = currentStroke();
+      if (on) app.setStrokeEffect(sel.id, cur ? { ...cur, enabled: true } : defaultStroke());
+      else if (cur) app.setStrokeEffect(sel.id, { ...cur, enabled: false });
+    });
+    const commitStroke = () => {
+      const sel = selectedLayers(app.doc)[0];
+      if (!sel) return;
+      const cur = currentStroke() ?? defaultStroke();
+      app.setStrokeEffect(sel.id, {
+        ...cur,
+        enabled: true,
+        width: Math.max(0, parseNum(el<HTMLInputElement>("fx-stroke-width").value) ?? cur.width),
+        opacity: Math.min(1, Math.max(0, parseNum(el<HTMLInputElement>("fx-stroke-opacity").value) ?? cur.opacity)),
+        color: hexToRgba(el<HTMLInputElement>("fx-stroke-color").value),
+      });
+    };
+    for (const id of ["fx-stroke-width", "fx-stroke-opacity", "fx-stroke-color"]) {
+      el(id).addEventListener("change", commitStroke);
+    }
+
+    const currentGlow = () => {
+      const sel = selectedLayers(app.doc)[0];
+      return sel?.effects?.find((e) => e.type === "outer-glow") ?? null;
+    };
+    const defaultGlow = () => ({
+      type: "outer-glow" as const,
+      enabled: true,
+      color: { r: 1, g: 0.9, b: 0.4, a: 1 },
+      blur: 16,
+      opacity: 0.85,
+    });
+    el<HTMLInputElement>("fx-glow-on").addEventListener("change", () => {
+      const sel = selectedLayers(app.doc)[0];
+      if (!sel) {
+        render();
+        return;
+      }
+      const on = el<HTMLInputElement>("fx-glow-on").checked;
+      const cur = currentGlow();
+      if (on) app.setOuterGlow(sel.id, cur ? { ...cur, enabled: true } : defaultGlow());
+      else if (cur) app.setOuterGlow(sel.id, { ...cur, enabled: false });
+    });
+    const commitGlow = () => {
+      const sel = selectedLayers(app.doc)[0];
+      if (!sel) return;
+      const cur = currentGlow() ?? defaultGlow();
+      app.setOuterGlow(sel.id, {
+        ...cur,
+        enabled: true,
+        blur: Math.max(0, parseNum(el<HTMLInputElement>("fx-glow-blur").value) ?? cur.blur),
+        opacity: Math.min(1, Math.max(0, parseNum(el<HTMLInputElement>("fx-glow-opacity").value) ?? cur.opacity)),
+        color: hexToRgba(el<HTMLInputElement>("fx-glow-color").value),
+      });
+    };
+    for (const id of ["fx-glow-blur", "fx-glow-opacity", "fx-glow-color"]) {
+      el(id).addEventListener("change", commitGlow);
+    }
   }
 
   function bindRecovery(): void {
@@ -1603,6 +1679,24 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
     if (grad && grad.stops[1]) el<HTMLInputElement>("fx-grad-b").value = rgbaToHex(grad.stops[grad.stops.length - 1].color);
     setDisabled(["fx-grad-on"], !sel);
     setDisabled(["fx-grad-a", "fx-grad-b", "fx-grad-angle", "fx-grad-opacity"], !gradOn);
+
+    const strokeFx = sel?.effects?.find((e) => e.type === "stroke") ?? null;
+    const strokeOn = !!strokeFx && strokeFx.enabled;
+    el<HTMLInputElement>("fx-stroke-on").checked = strokeOn;
+    fillIfIdle("fx-stroke-width", strokeFx ? fmt(strokeFx.width, 0) : "6");
+    fillIfIdle("fx-stroke-opacity", strokeFx ? fmt(strokeFx.opacity, 2) : "1");
+    if (strokeFx) el<HTMLInputElement>("fx-stroke-color").value = rgbaToHex(strokeFx.color);
+    setDisabled(["fx-stroke-on"], !sel);
+    setDisabled(["fx-stroke-width", "fx-stroke-opacity", "fx-stroke-color"], !strokeOn);
+
+    const glow = sel?.effects?.find((e) => e.type === "outer-glow") ?? null;
+    const glowOn = !!glow && glow.enabled;
+    el<HTMLInputElement>("fx-glow-on").checked = glowOn;
+    fillIfIdle("fx-glow-blur", glow ? fmt(glow.blur, 0) : "16");
+    fillIfIdle("fx-glow-opacity", glow ? fmt(glow.opacity, 2) : "0.85");
+    if (glow) el<HTMLInputElement>("fx-glow-color").value = rgbaToHex(glow.color);
+    setDisabled(["fx-glow-on"], !sel);
+    setDisabled(["fx-glow-blur", "fx-glow-opacity", "fx-glow-color"], !glowOn);
 
     const fxEmpty = document.getElementById("fx-empty");
     if (fxEmpty) fxEmpty.hidden = !!sel;

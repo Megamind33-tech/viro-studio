@@ -1,5 +1,5 @@
 import { migrateDocument } from "./document/migrate";
-import type { BlendMode, DropShadowEffect, GradientOverlayEffect, ImageFit, PressDocument, ResampleAlgo, Rgba, ToolId } from "./document/types";
+import type { BlendMode, DropShadowEffect, GradientOverlayEffect, ImageFit, OuterGlowEffect, PressDocument, ResampleAlgo, Rgba, StrokeEffect, ToolId } from "./document/types";
 import {
   addImageFrame,
   addTypeFrame,
@@ -42,6 +42,8 @@ import {
   setLayerBlend,
   setLayerDropShadow,
   setLayerGradientOverlay,
+  setLayerOuterGlow,
+  setLayerStrokeEffect,
   setLayerLocked,
   setLayerOpacity,
   setLayerTransform,
@@ -1244,6 +1246,38 @@ export class PressApp {
   /** Set or clear (null) the gradient-overlay effect on a layer. One undo step. */
   setGradientOverlay(id: string, overlay: GradientOverlayEffect | null): void {
     this.commit("Gradient overlay", setLayerGradientOverlay(this.doc, id, overlay));
+  }
+
+  /** Set or clear (null) the stroke/outline effect on a layer. One undo step. */
+  setStrokeEffect(id: string, stroke: StrokeEffect | null): void {
+    this.commit("Stroke effect", setLayerStrokeEffect(this.doc, id, stroke));
+  }
+
+  /** Set or clear (null) the outer-glow effect on a layer. One undo step. */
+  setOuterGlow(id: string, glow: OuterGlowEffect | null): void {
+    this.commit("Outer glow", setLayerOuterGlow(this.doc, id, glow));
+  }
+
+  /** A sensible default stroke/outline used when the effect is first enabled. */
+  static defaultStrokeEffect(): StrokeEffect {
+    return {
+      type: "stroke",
+      enabled: true,
+      color: { r: 0.88, g: 0.48, b: 0.18, a: 1 },
+      width: 6,
+      opacity: 1,
+    };
+  }
+
+  /** A sensible default outer glow used when the effect is first enabled. */
+  static defaultOuterGlow(): OuterGlowEffect {
+    return {
+      type: "outer-glow",
+      enabled: true,
+      color: { r: 1, g: 0.9, b: 0.4, a: 1 },
+      blur: 16,
+      opacity: 0.85,
+    };
   }
 
   /** A sensible default gradient overlay used when the effect is first enabled. */

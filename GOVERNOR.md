@@ -115,6 +115,7 @@ Hosted platform (approved 2026-08-26 via **ADR 0004**, phased + flag-gated):
 | Local Projects library (dashboard: save/list/open/rename/delete) | PROVEN_WORKING (new) | `tests/projects.spec.mjs` 11/11 + demo video |
 | Project thumbnails (rendered from real page) | PROVEN_WORKING (new) | `compositor.thumbnailDataUrl`; projects E2E asserts real PNG |
 | Anchor op API (preview/apply/audit) | PROVEN_WORKING | `tests/anchor-bus.spec.mjs` |
+| Layer effects: stroke/outline + outer glow (leaf + group) | PROVEN_WORKING (new) | `tests/effects.*` pixel-diff + undo, `tests/effects.test.mjs` |
 | Templates/presets + procedural marks | PARTIALLY_IMPLEMENTED | real generators; catalog breadth limited |
 | Accounts / auth / sessions | ABSENT | no code |
 | Cloud storage / sync / multi-device | ABSENT | no code |
@@ -251,6 +252,15 @@ truthful editor release.
 
 ## Decision Log
 
+- 2026-08-26 — Delivered RFC-3 additive layer effects **Stroke/outline** and **Outer glow**
+  (`docs/research/0001-next-editor-features.md`), reusing the `effects[]` list and the
+  `withDropShadow`/`drawGradientOverlay` composition seam. No schema bump: effects are additive
+  and forward/backward-safe (old builds ignore an unknown effect), matching the drop-shadow
+  precedent. Stroke renders by dilating the layer silhouette (`ImageFilter.MakeDilate` +
+  `ColorFilter.MakeBlend SrcIn`); outer glow is a zero-offset `MakeDropShadowOnly` in the glow
+  colour. Both compose for leaves and groups via a shared `withEffects` wrapper, and effects are
+  folded into `hashLayer` so panel thumbnails invalidate. Proven with pixel-diff E2E (renders +
+  undo clears) and unit tests. Migration impact: none (additive, versionless). Owner: engineering.
 - 2026-08-26 — Governor established; forensic audit completed. Owner: Governor.
 - 2026-08-26 — Ruled the two supplied screenshots aspirational; SaaS surfaces classified ABSENT,
   not decorative, and explicitly out of scope pending an owner-approved platform RFC. Rationale:

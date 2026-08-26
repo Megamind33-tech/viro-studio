@@ -108,7 +108,39 @@ export interface GradientOverlayEffect {
   opacity: number;
 }
 
-export type LayerEffect = DropShadowEffect | GradientOverlayEffect;
+/**
+ * A solid outline traced around the layer's silhouette (Photoshop "Stroke").
+ * Renders for any layer kind by dilating its alpha and tinting the ring that
+ * stands proud of the original content. Additive effect — no schema bump.
+ */
+export interface StrokeEffect {
+  type: "stroke";
+  enabled: boolean;
+  /** 0..1 float channels, matching Rgba elsewhere. */
+  color: Rgba;
+  /** Outline width in page px, drawn outward from the silhouette. */
+  width: number;
+  /** 0..1, multiplies the stroke colour's alpha. */
+  opacity: number;
+}
+
+/**
+ * A soft coloured halo bleeding outward from the layer's silhouette (Photoshop
+ * "Outer Glow") — a blurred silhouette of the glow colour drawn behind the
+ * layer, i.e. a zero-offset drop shadow in a light colour. Additive — no bump.
+ */
+export interface OuterGlowEffect {
+  type: "outer-glow";
+  enabled: boolean;
+  /** 0..1 float channels, matching Rgba elsewhere. */
+  color: Rgba;
+  /** Blur radius in page px. */
+  blur: number;
+  /** 0..1, multiplies the glow colour's alpha. */
+  opacity: number;
+}
+
+export type LayerEffect = DropShadowEffect | GradientOverlayEffect | StrokeEffect | OuterGlowEffect;
 
 export interface LayerBase {
   id: string;

@@ -132,6 +132,48 @@ check("gradient overlay is stored on the layer", grad.stored === true);
 check("gradient overlay actually renders (not decorative)", grad.changed === true, `before=${grad.beforeLen}B after=${grad.afterLen}B`);
 check("undo removes the gradient overlay", grad.undoCleared === true);
 
+// Stroke/outline effect must actually render a ring around the layer silhouette.
+const stroke = await page.evaluate(async () => {
+  const P = window.__press;
+  window.viroAnchor.applyDetailed([
+    { op: "press.add_rect", params: { x: 1400, y: 300, w: 500, h: 500, fill: "#4488cc" }, reason: "stroke fixture" },
+  ]);
+  const layers = P.doc.pages[0].layers;
+  const id = layers[layers.length - 1].id;
+  const before = P.compositor.thumbnailDataUrl(P.doc, 256);
+  P.setStrokeEffect(id, { type: "stroke", enabled: true, color: { r: 0.9, g: 0.1, b: 0.1, a: 1 }, width: 30, opacity: 1 });
+  const stored = P.doc.pages[0].layers.find((l) => l.id === id)?.effects?.some((e) => e.type === "stroke" && e.enabled);
+  const after = P.compositor.thumbnailDataUrl(P.doc, 256);
+  P.undo();
+  const undoCleared = !P.doc.pages[0].layers.find((l) => l.id === id)?.effects?.some((e) => e.type === "stroke" && e.enabled);
+  return { stored: !!stored, changed: typeof before === "string" && before !== after, undoCleared, beforeLen: (before || "").length, afterLen: (after || "").length };
+});
+
+check("stroke effect is stored on the layer", stroke.stored === true);
+check("stroke effect actually renders (not decorative)", stroke.changed === true, `before=${stroke.beforeLen}B after=${stroke.afterLen}B`);
+check("undo removes the stroke effect", stroke.undoCleared === true);
+
+// Outer glow must actually render a soft halo behind the layer.
+const glow = await page.evaluate(async () => {
+  const P = window.__press;
+  window.viroAnchor.applyDetailed([
+    { op: "press.add_rect", params: { x: 1400, y: 1400, w: 500, h: 400, fill: "#222222" }, reason: "glow fixture" },
+  ]);
+  const layers = P.doc.pages[0].layers;
+  const id = layers[layers.length - 1].id;
+  const before = P.compositor.thumbnailDataUrl(P.doc, 256);
+  P.setOuterGlow(id, { type: "outer-glow", enabled: true, color: { r: 1, g: 0.85, b: 0.2, a: 1 }, blur: 60, opacity: 1 });
+  const stored = P.doc.pages[0].layers.find((l) => l.id === id)?.effects?.some((e) => e.type === "outer-glow" && e.enabled);
+  const after = P.compositor.thumbnailDataUrl(P.doc, 256);
+  P.undo();
+  const undoCleared = !P.doc.pages[0].layers.find((l) => l.id === id)?.effects?.some((e) => e.type === "outer-glow" && e.enabled);
+  return { stored: !!stored, changed: typeof before === "string" && before !== after, undoCleared, beforeLen: (before || "").length, afterLen: (after || "").length };
+});
+
+check("outer glow is stored on the layer", glow.stored === true);
+check("outer glow actually renders (not decorative)", glow.changed === true, `before=${glow.beforeLen}B after=${glow.afterLen}B`);
+check("undo removes the outer glow", glow.undoCleared === true);
+
 check("no page errors", pageErrors.length === 0, pageErrors.join(" | "));
 
 console.log(`\n${results.length - failed}/${results.length} checks passed`);

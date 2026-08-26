@@ -4,10 +4,13 @@ import type {
   DropShadowEffect,
   GradientOverlayEffect,
   Layer,
+  LayerEffect,
+  OuterGlowEffect,
   Page,
   PressDocument,
   ResampleAlgo,
   Rgba,
+  StrokeEffect,
   ToolId,
   Transform,
   VectorLayer,
@@ -34,6 +37,47 @@ function gradientOverlayOf(layer: Layer): GradientOverlayEffect | null {
   if (!fx) return null;
   for (const e of fx) if (e.type === "gradient-overlay" && e.enabled && e.stops.length >= 2) return e;
   return null;
+}
+
+/** The layer's enabled stroke/outline effect, if any. */
+function strokeEffectOf(layer: Layer): StrokeEffect | null {
+  const fx = layer.effects;
+  if (!fx) return null;
+  for (const e of fx) if (e.type === "stroke" && e.enabled && e.width > 0) return e;
+  return null;
+}
+
+/** The layer's enabled outer glow, if any. */
+function outerGlowOf(layer: Layer): OuterGlowEffect | null {
+  const fx = layer.effects;
+  if (!fx) return null;
+  for (const e of fx) if (e.type === "outer-glow" && e.enabled && e.blur >= 0) return e;
+  return null;
+}
+
+/** Everything that alters how a layer draws, folded into its render hash. */
+function hashEffect(h: number, e: LayerEffect): number {
+  h = hashStr(h, e.type);
+  h = mixHash(h, e.enabled ? 1 : 2);
+  switch (e.type) {
+    case "drop-shadow":
+      h = hashRgba(h, e.color);
+      h = hashNum(hashNum(hashNum(hashNum(h, e.offsetX), e.offsetY), e.blur), e.opacity);
+      break;
+    case "gradient-overlay":
+      h = hashNum(hashNum(h, e.angle), e.opacity);
+      for (const s of e.stops) h = hashRgba(hashNum(h, s.offset), s.color);
+      break;
+    case "stroke":
+      h = hashRgba(h, e.color);
+      h = hashNum(hashNum(h, e.width), e.opacity);
+      break;
+    case "outer-glow":
+      h = hashRgba(h, e.color);
+      h = hashNum(hashNum(h, e.blur), e.opacity);
+      break;
+  }
+  return h;
 }
 
 /** Ruler band thickness in CSS px. Chrome imports this for its own hit maths. */
@@ -1525,11 +1569,10 @@ export class Compositor {
       return;
     }
     if (layer.kind === "group") {
-      // Groups honour effects too — a drop shadow applies to the composited
-      // group silhouette, not each child. Renders on canvas, export and thumbs.
-      this.withDropShadow(ck, sk, dropShadowOf(layer), () =>
-        this.drawGroup(ck, sk, surf, doc, page, layer),
-      );
+      // Groups honour effects too — a drop shadow, glow or outline applies to
+      // the composited group silhouette, not each child. Renders on canvas,
+      // export and thumbs.
+      this.withEffects(ck, sk, layer, () => this.drawGroup(ck, sk, surf, doc, page, layer));
       return;
     }
     this.drawLayerWithEffects(ck, sk, doc, layer);
@@ -1577,9 +1620,74 @@ export class Compositor {
     draw();
   }
 
+  /**
+   * A soft coloured halo behind the layer (Photoshop "Outer Glow") — a blurred
+   * silhouette of the glow colour with zero offset, drawn as a pre-pass, then
+   * the layer on top. Shared by leaves and groups. Absent glow costs nothing.
+   */
+  private withOuterGlow(ck: CanvasKit, sk: Canvas, glow: OuterGlowEffect | null, draw: () => void): void {
+    if (glow && glow.enabled && glow.blur >= 0) {
+      const paint = new ck.Paint();
+      const a = Math.min(1, Math.max(0, glow.color.a * glow.opacity));
+      const c = ck.Color4f(glow.color.r, glow.color.g, glow.color.b, a);
+      const sigma = Math.max(0, glow.blur) * 0.5;
+      const filter = ck.ImageFilter.MakeDropShadowOnly(0, 0, sigma, sigma, c, null);
+      paint.setImageFilter(filter);
+      sk.saveLayer(paint);
+      draw();
+      sk.restore();
+      filter.delete();
+      paint.delete();
+    }
+    draw();
+  }
+
+  /**
+   * A solid outline around the layer's silhouette (Photoshop "Stroke"). The
+   * silhouette is dilated by the stroke width and re-tinted to the stroke
+   * colour (SrcIn keeps the dilated alpha), drawn as a pre-pass behind the
+   * layer, so a ring of `width` stands proud of the original content. Absent
+   * stroke costs nothing.
+   */
+  private withStrokeEffect(ck: CanvasKit, sk: Canvas, stroke: StrokeEffect | null, draw: () => void): void {
+    if (stroke && stroke.enabled && stroke.width > 0) {
+      const paint = new ck.Paint();
+      const a = Math.min(1, Math.max(0, stroke.color.a * stroke.opacity));
+      const c = ck.Color4f(stroke.color.r, stroke.color.g, stroke.color.b, a);
+      const r = Math.max(0.5, stroke.width);
+      const dilate = ck.ImageFilter.MakeDilate(r, r, null);
+      const cf = ck.ColorFilter.MakeBlend(c, ck.BlendMode.SrcIn);
+      const filter = ck.ImageFilter.MakeColorFilter(cf, dilate);
+      paint.setImageFilter(filter);
+      sk.saveLayer(paint);
+      draw();
+      sk.restore();
+      filter.delete();
+      cf.delete();
+      dilate.delete();
+      paint.delete();
+    }
+    draw();
+  }
+
+  /**
+   * Compose every enabled non-destructive effect around a layer's own draw.
+   * Nested so the pre-passes stack behind the content, bottom-to-top: drop
+   * shadow, then outer glow, then the outline ring closest to the layer. Each
+   * wrapper no-ops when its effect is absent. Gradient overlay is painted
+   * inside `drawLayer` (clipped to the layer's own alpha) and so is not here.
+   */
+  private withEffects(ck: CanvasKit, sk: Canvas, layer: Layer, draw: () => void): void {
+    this.withDropShadow(ck, sk, dropShadowOf(layer), () =>
+      this.withOuterGlow(ck, sk, outerGlowOf(layer), () =>
+        this.withStrokeEffect(ck, sk, strokeEffectOf(layer), draw),
+      ),
+    );
+  }
+
   /** Draw a leaf layer, applying any enabled non-destructive effects. */
   private drawLayerWithEffects(ck: CanvasKit, sk: Canvas, doc: PressDocument, layer: Layer): void {
-    this.withDropShadow(ck, sk, dropShadowOf(layer), () => this.drawLayer(ck, sk, doc, layer));
+    this.withEffects(ck, sk, layer, () => this.drawLayer(ck, sk, doc, layer));
   }
 
   private applyAdjustment(ck: CanvasKit, sk: Canvas, surf: Surface, layer: AdjustmentLayer): void {
@@ -2169,6 +2277,9 @@ export class Compositor {
     const t = layer.transform;
     h = hashNum(hashNum(hashNum(hashNum(hashNum(h, t.x), t.y), t.w), t.h), t.rotation);
     h = hashNum(hashNum(h, t.scaleX ?? 1), t.scaleY ?? 1);
+    // Non-destructive effects change the rendered pixels without touching the
+    // layer's own fields, so a panel thumbnail must re-render when they change.
+    if (layer.effects) for (const e of layer.effects) h = hashEffect(h, e);
     switch (layer.kind) {
       case "vector": {
         h = mixHash(h, layer.closed ? 1 : 2);
