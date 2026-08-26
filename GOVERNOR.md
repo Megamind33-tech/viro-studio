@@ -116,6 +116,7 @@ Hosted platform (approved 2026-08-26 via **ADR 0004**, phased + flag-gated):
 | Project thumbnails (rendered from real page) | PROVEN_WORKING (new) | `compositor.thumbnailDataUrl`; projects E2E asserts real PNG |
 | Anchor op API (preview/apply/audit) | PROVEN_WORKING | `tests/anchor-bus.spec.mjs` |
 | Layer effects: stroke/outline + outer glow (leaf + group) | PROVEN_WORKING (new) | `tests/effects.*` pixel-diff + undo, `tests/effects.test.mjs` |
+| Frontend hosting (Cloudflare Pages config) | PROVEN_WORKING (config; deploy owner-gated) | build emits `dist`, boots under CSP, `docs/deploy/cloudflare-pages.md` |
 | Templates/presets + procedural marks | PARTIALLY_IMPLEMENTED | real generators; catalog breadth limited |
 | Accounts / auth / sessions | ABSENT | no code |
 | Cloud storage / sync / multi-device | ABSENT | no code |
@@ -208,7 +209,14 @@ owner — requested via the environment setup-actions channel:
 - Secrets: `LENCO_API_TOKEN` (server-side), `SUPABASE_URL`, `SUPABASE_ANON_KEY`,
   `SUPABASE_SERVICE_ROLE_KEY`.
 - Accounts/config: create the Lenco Pay API key and register the webhook URL with `support@lenco.ng`;
-  create the Supabase project in `eu-west-2`; create the Cloudflare Pages project.
+  create the Supabase project in `eu-west-2`.
+- Cloudflare frontend hosting: **config is DONE and validated** (committed this branch) — `wrangler.jsonc`
+  (Pages project `viro-press`, `pages_build_output_dir: ./dist`), `public/_headers`, `public/_redirects`
+  (SPA fallback), `docs/deploy/cloudflare-pages.md`, and a `deploy:pages` npm script. The only remaining
+  step is **owner-authenticated go-live**: Cloudflare OAuth/login (`wrangler login` or dashboard sign-in),
+  create/confirm the `viro-press` Pages project, and deploy (`npx wrangler pages deploy dist`, or dashboard
+  Connect-to-Git with build `npm run build`, output `dist`, `NODE_VERSION=20`). An agent cannot authenticate
+  or own the project — same class as the Supabase/Lenco provisioning above.
 - Legal: execute the Supabase DPA + SCCs; complete a DPIA and ROPA; publish a privacy policy;
   NDPC registration / DPO as required. (Owner/legal — not engineering.)
 - Open question for owner: does the Lenco account support card tokenization for true auto-renewal?
@@ -252,6 +260,16 @@ truthful editor release.
 
 ## Decision Log
 
+- 2026-08-26 — Implemented and validated the **Cloudflare Pages frontend hosting config** repo-side
+  (commit `5f7b223`): `wrangler.jsonc` (Pages project `viro-press`, `pages_build_output_dir: ./dist`),
+  `public/_headers` (application/wasm MIME, immutable caching for hashed `/assets/*` and vendored
+  `/wasm|/ml|/fonts`, nosniff/DENY/Referrer-Policy/Permissions-Policy + same-origin CSP; COOP/COEP
+  intentionally omitted because ONNX runs `numThreads=1` and CanvasKit is the non-threaded build → no
+  SharedArrayBuffer), `public/_redirects` SPA fallback, `docs/deploy/cloudflare-pages.md` runbook, and a
+  `deploy:pages` npm script. Build emits a complete `dist/` and the production bundle boots under the CSP
+  with 0 violations; suite green. Go-live deploy remains an **owner-authenticated** step (Cloudflare
+  OAuth/login + own the Pages project + deploy). Migration impact: none (additive config files). Owner:
+  engineering (config); owner (deploy auth).
 - 2026-08-26 — Delivered RFC-3 additive layer effects **Stroke/outline** and **Outer glow**
   (`docs/research/0001-next-editor-features.md`), reusing the `effects[]` list and the
   `withDropShadow`/`drawGradientOverlay` composition seam. No schema bump: effects are additive
