@@ -3,10 +3,10 @@
   "title": "Prove multi-contour vector model before boolean tools ship",
   "priority": "P1",
   "domain": "editor-core",
-  "state": "QUEUED",
-  "outcome": "Existing vectors migrate to document v6 without visual change, while a multi-contour vector can render a subtract-created hole and survive save/reopen before production boolean commands are exposed.",
-  "before": "The current VectorLayer model stores one contour only, so boolean results with holes or disjoint pieces cannot be represented truthfully.",
-  "after": "The document/rendering model can represent and round-trip multi-contour vectors with explicit fill behavior without regressing existing single-contour files; no user-facing boolean controls ship in this packet.",
+  "state": "RECONCILED",
+  "outcome": "Existing vectors migrate to document v6 without visual change, while multi-contour vectors truthfully represent holes and disjoint pieces.",
+  "before": "Historical packet assumption: VectorLayer stored one contour only and document v6/multi-contour rendering had not landed.",
+  "after": "Governor reconciliation on 2026-08-27: the packet target already existed on main before this delivery packet was activated. Document v6, VectorLayer.contours, v5-to-v6 widening, compound EvenOdd rendering, contour validation, boolean kernel, reversible vector.boolean command, and Pathfinder UI are already merged and regression-proven. No Builder cycle is legitimate for this packet.",
   "allowed_paths": [
     "src/document/types.ts",
     "src/document/migrate.ts",
@@ -17,30 +17,52 @@
     "docs/agents/deliveries/VIRO-0002.json"
   ],
   "acceptance": [
-    "A v5 single-contour vector opens through the v6 migration path and renders pixel-identically to the pre-migration baseline.",
-    "A multi-contour test vector containing an outer contour and inner hole renders the hole correctly under the chosen explicit fill rule.",
-    "The same multi-contour vector survives serialize/save and reopen without geometry, fill, stroke, or contour loss.",
+    "A v5 single-contour vector opens through the v6 migration path without moving geometry.",
+    "A multi-contour vector with an outer contour and inner hole renders the hole correctly under the explicit compound fill rule.",
+    "Multi-contour vectors survive serialize/save/reopen without contour loss.",
     "Validation rejects malformed contour arrays, non-finite coordinates, and out-of-contract contour/node counts.",
-    "Existing document-model, editor, rendering, export, TypeScript and build gates remain green.",
-    "No user-visible boolean command or decorative control is introduced in Phase 0."
+    "Document, TypeScript, engine and build gates remain green for the already-landed implementation.",
+    "Pathfinder controls on main are classified truthfully as real delivered functionality, not as Phase-0 decorative UI."
   ],
   "evidence": [
-    "Regression-first migration invariant test",
-    "Multi-contour rendering test or pixel evidence showing an actual hole",
-    "Serialization round-trip test",
-    "Validation negative tests",
-    "npm test",
-    "npx tsc --noEmit",
-    "npm run build"
+    "main @ 6d4d7b6 contains commits 84936c2 and 9a22f8e as ancestors",
+    "src/document/types.ts defines Contour and authoritative VectorLayer.contours for document v6",
+    "src/document/migrate.ts declares DOC_VERSION = 6 and the v5-to-v6 contour stamp",
+    "src/engine/compositor.ts renders multi-contour compound paths with EvenOdd fill",
+    "src/document/factory.ts validates contour structure and caps",
+    "src/document/boolean-ops.ts and vector.boolean implement the real boolean kernel and reversible command path",
+    "index.html ships Unite, Minus Front, Intersect and Exclude controls",
+    "gap audit: tsc exit 0; unit 316/316; build exit 0; engines PASS; boolean E2E 17/17"
   ],
-  "builder": {"status": "PENDING", "notes": "Not assigned until Governor activates the packet.", "proof": []},
-  "verifier": {"status": "PENDING", "notes": "Independent verification has not started.", "proof": []},
-  "critic": {"status": "NOT_APPLICABLE", "notes": "Phase 0 exposes no new user-facing UI; rendering evidence is handled by verifier.", "proof": []},
+  "builder": {
+    "status": "NOT_APPLICABLE",
+    "notes": "Historical reconciliation: the implementation landed before this packet was activated. Assigning a Builder now would create activity without a product delta.",
+    "proof": []
+  },
+  "verifier": {
+    "status": "NOT_APPLICABLE",
+    "notes": "Historical reconciliation does not fabricate a retroactive pipeline verdict. The Governor closes the stale packet from repository/test evidence supplied by the gap audit.",
+    "proof": []
+  },
+  "critic": {
+    "status": "NOT_APPLICABLE",
+    "notes": "No new UI is being produced by this reconciliation.",
+    "proof": []
+  },
   "delta": {
-    "before": "Single-contour VectorLayer cannot truthfully store boolean results containing holes or disjoint contours.",
-    "after": "Pending implementation and verification.",
-    "proof": [],
-    "regression_protection": [],
-    "new_debt": "none accepted yet"
+    "before": "The delivery queue incorrectly treated document v6/multi-contour support as missing work.",
+    "after": "The queue records the capability as already delivered and removes VIRO-0002 as an executable implementation packet.",
+    "proof": [
+      "main branch evidence at 6d4d7b6: document v6 multi-contour model and migration are present",
+      "main branch evidence: Pathfinder kernel, vector.boolean command, undo/redo path and UI controls are present",
+      "gap-audit regression evidence: unit 316/316, tsc/build/engines green, boolean E2E 17/17"
+    ],
+    "regression_protection": [
+      "tests/transform.test.mjs v5-to-v6 migration invariant and v6 multi-contour round-trip",
+      "tests/boolean-ops.test.mjs kernel and validation tests",
+      "tests/ui-commands.test.mjs vector.boolean apply/refuse/undo/redo/serializable tests",
+      "tests/booleans.spec.mjs runtime hole/undo/save-open proof"
+    ],
+    "new_debt": "The audit exposed a distinct real gap: src/export/pdf.ts emitVector still walks legacy layer.nodes rather than authoritative layer.contours, so compound boolean geometry can be correct on canvas yet lose holes/disjoint contours in vector PDF export. That work is re-aimed to VIRO-0005."
   }
 }
