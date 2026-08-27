@@ -234,7 +234,7 @@ check("underline is stored on the story", under.stored === true);
 check("underline actually renders (not decorative)", under.changed === true, `before=${under.beforeLen}B after=${under.afterLen}B`);
 check("undo removes the underline", under.undoCleared === true);
 
-const grad = await page.evaluate(async () => {
+const fillG = await page.evaluate(async () => {
   const P = window.__press;
   window.viroAnchor.applyDetailed([
     { op: "press.add_rect", params: { x: 200, y: 200, w: 1200, h: 800, fill: "#e07a2f" }, reason: "gradient-fill fixture" },
@@ -259,10 +259,10 @@ const grad = await page.evaluate(async () => {
   };
 });
 
-check("linear gradient fill is stored on the vector", grad.stored === true);
-check("linear gradient fill actually renders (not a solid alias)", grad.changed === true, `before=${grad.beforeLen}B after=${grad.afterLen}B`);
-check("undo restores the solid fill", grad.undoCleared === true);
-check("document is v7 after a gradient fill", grad.version === 7, `version=${grad.version}`);
+check("linear gradient fill is stored on the vector", fillG.stored === true);
+check("linear gradient fill actually renders (not a solid alias)", fillG.changed === true, `before=${fillG.beforeLen}B after=${fillG.afterLen}B`);
+check("undo restores the solid fill", fillG.undoCleared === true);
+check("document is v7 after a gradient fill", fillG.version === 7, `version=${fillG.version}`);
 
 check("no page errors", pageErrors.length === 0, pageErrors.join(" | "));
 
