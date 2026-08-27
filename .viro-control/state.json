@@ -1,14 +1,14 @@
 {
   "version": 1,
-  "revision": 6,
-  "updated_at": "2026-08-27T16:55:00.000Z",
+  "revision": 7,
+  "updated_at": "2026-08-27T17:19:44.200Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
       "title": "Prove multi-contour vector model before boolean tools ship",
       "priority": "P1",
       "domain": "editor-core",
-      "outcome": "Existing vectors migrate to document v6 without visual change, while a multi-contour vector can render a subtract-created hole and survive save/reopen before production boolean commands are exposed.",
+      "outcome": "Existing vectors migrate to document v6 without visual change, while multi-contour vectors truthfully represent holes and disjoint pieces.",
       "scope": [
         "src/document/types.ts",
         "src/document/migrate.ts",
@@ -122,6 +122,11 @@
       "packet": "VIRO-0005",
       "by": "governor",
       "detail": "Activated real remaining P1: compound multi-contour vector PDF export fidelity."
+    },
+    {
+      "at": "2026-08-27T17:19:44.200Z",
+      "type": "packet.reconciled_from_manifest",
+      "packet": "VIRO-0002"
     }
   ]
 }
