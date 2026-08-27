@@ -1,0 +1,29 @@
+---
+description: Mandatory VIRO shared-work orchestration contract
+alwaysApply: true
+---
+
+# VIRO Cursor Team Contract
+
+Before making non-trivial product edits, Cursor must participate in the repository's resident orchestrator exactly like every other team member.
+
+Read `GOVERNOR.md`, `CLAUDE.md`, `AGENTS.md`, and `docs/agents/ORCHESTRATOR.md`.
+
+Use a stable identity such as `cursor-editor-pc2` or `cursor-ui-laptop`.
+
+Before editing:
+
+```bash
+node scripts/viro-orchestrator.mjs sync
+node scripts/viro-orchestrator.mjs check
+node scripts/viro-orchestrator.mjs claim --agent <stable-id> --role <role> [--packet VIRO-NNNN]
+node scripts/viro-orchestrator.mjs brief --agent <stable-id>
+```
+
+The shared state requires `GITHUB_TOKEN` with repository Contents read/write permission.
+
+The returned assignment is binding. Edit only its leased paths. Do not duplicate another packet's implementation, bypass a collision, broaden scope, or silently repair a neighboring feature.
+
+Use `heartbeat` during long work. At handoff, provide concrete evidence through `advance`. Builder output is never self-verified. A Verifier/Critic rejection returns the same packet to Build.
+
+If the worker refuses the claim, stop product edits and surface the conflict to the Orchestrator/Governor. Do not create an alternative implementation on another branch.

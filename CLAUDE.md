@@ -8,6 +8,24 @@ Agent activity is not progress. A change counts only when the running product ga
 
 Never report a feature as complete because UI exists, code compiles, a plan was written, or a builder says it works.
 
+## Mandatory orchestration entry point
+
+Before any non-trivial product work begins, use the resident orchestrator described in `docs/agents/ORCHESTRATOR.md`.
+
+Shared work state is controlled by `scripts/viro-orchestrator.mjs`. No Builder, specialist engineer, Verifier, Critic, or Release Manager may begin a packet without a successful orchestrator claim and assignment brief.
+
+The orchestrator owns coordination, not product judgment. It prevents duplicated work by maintaining a shared GitHub-backed queue, dependency graph, packet-level path leases, stable agent identities, handoffs and stale-worker recovery across computers and coding tools.
+
+Required behavior:
+- synchronize delivery manifests before assignment;
+- check shared state for collisions;
+- one agent may own only one packet at a time;
+- overlapping packet scopes cannot run concurrently;
+- the packet lease survives Builder → Verifier → Critic → Release handoffs;
+- rejected work returns to the same packet rather than spawning a parallel rewrite;
+- agents work on the branch and paths named in their assignment brief;
+- external blockers and stale assignments return to Governor control.
+
 ## Mandatory pipeline
 
 Every non-trivial task follows this sequence:
@@ -18,6 +36,8 @@ Every non-trivial task follows this sequence:
 4. **Verifier** — independently reproduces acceptance tests and regression gates.
 5. **Critic** — independently judges product/UX quality and rejects weak or generic output.
 6. **Release Manager** — integrates only when verifier and critic both pass, then records the before→after delta.
+
+The resident Orchestrator routes the packet between these roles but may not perform their substantive responsibilities.
 
 Builders may not verify or approve their own work. Critics may not repair the work they judge. The Governor may not silently broaden scope.
 
@@ -39,6 +59,7 @@ Before production code changes, create one delivery manifest under `docs/agents/
 - outcome and domain owner;
 - before-state and target after-state;
 - allowed production paths;
+- dependencies when another packet must complete first;
 - acceptance tests;
 - evidence to capture;
 - verifier and critic verdicts.
@@ -65,16 +86,17 @@ Otherwise classify the work as PARTIAL, BLOCKED, or REJECTED.
 
 ## Parallelism rule
 
-Parallel agents must own disjoint production areas defined in `docs/agents/OWNERSHIP.md`. If two agents need the same file, the Governor serializes that work or assigns one integrator. Do not let teammates edit the same implementation surface concurrently.
+Parallel agents must own disjoint production areas defined in `docs/agents/OWNERSHIP.md` and must also hold non-overlapping orchestrator leases. If two agents need the same file, the Governor serializes that work or assigns one integrator. Do not let teammates edit the same implementation surface concurrently.
 
 ## Required reading by role
 
-- Governor: `GOVERNOR.md`, `docs/agents/PIPELINE.md`, `docs/agents/OWNERSHIP.md`
+- Orchestrator: `GOVERNOR.md`, `CLAUDE.md`, `docs/agents/ORCHESTRATOR.md`, `docs/agents/PIPELINE.md`, `docs/agents/OWNERSHIP.md`
+- Governor: `GOVERNOR.md`, `docs/agents/PIPELINE.md`, `docs/agents/OWNERSHIP.md`, orchestrator state
 - Auditor: above + relevant source/tests + current delivery manifests
-- Builder: above + its assigned `.claude/agents/*.md` role file
-- Verifier: `GOVERNOR.md`, delivery manifest, tests, runtime evidence
+- Builder: above + orchestrator assignment brief + assigned `.claude/agents/*.md` role file
+- Verifier: `GOVERNOR.md`, delivery manifest, orchestrator evidence history, tests, runtime evidence
 - Critic: `docs/AAA-BRIEF.md`, `docs/CRITIC.md`, delivery manifest, screenshots/runtime
-- Release Manager: all verdicts + CI result + before/after delta
+- Release Manager: all verdicts + orchestrator evidence + CI result + before/after delta
 
 ## Reporting format
 

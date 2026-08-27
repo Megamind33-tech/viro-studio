@@ -1,0 +1,40 @@
+name: Orchestrator Integrity
+
+on:
+  pull_request:
+    paths:
+      - ".viro/**"
+      - ".claude/agents/**"
+      - "CLAUDE.md"
+      - "docs/agents/**"
+      - "scripts/viro-orchestrator.mjs"
+      - "scripts/lib/orchestrator-core.mjs"
+      - "tests/orchestrator.test.mjs"
+      - ".github/workflows/orchestrator-integrity.yml"
+  push:
+    branches: [main]
+    paths:
+      - ".viro/**"
+      - ".claude/agents/**"
+      - "CLAUDE.md"
+      - "docs/agents/**"
+      - "scripts/viro-orchestrator.mjs"
+      - "scripts/lib/orchestrator-core.mjs"
+      - "tests/orchestrator.test.mjs"
+
+permissions:
+  contents: read
+
+jobs:
+  state-machine:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Test scheduling, leases and handoffs
+        run: node --test tests/orchestrator.test.mjs
+      - name: Prove CLI loads without credentials
+        run: node scripts/viro-orchestrator.mjs help
