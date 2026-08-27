@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 16,
-  "updated_at": "2026-08-27T21:22:43.221Z",
+  "revision": 17,
+  "updated_at": "2026-08-27T21:55:02.649Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -281,6 +281,11 @@
       "type": "agent.heartbeat",
       "agent": "claude-export-pc1",
       "packet": "VIRO-0005"
+    },
+    {
+      "at": "2026-08-27T21:55:02.649Z",
+      "type": "packet.reconciled_from_manifest",
+      "packet": "VIRO-0002"
     }
   ]
 }
