@@ -1,0 +1,46 @@
+{
+  "id": "VIRO-0002",
+  "title": "Prove multi-contour vector model before boolean tools ship",
+  "priority": "P1",
+  "domain": "editor-core",
+  "state": "QUEUED",
+  "outcome": "Existing vectors migrate to document v6 without visual change, while a multi-contour vector can render a subtract-created hole and survive save/reopen before production boolean commands are exposed.",
+  "before": "The current VectorLayer model stores one contour only, so boolean results with holes or disjoint pieces cannot be represented truthfully.",
+  "after": "The document/rendering model can represent and round-trip multi-contour vectors with explicit fill behavior without regressing existing single-contour files; no user-facing boolean controls ship in this packet.",
+  "allowed_paths": [
+    "src/document/types.ts",
+    "src/document/migrate.ts",
+    "src/document/factory.ts",
+    "src/app.ts",
+    "src/engine/compositor.ts",
+    "tests/**",
+    "docs/agents/deliveries/VIRO-0002.json"
+  ],
+  "acceptance": [
+    "A v5 single-contour vector opens through the v6 migration path and renders pixel-identically to the pre-migration baseline.",
+    "A multi-contour test vector containing an outer contour and inner hole renders the hole correctly under the chosen explicit fill rule.",
+    "The same multi-contour vector survives serialize/save and reopen without geometry, fill, stroke, or contour loss.",
+    "Validation rejects malformed contour arrays, non-finite coordinates, and out-of-contract contour/node counts.",
+    "Existing document-model, editor, rendering, export, TypeScript and build gates remain green.",
+    "No user-visible boolean command or decorative control is introduced in Phase 0."
+  ],
+  "evidence": [
+    "Regression-first migration invariant test",
+    "Multi-contour rendering test or pixel evidence showing an actual hole",
+    "Serialization round-trip test",
+    "Validation negative tests",
+    "npm test",
+    "npx tsc --noEmit",
+    "npm run build"
+  ],
+  "builder": {"status": "PENDING", "notes": "Not assigned until Governor activates the packet.", "proof": []},
+  "verifier": {"status": "PENDING", "notes": "Independent verification has not started.", "proof": []},
+  "critic": {"status": "NOT_APPLICABLE", "notes": "Phase 0 exposes no new user-facing UI; rendering evidence is handled by verifier.", "proof": []},
+  "delta": {
+    "before": "Single-contour VectorLayer cannot truthfully store boolean results containing holes or disjoint contours.",
+    "after": "Pending implementation and verification.",
+    "proof": [],
+    "regression_protection": [],
+    "new_debt": "none accepted yet"
+  }
+}
