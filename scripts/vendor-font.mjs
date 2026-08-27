@@ -161,12 +161,12 @@ function generateRegular() {
 
 const regular = FACES[0];
 const extras = FACES.slice(1);
-let gotRegular = await downloadOne(regular);
-if (!gotRegular) gotRegular = copyLocal(regular.file);
+let gotRegular = copyLocal(regular.file);
+if (!gotRegular) gotRegular = await downloadOne(regular);
 await Promise.all(
   extras.map(async (spec) => {
-    if (await downloadOne(spec)) return;
-    copyLocal(spec.file);
+    if (copyLocal(spec.file)) return;
+    await downloadOne(spec);
   }),
 );
 if (!gotRegular) generateRegular();
