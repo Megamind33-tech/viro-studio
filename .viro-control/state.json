@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 1,
-  "updated_at": "2026-08-27T16:16:00.000Z",
+  "revision": 2,
+  "updated_at": "2026-08-27T16:38:31.590Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -21,25 +21,56 @@
       "dependencies": [],
       "critic_needed": false,
       "stage": "audit",
-      "status": "QUEUED",
-      "assigned_agent": null,
-      "assigned_role": null,
-      "work_branch": null,
-      "heartbeat_at": null,
+      "status": "ACTIVE",
+      "assigned_agent": "claude-audit-cloud1",
+      "assigned_role": "gap-auditor",
+      "work_branch": "agent/viro-0002/claude-audit-cloud1",
+      "heartbeat_at": "2026-08-27T16:38:31.590Z",
       "attempts": 0,
       "evidence": [],
       "last_handoff": null,
       "rejection": null
     }
   },
-  "agents": {},
-  "leases": {},
+  "agents": {
+    "claude-audit-cloud1": {
+      "role": "gap-auditor",
+      "machine": "claude-code-cloud-vm",
+      "packet": "VIRO-0002",
+      "heartbeat_at": "2026-08-27T16:38:31.590Z"
+    }
+  },
+  "leases": {
+    "VIRO-0002": {
+      "packet": "VIRO-0002",
+      "scope": [
+        "src/document/types.ts",
+        "src/document/migrate.ts",
+        "src/document/factory.ts",
+        "src/app.ts",
+        "src/engine/compositor.ts",
+        "tests/**",
+        "docs/agents/deliveries/VIRO-0002.json"
+      ],
+      "acquired_at": "2026-08-27T16:38:31.590Z",
+      "current_agent": "claude-audit-cloud1",
+      "current_stage": "audit"
+    }
+  },
   "events": [
     {
       "at": "2026-08-27T16:16:00.000Z",
       "type": "control.bootstrap",
       "packet": "VIRO-0002",
       "detail": "Shared queue provisioned; no agent has claimed work."
+    },
+    {
+      "at": "2026-08-27T16:38:31.590Z",
+      "type": "packet.claimed",
+      "packet": "VIRO-0002",
+      "agent": "claude-audit-cloud1",
+      "role": "gap-auditor",
+      "machine": "claude-code-cloud-vm"
     }
   ]
 }
