@@ -1,0 +1,127 @@
+{
+  "version": 1,
+  "revision": 6,
+  "updated_at": "2026-08-27T16:55:00.000Z",
+  "packets": {
+    "VIRO-0002": {
+      "id": "VIRO-0002",
+      "title": "Prove multi-contour vector model before boolean tools ship",
+      "priority": "P1",
+      "domain": "editor-core",
+      "outcome": "Existing vectors migrate to document v6 without visual change, while a multi-contour vector can render a subtract-created hole and survive save/reopen before production boolean commands are exposed.",
+      "scope": [
+        "src/document/types.ts",
+        "src/document/migrate.ts",
+        "src/document/factory.ts",
+        "src/app.ts",
+        "src/engine/compositor.ts",
+        "tests/**",
+        "docs/agents/deliveries/VIRO-0002.json"
+      ],
+      "dependencies": [],
+      "critic_needed": false,
+      "stage": "done",
+      "status": "RECONCILED",
+      "assigned_agent": null,
+      "assigned_role": null,
+      "work_branch": "agent/viro-0002/claude-audit-cloud1",
+      "heartbeat_at": null,
+      "attempts": 0,
+      "evidence": [
+        {
+          "stage": "reconcile",
+          "by": "governor",
+          "item": "Gap audit proved main @ 6d4d7b6 already contains commit 84936c2 document-v6 multi-contour model/migration/render/validation and commit 9a22f8e destructive Pathfinder booleans/UI.",
+          "at": "2026-08-27T16:55:00.000Z"
+        },
+        {
+          "stage": "reconcile",
+          "by": "governor",
+          "item": "Audit evidence: tsc exit 0; unit 316/316; build exit 0; engines PASS; Boolean runtime E2E 17/17. No production change is required for VIRO-0002.",
+          "at": "2026-08-27T16:55:00.000Z"
+        }
+      ],
+      "last_handoff": {
+        "from": "historical",
+        "to": "done",
+        "by": "governor",
+        "at": "2026-08-27T16:55:00.000Z",
+        "evidence": [
+          "VIRO-0002 target predates packet activation and is reconciled, not rebuilt."
+        ]
+      },
+      "rejection": null
+    },
+    "VIRO-0005": {
+      "id": "VIRO-0005",
+      "title": "Preserve compound boolean geometry in vector PDF export",
+      "priority": "P1",
+      "domain": "export",
+      "outcome": "A multi-contour vector that renders with holes or disjoint pieces on the VIRO canvas exports to vector PDF with the same compound geometry and fill semantics, without regressing legacy single-contour vectors.",
+      "scope": [
+        "src/export/pdf.ts",
+        "tests/**",
+        "docs/agents/deliveries/VIRO-0005.json"
+      ],
+      "dependencies": [
+        "VIRO-0002"
+      ],
+      "critic_needed": true,
+      "stage": "audit",
+      "status": "QUEUED",
+      "assigned_agent": null,
+      "assigned_role": null,
+      "work_branch": null,
+      "heartbeat_at": null,
+      "attempts": 0,
+      "evidence": [],
+      "last_handoff": null,
+      "rejection": null
+    }
+  },
+  "agents": {},
+  "leases": {},
+  "events": [
+    {
+      "at": "2026-08-27T16:16:00.000Z",
+      "type": "control.bootstrap",
+      "packet": "VIRO-0002",
+      "detail": "Shared queue provisioned; no agent has claimed work."
+    },
+    {
+      "at": "2026-08-27T16:38:31.590Z",
+      "type": "packet.claimed",
+      "packet": "VIRO-0002",
+      "agent": "claude-audit-cloud1",
+      "role": "gap-auditor",
+      "machine": "claude-code-cloud-vm"
+    },
+    {
+      "at": "2026-08-27T16:41:36.413Z",
+      "type": "agent.heartbeat",
+      "agent": "claude-audit-cloud1",
+      "packet": "VIRO-0002"
+    },
+    {
+      "at": "2026-08-27T16:47:19.204Z",
+      "type": "packet.blocked",
+      "packet": "VIRO-0002",
+      "by": "claude-audit-cloud1",
+      "reason": "Gap audit found the before-state stale and requested Governor reconciliation instead of Builder deployment."
+    },
+    {
+      "at": "2026-08-27T16:55:00.000Z",
+      "type": "packet.reconciled",
+      "packet": "VIRO-0002",
+      "by": "governor",
+      "detail": "Target already landed before packet activation; historical evidence accepted without fabricating Builder/Verifier PASS."
+    },
+    {
+      "at": "2026-08-27T16:55:00.000Z",
+      "type": "packet.imported",
+      "packet": "VIRO-0005",
+      "by": "governor",
+      "detail": "Activated real remaining P1: compound multi-contour vector PDF export fidelity."
+    }
+  ]
+}
