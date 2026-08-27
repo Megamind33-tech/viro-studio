@@ -12,6 +12,7 @@ import {
   cloneDoc,
   hitTest,
   selectedLayers,
+  snapCandidateLines,
   uid,
 } from "./document/factory";
 import { CommandBus, type CommandNote } from "./document/command-bus";
@@ -77,7 +78,7 @@ import { mimeForImageFile, sniffBytes } from "./engine/sniff";
 import type { PdfExportReport } from "./export/pdf";
 import { documentFromPsd } from "./import/psd";
 import { documentFromVdj } from "./import/vdj";
-import { pageToLocal, worldBounds } from "./document/transform";
+import { pageToLocal } from "./document/transform";
 import {
   movedLayerBox,
   resolveMoveSnap,
@@ -217,6 +218,10 @@ export class PressApp {
     snapXs?: number[];
     snapYs?: number[];
     snapTol?: number;
+    /** Locked axis when dragging from a ruler or an existing guide. */
+    guideAxis?: "h" | "v";
+    /** Existing guide being moved; absent when creating a new one. */
+    guideId?: string;
   } | null = null;
 
   /**
@@ -691,8 +696,11 @@ export class PressApp {
    * Guide tool: a drag whose larger axis is horizontal drops a horizontal
    * guide at y; a more-vertical drag drops a vertical guide at x. A click
    * (under 4px) is a vertical at x, or horizontal at y with Shift.
+   * A ruler-originated or existing-guide drag keeps the axis it started with.
    */
   private guideFromPointer(px: number, py: number, shift: boolean): { axis: "h" | "v"; offset: number } {
+    const locked = this.drag?.guideAxis;
+    if (locked) return { axis: locked, offset: locked === "v" ? px : py };
     const ox = this.drag?.x ?? px;
     const oy = this.drag?.y ?? py;
     const dx = Math.abs(px - ox);
@@ -806,23 +814,13 @@ export class PressApp {
 
   /**
    * Snap-target lines for a move, computed once at pointer-down: the page frame,
-   * its margins and centre, plus every OTHER top-level layer's edges and centre.
-   * Excludes the layers being moved so a selection never snaps to itself.
+   * its margins and centre, other top-level layers, and the page's ruler guides
+   * (View → Snap to Guides is those offsets, not a decorative checkmark).
    */
   private buildSnapCandidates(exclude: Set<string>): { xs: number[]; ys: number[] } {
     const page = activePage(this.doc);
-    const xs: number[] = [0, page.widthPx / 2, page.widthPx];
-    const ys: number[] = [0, page.heightPx / 2, page.heightPx];
-    const m = page.margin;
-    xs.push(m.left, page.widthPx - m.right);
-    ys.push(m.top, page.heightPx - m.bottom);
-    for (const l of page.layers) {
-      if (l.parentId || exclude.has(l.id) || l.kind === "adjustment") continue;
-      const b = worldBounds(page, l);
-      xs.push(b.x, b.x + b.w / 2, b.x + b.w);
-      ys.push(b.y, b.y + b.h / 2, b.y + b.h);
-    }
-    return { xs, ys };
+    const includeGuides = (this.compositor?.view.showGuides ?? true) && this.snapEnabled;
+    return snapCandidateLines(page, exclude, includeGuides);
   }
 
   /**
@@ -880,6 +878,41 @@ export class PressApp {
       const sy = e.clientY - rect.top;
       const p = this.compositor.screenToPage(sx, sy);
       const tool = this.compositor.view.tool;
+      const rulerHit = this.compositor.hitRuler(sx, sy);
+      if ((rulerHit === "h" || rulerHit === "v") && e.button === 0) {
+        this.drag = {
+          mode: "guide",
+          x: p.x,
+          y: p.y,
+          lx: p.x,
+          ly: p.y,
+          guideAxis: rulerHit,
+        };
+        return;
+      }
+      if (e.button === 0 && this.compositor.view.showGuides && (tool === "move" || tool === "guide")) {
+        // Resize/rotate handles sit on the same pixels as a snapped edge. A
+        // handle under the pointer wins so a layer parked on a guide is still
+        // scalable; the Guide tool always prefers the guide.
+        const handle = tool === "move" ? this.compositor.hitHandle(this.doc, sx, sy) : null;
+        const handleWins = Boolean(handle && handle !== "move");
+        if (!handleWins) {
+          const gd = this.compositor.hitGuide(this.doc, sx, sy);
+          if (gd) {
+            this.drag = {
+              mode: "guide",
+              session: uid("drag"),
+              x: p.x,
+              y: p.y,
+              lx: p.x,
+              ly: p.y,
+              guideAxis: gd.axis,
+              guideId: gd.id,
+            };
+            return;
+          }
+        }
+      }
       if (tool === "eyedropper") {
         const sampled = this.compositor.samplePageColor(p.x, p.y);
         if (sampled) {
@@ -1035,9 +1068,17 @@ export class PressApp {
         if (tool === "move") {
           const r0 = canvas.getBoundingClientRect();
           const over = this.compositor.hitHandle(this.doc, e.clientX - r0.left, e.clientY - r0.top);
-          canvas.style.cursor = over ? HANDLE_CURSOR[over] : "default";
+          const gd = this.compositor.hitGuide(this.doc, e.clientX - r0.left, e.clientY - r0.top);
+          if (over && over !== "move") canvas.style.cursor = HANDLE_CURSOR[over];
+          else if (gd) canvas.style.cursor = gd.axis === "v" ? "ew-resize" : "ns-resize";
+          else canvas.style.cursor = over ? HANDLE_CURSOR[over] : "default";
         } else if (tool === "frame" || tool === "guide" || tool === "rotate") {
-          canvas.style.cursor = "crosshair";
+          const r0 = canvas.getBoundingClientRect();
+          const ruler = this.compositor.hitRuler(e.clientX - r0.left, e.clientY - r0.top);
+          const gd = this.compositor.hitGuide(this.doc, e.clientX - r0.left, e.clientY - r0.top);
+          if (ruler === "h" || (gd && gd.axis === "h")) canvas.style.cursor = "ns-resize";
+          else if (ruler === "v" || (gd && gd.axis === "v")) canvas.style.cursor = "ew-resize";
+          else canvas.style.cursor = "crosshair";
         }
         return;
       }
@@ -1110,6 +1151,13 @@ export class PressApp {
       }
       if (this.drag.mode === "guide") {
         const g = this.guideFromPointer(p.x, p.y, e.shiftKey);
+        if (this.drag.guideId) {
+          this.run(
+            { type: "page.guideMove", params: { id: this.drag.guideId, offset: g.offset, session: this.drag.session } },
+            { label: "Move guide", soon: true },
+          );
+          return;
+        }
         const page = activePage(this.doc);
         this.compositor.view.shapePreview =
           g.axis === "v"
@@ -1201,8 +1249,17 @@ export class PressApp {
         }
       }
       if (this.drag.mode === "guide") {
-        const g = this.guideFromPointer(p.x, p.y, e.shiftKey);
-        this.run({ type: "page.guide", params: { axis: g.axis, offset: g.offset } });
+        const sx = e.clientX - rect.left;
+        const sy = e.clientY - rect.top;
+        const droppedOnRuler = this.compositor.hitRuler(sx, sy);
+        if (this.drag.guideId) {
+          if (droppedOnRuler) {
+            this.run({ type: "page.guideRemove", params: { id: this.drag.guideId } });
+          }
+        } else if (!droppedOnRuler) {
+          const g = this.guideFromPointer(p.x, p.y, e.shiftKey);
+          this.run({ type: "page.guide", params: { axis: g.axis, offset: g.offset } });
+        }
       }
       if (this.drag.mode === "line") {
         const end = this.lineEnd(p.x, p.y, e.shiftKey);
@@ -1996,7 +2053,13 @@ export class PressApp {
     this.emit();
   }
 
-  /** Toggle smart-guide snapping (edges/centres/page). Off suspends snap + guides. */
+  /** Drop every ruler guide on the active page. One undo step. */
+  clearGuides(): void {
+    if (!activePage(this.doc).guides.length) return;
+    this.run({ type: "page.guidesClear", params: {} });
+  }
+
+  /** Toggle snapping to page edges, other layers, and ruler guides. */
   toggleSnap(): void {
     this.snapEnabled = !this.snapEnabled;
     if (!this.snapEnabled && this.compositor?.view.smartGuides) {

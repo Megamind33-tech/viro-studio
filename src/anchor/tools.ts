@@ -741,7 +741,8 @@ const OPS: Record<string, AnchorOpDef> = {
   "press.add_guide": {
     description:
       "Add a ruler guide to the active page. Guides are document state (saved with the page) and are drawn " +
-      "when View → Guides is on. They do not snap or constrain anything yet — they are a visual reference.",
+      "when View → Guides is on. With View → Snap to Guides on, a move snaps to these offsets the same way " +
+      "it snaps to page edges and other layers.",
     params: {
       axis: pEnum(
         'Guide direction: "v" for a vertical guide at x = offset, "h" for a horizontal guide at y = offset.',

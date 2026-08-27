@@ -896,6 +896,42 @@ export class Compositor {
     return null;
   }
 
+  /**
+   * Which ruler the pointer is over, in canvas CSS px. Origin is the square
+   * where the two rulers meet. Null when rulers are hidden or the pointer is
+   * on the pasteboard.
+   */
+  hitRuler(cssX: number, cssY: number): "h" | "v" | "origin" | null {
+    if (!this.view.showRulers) return null;
+    const r = this.rulerSize;
+    if (cssX < r && cssY < r) return "origin";
+    if (cssY < r) return "h";
+    if (cssX < r) return "v";
+    return null;
+  }
+
+  /**
+   * Nearest page guide under the pointer, within 5 CSS px. Null when guides
+   * are hidden or the pointer is on a ruler.
+   */
+  hitGuide(doc: PressDocument, cssX: number, cssY: number): { id: string; axis: "h" | "v"; offset: number } | null {
+    if (!this.view.showGuides) return null;
+    if (this.hitRuler(cssX, cssY)) return null;
+    const page = activePage(doc);
+    const p = this.screenToPage(cssX, cssY);
+    const tol = 5 / this.zoomValue;
+    let best: { id: string; axis: "h" | "v"; offset: number } | null = null;
+    let bestD = tol;
+    for (const g of page.guides) {
+      const d = g.axis === "v" ? Math.abs(p.x - g.offset) : Math.abs(p.y - g.offset);
+      if (d <= bestD) {
+        best = g;
+        bestD = d;
+      }
+    }
+    return best;
+  }
+
   invalidateAsset(id: string): void {
     const img = this.images.get(id);
     img?.delete();

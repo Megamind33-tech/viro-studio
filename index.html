@@ -119,6 +119,7 @@
             <button type="button" data-cmd="view-rulers"><span class="check" data-check="rulers">✓</span>Rulers<span class="kbd">Ctrl+R</span></button>
             <button type="button" data-cmd="view-guides"><span class="check" data-check="guides">✓</span>Guides</button>
             <button type="button" data-cmd="view-snap"><span class="check" data-check="snap">✓</span>Snap to Guides</button>
+            <button type="button" data-cmd="view-clear-guides">Clear Guides</button>
             <button type="button" data-cmd="view-bleed"><span class="check" data-check="bleed">✓</span>Bleed</button>
             <div class="sep"></div>
             <button type="button" data-cmd="zoom-in">Zoom In<span class="kbd">Ctrl+=</span></button>
@@ -254,7 +255,7 @@
         <div class="opt-strip" data-for="guide" hidden>
           <span class="lbl">Guide</span>
           <span class="div"></span>
-          <span class="lbl">Drag: longer axis sets direction · Click: vertical at x · Shift-click: horizontal at y</span>
+          <span class="lbl">Drag: longer axis sets direction · Click: vertical at x · Shift-click: horizontal at y · Drag from a ruler · Drop on a ruler to delete</span>
         </div>
         <div class="opt-strip" data-for="hand" hidden>
           <span class="lbl">Drag pasteboard · Space also pans</span>
@@ -930,6 +931,7 @@
         <div class="dialog-title" id="dlg-help-title">Keyboard shortcuts</div>
         <div class="dialog-body">
           <p class="hint">Tools: V move · M marquee · T type · P pen · U shapes (Shift+U cycles) · F frame · R rotate · G guide · C crop · I eyedropper · H hand · Z zoom</p>
+          <p class="hint">Guides: drag from a ruler, or G then click/drag. Drag a guide back onto a ruler to delete it. View → Snap to Guides snaps moves to them.</p>
           <p class="hint">Type: Ctrl+Shift+, / . size · Ctrl+U underline · Character panel weight + italic</p>
           <p class="hint">Fill: Edit → Linear / Radial Gradient Fill on a selected vector (real Skia shader)</p>
           <p class="hint">Edit: Ctrl+Z/Y undo/redo · Ctrl+J duplicate · Ctrl+G group · Del delete</p>

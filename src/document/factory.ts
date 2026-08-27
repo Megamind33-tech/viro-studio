@@ -1,6 +1,6 @@
 import { DOC_VERSION } from "./migrate";
 import { defaultTextFrameProperties, emptyTextStyles, validateStoryTextModel } from "./text-model";
-import { pageToLocal } from "./transform";
+import { pageToLocal, worldBounds } from "./transform";
 import type {
   Align,
   BlendMode,
@@ -998,6 +998,57 @@ export function addGuide(doc: PressDocument, axis: "h" | "v", offset: number): P
   const page = activePage(next);
   page.guides.push({ id: uid("gd"), axis, offset });
   return next;
+}
+
+export function setGuideOffset(doc: PressDocument, id: string, offset: number): PressDocument {
+  const next = cloneDoc(doc);
+  const g = activePage(next).guides.find((x) => x.id === id);
+  if (!g) return next;
+  g.offset = offset;
+  return next;
+}
+
+export function removeGuide(doc: PressDocument, id: string): PressDocument {
+  const next = cloneDoc(doc);
+  const page = activePage(next);
+  page.guides = page.guides.filter((g) => g.id !== id);
+  return next;
+}
+
+export function clearGuides(doc: PressDocument): PressDocument {
+  const next = cloneDoc(doc);
+  activePage(next).guides = [];
+  return next;
+}
+
+/**
+ * Snap-target lines for a move: page edges, margins, centres, other layers,
+ * and — when `includeGuides` — the page's ruler guides. View → Snap to Guides
+ * is a lie unless those offsets are in this list.
+ */
+export function snapCandidateLines(
+  page: Page,
+  exclude: ReadonlySet<string> = new Set(),
+  includeGuides = true,
+): { xs: number[]; ys: number[] } {
+  const xs: number[] = [0, page.widthPx / 2, page.widthPx];
+  const ys: number[] = [0, page.heightPx / 2, page.heightPx];
+  const m = page.margin;
+  xs.push(m.left, page.widthPx - m.right);
+  ys.push(m.top, page.heightPx - m.bottom);
+  for (const l of page.layers) {
+    if (l.parentId || exclude.has(l.id) || l.kind === "adjustment") continue;
+    const b = worldBounds(page, l);
+    xs.push(b.x, b.x + b.w / 2, b.x + b.w);
+    ys.push(b.y, b.y + b.h / 2, b.y + b.h);
+  }
+  if (includeGuides) {
+    for (const g of page.guides) {
+      if (g.axis === "v") xs.push(g.offset);
+      else ys.push(g.offset);
+    }
+  }
+  return { xs, ys };
 }
 
 /** An empty picture box. Place an image into it later — it is a real frame, not a placeholder graphic. */

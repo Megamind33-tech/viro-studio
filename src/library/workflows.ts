@@ -250,6 +250,40 @@ export const WORKFLOWS: Workflow[] = [
       ];
     },
   },
+  {
+    id: "column-grid",
+    name: "Column grid",
+    blurb: "Two vertical guides at the thirds and a title in the middle column. Moves snap to those guides.",
+    build: (ctx) => {
+      const third = Math.round(ctx.width / 3);
+      return [
+        {
+          op: "press.add_guide",
+          params: { axis: "v", offset: third },
+          reason: "left third as a snap line",
+        },
+        {
+          op: "press.add_guide",
+          params: { axis: "v", offset: third * 2 },
+          reason: "right third as a snap line",
+        },
+        {
+          op: "press.add_type_frame",
+          params: {
+            x: third + 24,
+            y: Math.round(ctx.height * 0.28),
+            w: third - 48,
+            h: 180,
+            text: "GRID",
+            size: 72,
+            leading: 80,
+            name: "Title",
+          },
+          reason: "title sitting in the centre column the guides mark",
+        },
+      ];
+    },
+  },
 ];
 
 export function workflowById(id: string): Workflow | undefined {

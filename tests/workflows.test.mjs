@@ -45,3 +45,17 @@ test("star badge uses press.add_star, not a baked icon", () => {
   assert.ok(star);
   assert.equal(star.params.points, 5);
 });
+
+test("column grid drops two real vertical guides and a type frame between them", () => {
+  const wf = WORKFLOWS.find((w) => w.id === "column-grid");
+  assert.ok(wf);
+  const ops = wf.build({ width: 1080, height: 1350, fg: { r: 0.88, g: 0.48, b: 0.18, a: 1 } });
+  const guides = ops.filter((o) => o.op === "press.add_guide");
+  assert.equal(guides.length, 2);
+  assert.equal(guides[0].params.axis, "v");
+  assert.equal(guides[0].params.offset, 360);
+  assert.equal(guides[1].params.offset, 720);
+  const type = ops.find((o) => o.op === "press.add_type_frame");
+  assert.ok(type);
+  assert.ok(type.params.x > 360 && type.params.x + type.params.w < 720);
+});

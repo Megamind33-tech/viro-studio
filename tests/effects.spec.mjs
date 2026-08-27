@@ -307,6 +307,36 @@ check("vertical guide is stored on the page", frameG.guideAxis === "v" && frameG
 check("undo removes the guide then the frame", frameG.guidesAfterUndo === frameG.guideCount - 1 && frameG.frameGone === true);
 check("toolbox has Frame, Rotate, and Guide tools", frameG.tools.frame && frameG.tools.rotate && frameG.tools.guide);
 
+const guideOps = await page.evaluate(() => {
+  const P = window.__press;
+  P.run({ type: "page.guide", params: { axis: "v", offset: 240 } });
+  P.run({ type: "page.guide", params: { axis: "h", offset: 180 } });
+  const ids = P.doc.pages[0].guides.map((g) => g.id);
+  const beforeMove = P.doc.pages[0].guides.find((g) => g.id === ids[0])?.offset;
+  P.run({ type: "page.guideMove", params: { id: ids[0], offset: 400 } });
+  const moved = P.doc.pages[0].guides.find((g) => g.id === ids[0])?.offset;
+  const countBeforeClear = P.doc.pages[0].guides.length;
+  P.run({ type: "page.guidesClear", params: {} });
+  const afterClear = P.doc.pages[0].guides.length;
+  P.undo();
+  const afterUndo = P.doc.pages[0].guides.length;
+  return {
+    beforeMove,
+    moved,
+    countBeforeClear,
+    afterClear,
+    afterUndo,
+    clearBtn: Boolean(document.querySelector('[data-cmd="view-clear-guides"]')),
+    snapBtn: Boolean(document.querySelector('[data-cmd="view-snap"]')),
+    snapOn: P.snapEnabled === true,
+  };
+});
+
+check("page.guideMove writes a new offset", guideOps.moved === 400 && guideOps.beforeMove === 240, `before=${guideOps.beforeMove} after=${guideOps.moved}`);
+check("page.guidesClear drops every guide", guideOps.afterClear === 0 && guideOps.countBeforeClear >= 2, `before=${guideOps.countBeforeClear} after=${guideOps.afterClear}`);
+check("undo restores guides after Clear Guides", guideOps.afterUndo === guideOps.countBeforeClear, `undo=${guideOps.afterUndo}`);
+check("View menu has Clear Guides and Snap to Guides", guideOps.clearBtn && guideOps.snapBtn && guideOps.snapOn === true);
+
 check("no page errors", pageErrors.length === 0, pageErrors.join(" | "));
 
 console.log(`\n${results.length - failed}/${results.length} checks passed`);

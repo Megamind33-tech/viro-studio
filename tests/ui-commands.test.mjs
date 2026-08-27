@@ -69,6 +69,10 @@ const sel = (ids) => (doc) => {
   doc.activeLayerIds = ids;
 };
 
+const withGuide = (doc) => {
+  doc.pages[0].guides.push({ id: "gd_1", axis: "v", offset: 120 });
+};
+
 const rectNodes = (w, h) => {
   const p = (x, y) => ({ x, y, inX: x, inY: y, outX: x, outY: y });
   return [p(0, 0), p(w, 0), p(w, h), p(0, h)];
@@ -129,6 +133,24 @@ const CASES = {
     match: /needs image-frame/,
   },
   "page.guide": { valid: { axis: "v", offset: 240 }, invalid: { axis: "z", offset: 240 }, match: /must be h or v/ },
+  "page.guideMove": {
+    valid: { id: "gd_1", offset: 400 },
+    invalid: { id: "gd_missing", offset: 400 },
+    match: /no guide/,
+    setup: withGuide,
+  },
+  "page.guideRemove": {
+    valid: { id: "gd_1" },
+    invalid: { id: "gd_missing" },
+    match: /no guide/,
+    setup: withGuide,
+  },
+  "page.guidesClear": {
+    valid: {},
+    invalid: { x: 1 },
+    match: /takes no parameters/,
+    setup: withGuide,
+  },
 
   "story.setText": { valid: { layerId: "ly_type", text: "Changed" }, invalid: { layerId: "ly_type", text: 5 }, match: /must be a string/ },
   "story.replaceRange": { valid: { layerId: "ly_type", start: 0, end: 5, text: "Range" }, invalid: { layerId: "ly_type", start: 1.5, end: 5, text: "x" }, match: /integer UTF-16 offset/ },

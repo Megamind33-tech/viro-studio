@@ -713,6 +713,9 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
       case "view-guides":
         app.toggleGuides();
         return;
+      case "view-clear-guides":
+        app.clearGuides();
+        return;
       case "view-snap":
         app.toggleSnap();
         return;

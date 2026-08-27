@@ -30,7 +30,11 @@ import {
   addEmptyImageFrame,
   addGuide,
   addImageFrame,
+  activePage,
+  clearGuides,
   fillImageFrame,
+  removeGuide,
+  setGuideOffset,
   addTypeFrame,
   addVectorEllipse,
   addVectorLine,
@@ -610,6 +614,40 @@ const DEFS: CommandDef<never>[] = [
       return { axis: o.axis as "h" | "v", offset: reqNum(o, "offset", "page.guide") };
     },
     apply: (p, doc) => addGuide(doc, p.axis, p.offset),
+  }),
+  define({
+    type: "page.guideMove",
+    label: "Move guide",
+    validate: (raw, doc) => {
+      const o = v.obj(raw, "page.guideMove");
+      const id = v.str(o, "id", "page.guideMove");
+      if (!activePage(doc).guides.some((g) => g.id === id)) {
+        throw new CommandError(`page.guideMove: no guide "${id}" on the active page`);
+      }
+      const session = typeof o.session === "string" && o.session ? o.session : undefined;
+      return { id, offset: reqNum(o, "offset", "page.guideMove"), ...(session ? { session } : {}) };
+    },
+    apply: (p, doc) => setGuideOffset(doc, p.id, p.offset),
+    coalesceKey: (p) => (p.session ? `page.guideMove:${p.id}:${p.session}` : null),
+  }),
+  define({
+    type: "page.guideRemove",
+    label: "Delete guide",
+    validate: (raw, doc) => {
+      const o = v.obj(raw, "page.guideRemove");
+      const id = v.str(o, "id", "page.guideRemove");
+      if (!activePage(doc).guides.some((g) => g.id === id)) {
+        throw new CommandError(`page.guideRemove: no guide "${id}" on the active page`);
+      }
+      return { id };
+    },
+    apply: (p, doc) => removeGuide(doc, p.id),
+  }),
+  define({
+    type: "page.guidesClear",
+    label: "Clear guides",
+    validate: noParams("page.guidesClear"),
+    apply: (_p, doc) => clearGuides(doc),
   }),
 
   // ── type ──
