@@ -2011,16 +2011,24 @@ export class Compositor {
     const id = layer.assetId;
     if (!id || !doc.assets[id]) {
       if (layer.kind !== "image-frame") return;
-      // Empty picture box: a copper frame and an X so the box is visible and
-      // honest — it is a frame with no picture, not a missing thumbnail.
+      // Empty picture box: a copper wash, a stroke, and an X. Hairline-only
+      // marks vanish when the page is thumbnailed (2px on A4 → subpixel), so
+      // the wash is what makes the box occupy real pixels — it is a frame with
+      // no picture, not a missing thumbnail.
       const t = layer.transform;
-      paint.setStyle(ck.PaintStyle.Stroke);
-      paint.setStrokeWidth(2);
-      paint.setColor(ck.Color4f(0.878, 0.478, 0.184, 0.95));
+      const w = Math.max(2, t.w);
+      const hgt = Math.max(2, t.h);
+      const stroke = Math.max(4, Math.min(w, hgt) * 0.02);
       paint.setAntiAlias(true);
-      sk.drawRect(ck.LTRBRect(1, 1, Math.max(2, t.w - 1), Math.max(2, t.h - 1)), paint);
-      sk.drawLine(0, 0, t.w, t.h, paint);
-      sk.drawLine(t.w, 0, 0, t.h, paint);
+      paint.setStyle(ck.PaintStyle.Fill);
+      paint.setColor(ck.Color4f(0.878, 0.478, 0.184, 0.18));
+      sk.drawRect(ck.LTRBRect(0, 0, w, hgt), paint);
+      paint.setStyle(ck.PaintStyle.Stroke);
+      paint.setStrokeWidth(stroke);
+      paint.setColor(ck.Color4f(0.878, 0.478, 0.184, 0.95));
+      sk.drawRect(ck.LTRBRect(stroke / 2, stroke / 2, w - stroke / 2, hgt - stroke / 2), paint);
+      sk.drawLine(0, 0, w, hgt, paint);
+      sk.drawLine(w, 0, 0, hgt, paint);
       return;
     }
     const img = this.imageFor(ck, id, doc.assets[id].dataUrl);

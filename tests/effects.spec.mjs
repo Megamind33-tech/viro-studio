@@ -270,6 +270,7 @@ const frameG = await page.evaluate(async () => {
   P.run({ type: "image.addFrame", params: { x: 200, y: 300, w: 900, h: 600 } });
   const layer = P.doc.pages[0].layers.find((l) => l.name === "Frame" && l.kind === "image-frame");
   const after = P.compositor.thumbnailDataUrl(P.doc, 256);
+  const layerThumb = layer ? P.compositor.layerThumb(P.doc, layer.id, 128) : null;
   const tab = document.getElementById("tab-layers")?.textContent ?? "";
   P.run({ type: "page.guide", params: { axis: "v", offset: 480 } });
   const guides = P.doc.pages[0].guides;
@@ -280,6 +281,8 @@ const frameG = await page.evaluate(async () => {
   return {
     stored: !!layer && layer.assetId === null,
     changed: typeof before === "string" && typeof after === "string" && before !== after,
+    layerThumb: typeof layerThumb === "string" && layerThumb.startsWith("data:image/png") && layerThumb.length > 200,
+    layerThumbLen: (layerThumb || "").length,
     tab,
     guideCount: guides.length,
     guideAxis: guides[guides.length - 1]?.axis,
@@ -298,6 +301,7 @@ const frameG = await page.evaluate(async () => {
 
 check("empty picture box is stored as an image-frame with no asset", frameG.stored === true);
 check("empty picture box actually draws (copper X, not a missing thumbnail)", frameG.changed === true, `before=${frameG.beforeLen}B after=${frameG.afterLen}B`);
+check("empty picture box has a real layer thumbnail (not a missing-icon)", frameG.layerThumb === true, `len=${frameG.layerThumbLen}`);
 check("Layers tab lists the new frame", /Layers\s*\(\d+\)/.test(frameG.tab), `tab=${JSON.stringify(frameG.tab)}`);
 check("vertical guide is stored on the page", frameG.guideAxis === "v" && frameG.guideOffset === 480, `guides=${frameG.guideCount}`);
 check("undo removes the guide then the frame", frameG.guidesAfterUndo === frameG.guideCount - 1 && frameG.frameGone === true);
