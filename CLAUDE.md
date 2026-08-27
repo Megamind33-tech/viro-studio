@@ -12,13 +12,15 @@ Never report a feature as complete because UI exists, code compiles, a plan was 
 
 Before any non-trivial product work begins, use the resident orchestrator described in `docs/agents/ORCHESTRATOR.md`.
 
-Shared work state is controlled by `scripts/viro-orchestrator.mjs`. No Builder, specialist engineer, Verifier, Critic, or Release Manager may begin a packet without a successful orchestrator claim and assignment brief.
+Shared work state lives on the single `viro-agent-control` branch. Prefer `scripts/viro-orchestrator.mjs` when direct GitHub REST access works. If a cloud environment blocks or returns 403 for direct `api.github.com` access but authenticated git fetch/push works, use `scripts/viro-orchestrator-git.mjs` for that session. The Git transport reads/writes the same control state and uses `git --force-with-lease` as the CAS guard; it is not a second queue and does not relax any lease rule.
 
-The exhaustive unresolved-work inventory is `docs/agents/WORK-REGISTRY.md`. It is an inventory, not permission to self-select work. A registry item becomes executable only when the Governor activates it through a delivery manifest and the Orchestrator grants a conflict-free claim.
+No Builder, specialist engineer, Verifier, Critic, or Release Manager may begin a packet without a successful orchestrator claim and assignment brief. If neither transport can safely access shared state, implementation is prohibited until control-plane access is restored; read-only inspection/research is allowed.
+
+The authoritative known-work inventory is `docs/agents/WORK-REGISTRY.md`. It is an inventory, not permission to self-select work. A registry item becomes executable only when the Governor activates it through a delivery manifest and the Orchestrator grants a conflict-free claim.
 
 For any terminal-capable external worker (Claude Code, Cursor, Codex-style agents or another coding tool), use `docs/agents/UNIVERSAL-WORKER-PROMPT.md` as the standard reporting, handoff and redeployment contract. Automatic release behavior is governed by `docs/agents/AUTO-MERGE.md`.
 
-The orchestrator owns coordination and release execution, not product judgment. It prevents duplicated work by maintaining a shared GitHub-backed queue, dependency graph, packet-level path leases, stable agent identities, handoffs and stale-worker recovery across computers and coding tools.
+The orchestrator owns coordination and release execution, not product judgment. It prevents duplicated work by maintaining a shared queue, dependency graph, packet-level path leases, stable agent identities, handoffs and stale-worker recovery across computers and coding tools.
 
 Required behavior:
 - synchronize delivery manifests before assignment;
@@ -36,12 +38,18 @@ Required behavior:
 - a commit pushed after approval invalidates approval and requires fresh release review;
 - external blockers and stale assignments return to Governor control.
 
+## Stale-packet reconciliation
+
+A gap audit is allowed to prove that a packet is obsolete. If the packet's before-state is contradicted by current `main`, do not deploy a Builder merely to preserve an old plan. The auditor must gather commit/source/test evidence and return the packet to the Governor.
+
+The Governor may classify it `RECONCILED` when the target demonstrably landed before packet activation. `RECONCILED` is terminal and may satisfy historical dependency edges, but it is not a retroactive delivery claim: Builder and Verifier verdicts remain `NOT_APPLICABLE` unless those roles actually ran under the packet. Never fabricate PASS verdicts for historical work.
+
 ## Mandatory pipeline
 
-Every non-trivial task follows this sequence:
+Every non-trivial new delivery follows this sequence:
 
 1. **Governor** — selects one measurable outcome and freezes scope.
-2. **Gap Auditor** — establishes before-state from repository/runtime evidence.
+2. **Gap Auditor** — establishes before-state from repository/runtime evidence; stale targets return for reconciliation rather than continuing to Build.
 3. **Builder** — implements only within its assigned domain and allowed paths.
 4. **Verifier** — independently reproduces acceptance tests and regression gates.
 5. **Critic** — independently judges product/UX quality and rejects weak or generic output.
@@ -52,10 +60,10 @@ Builders may not verify or approve their own work. Critics may not repair the wo
 
 ## No sideways development
 
-Do not start unrelated features while an active P0/P1 work packet is PARTIAL or REJECTED. Finish, revert, or explicitly de-scope it through the Governor first.
+Do not start unrelated features while an active P0/P1 work packet is PARTIAL or REJECTED. Finish, revert, reconcile, or explicitly de-scope it through the Governor first.
 
 Forbidden substitutes for completion:
-- another audit of the same unresolved item;
+- another audit of the same unresolved item without new evidence;
 - another architecture document without an implementation blocker that requires it;
 - cosmetic relocation of existing UI;
 - decorative controls, fake states, sample counts, fake success messages, placeholder features, mock production data;
@@ -95,7 +103,7 @@ A capability is DONE only when all applicable conditions are true:
 - GitHub returned a real merge SHA for a merge into `main`;
 - the Orchestrator recorded that merge and released the packet lease.
 
-Approval without merge is not DONE. CI green without independent approval is not DONE. A manually merged branch is a process violation and must not be represented as an Orchestrator-complete packet.
+Approval without merge is not DONE. CI green without independent approval is not DONE. A manually merged branch is a process violation and must not be represented as an Orchestrator-complete packet. Historical work discovered after the fact is RECONCILED, not retroactively DONE.
 
 ## Parallelism rule
 
@@ -114,9 +122,10 @@ Parallel agents must own disjoint production areas defined in `docs/agents/OWNER
 ## Reporting format
 
 Every agent handoff ends with exactly these facts:
-- `STATUS:` PASS | PARTIAL | BLOCKED | REJECTED | IDLE_NO_ASSIGNMENT
+- `STATUS:` PASS | PARTIAL | BLOCKED | REJECTED | IDLE_NO_ASSIGNMENT | CONTROL_PLANE_UNAVAILABLE
 - `PACKET:` packet id or `none`
 - `ROLE:` current orchestrator role
+- `TRANSPORT:` REST | GIT | NONE
 - `CHANGED:` concrete files or `none`
 - `PROVED:` commands/evidence actually run or inspected
 - `FAILED:` remaining failures or `none`
