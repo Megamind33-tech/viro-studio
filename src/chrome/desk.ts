@@ -56,39 +56,7 @@ import {
 const THUMB = 30;
 const NAV_THUMB = 256;
 
-/**
- * Rendered thumbnails, keyed by the document object itself.
- *
- * Every commit clones the document, so a new object *is* the invalidation
- * signal — a stale thumbnail cannot outlive the edit that changed it, and
- * nothing has to hand-roll a version counter. Old documents fall out of the map
- * once history stops referencing them.
- *
- * Module scope, not closure scope: `mountDesk` renders once during mount, which
- * would otherwise hit this in its temporal dead zone.
- */
-const THUMB_CACHE = new WeakMap<PressDocument, Map<string, string | null>>();
-
 const PAGE_THUMB_PX = 64;
-
-function thumbFor(doc: PressDocument, key: string, make: () => string | null): string | null {
-  let forDoc = THUMB_CACHE.get(doc);
-  if (!forDoc) {
-    forDoc = new Map();
-    THUMB_CACHE.set(doc, forDoc);
-  }
-  const hit = forDoc.get(key);
-  if (hit !== undefined) return hit;
-  let url: string | null = null;
-  try {
-    url = make();
-  } catch {
-    // A thumbnail is never worth breaking a panel render for.
-    url = null;
-  }
-  forDoc.set(key, url);
-  return url;
-}
 
 /**
  * Tools the chrome will actually let you pick. This is the honesty gate: a tool
@@ -1904,7 +1872,7 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
         // there are genuinely no pixels to show (empty group, adjustment
         // layer, degenerate transform) — in that case the kind mark stands in
         // rather than the panel inventing an image.
-        const url = thumbFor(app.doc, `ly:${layer.id}`, () => app.compositor?.layerThumb(app.doc, layer.id, THUMB) ?? null);
+        const url = app.compositor?.layerThumb(app.doc, layer.id, THUMB) ?? null;
         const cell = url
           ? `<span class="thumb"><img src="${url}" alt="" draggable="false" /></span>`
           : `<span class="thumb is-empty">${layerKindMark(layer.kind)}</span>`;
@@ -1943,7 +1911,7 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
         const wide = p.widthPx > p.heightPx;
         // A real composite of the page, not an empty box pretending to be one.
         // Null (a genuinely empty page) leaves the blank sheet, which is honest.
-        const url = thumbFor(app.doc, `pg:${p.id}`, () => app.compositor?.pageThumb(app.doc, p.id, PAGE_THUMB_PX) ?? null);
+        const url = app.compositor?.pageThumb(app.doc, p.id, PAGE_THUMB_PX) ?? null;
         const art = url ? `<img src="${url}" alt="" draggable="false" />` : "";
         return `<button type="button" class="page-row${p.id === app.doc.activePageId ? " is-on" : ""}" data-page="${p.id}">
           <span class="page-thumb${wide ? " wide" : ""}">${art}</span>
@@ -1984,7 +1952,7 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
     np.style.height = `${ph}px`;
     // A Navigator that cannot show the artwork has no reason to exist. This is
     // a real composite of the page, not a painted stand-in.
-    const url = thumbFor(app.doc, `pg:${page.id}`, () => app.compositor?.pageThumb(app.doc, page.id, NAV_THUMB) ?? null);
+    const url = app.compositor?.pageThumb(app.doc, page.id, NAV_THUMB) ?? null;
     np.style.backgroundImage = url ? `url("${url}")` : "none";
     if (!v) return;
     const r = v.showRulers ? RULER : 0;
