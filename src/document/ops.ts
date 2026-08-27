@@ -2,15 +2,22 @@ import type {
   ImageFit,
   Align,
   BlendMode,
+  DropShadowEffect,
+  GradientOverlayEffect,
+  LayerEffect,
   Layer,
+  OuterGlowEffect,
   Page,
   PressDocument,
   Rgba,
+  StrokeEffect,
   Transform,
+  VectorLayer,
+  VectorStroke,
 } from "./types";
 import { replaceStoryRange } from "./text-model";
 import { applyPt, decompose, localMatrix, mul, worldBounds } from "./transform";
-import { activePage, cloneDoc, findLayer, selectedLayers, uid } from "./factory";
+import { activePage, cloneDoc, cloneStroke, findLayer, selectedLayers, uid } from "./factory";
 
 export function setActiveLayers(doc: PressDocument, ids: string[]): PressDocument {
   const next = cloneDoc(doc);
@@ -50,6 +57,168 @@ export function setLayerName(doc: PressDocument, id: string, name: string): Pres
   const next = cloneDoc(doc);
   const layer = findLayer(activePage(next), id);
   if (layer) layer.name = name;
+  return next;
+}
+
+export type AlignMode = "left" | "center-h" | "right" | "top" | "center-v" | "bottom";
+
+/**
+ * Align the selected top-level layers to their shared selection bounds, in page
+ * space. Nested layers are skipped (their local axes differ from the page), so
+ * alignment stays geometrically correct. No-op below two eligible layers.
+ */
+export function alignLayers(doc: PressDocument, ids: string[], mode: AlignMode): PressDocument {
+  const next = cloneDoc(doc);
+  const page = activePage(next);
+  const items = ids
+    .map((id) => findLayer(page, id))
+    .filter((l): l is Layer => !!l && l.parentId === null && !l.locked)
+    .map((l) => ({ l, b: worldBounds(page, l) }));
+  if (items.length < 2) return next;
+  const minX = Math.min(...items.map((i) => i.b.x));
+  const maxR = Math.max(...items.map((i) => i.b.x + i.b.w));
+  const minY = Math.min(...items.map((i) => i.b.y));
+  const maxB = Math.max(...items.map((i) => i.b.y + i.b.h));
+  for (const { l, b } of items) {
+    if (mode === "left") l.transform.x += minX - b.x;
+    else if (mode === "right") l.transform.x += maxR - (b.x + b.w);
+    else if (mode === "center-h") l.transform.x += (minX + maxR) / 2 - (b.x + b.w / 2);
+    else if (mode === "top") l.transform.y += minY - b.y;
+    else if (mode === "bottom") l.transform.y += maxB - (b.y + b.h);
+    else if (mode === "center-v") l.transform.y += (minY + maxB) / 2 - (b.y + b.h / 2);
+  }
+  return next;
+}
+
+/**
+ * Evenly distribute the selected top-level layers' centres between the two
+ * outermost, along the given axis. No-op below three eligible layers.
+ */
+export function distributeLayers(doc: PressDocument, ids: string[], axis: "h" | "v"): PressDocument {
+  const next = cloneDoc(doc);
+  const page = activePage(next);
+  const items = ids
+    .map((id) => findLayer(page, id))
+    .filter((l): l is Layer => !!l && l.parentId === null && !l.locked)
+    .map((l) => ({ l, b: worldBounds(page, l) }));
+  if (items.length < 3) return next;
+  const center = (b: { x: number; y: number; w: number; h: number }) =>
+    axis === "h" ? b.x + b.w / 2 : b.y + b.h / 2;
+  items.sort((a, z) => center(a.b) - center(z.b));
+  const first = center(items[0]!.b);
+  const last = center(items[items.length - 1]!.b);
+  const step = (last - first) / (items.length - 1);
+  items.forEach((it, i) => {
+    const target = first + step * i;
+    const delta = target - center(it.b);
+    if (axis === "h") it.l.transform.x += delta;
+    else it.l.transform.y += delta;
+  });
+  return next;
+}
+
+/**
+ * Set (or clear, with null) a layer's drop-shadow effect. Effects are stored as
+ * a list so future styles (glow, stroke, gradient overlay) coexist; this
+ * replaces only the drop-shadow entry.
+ */
+export function setLayerDropShadow(
+  doc: PressDocument,
+  id: string,
+  shadow: DropShadowEffect | null,
+): PressDocument {
+  const next = cloneDoc(doc);
+  const layer = findLayer(activePage(next), id);
+  if (!layer) return next;
+  const effects: LayerEffect[] = (layer.effects ?? []).filter((e) => e.type !== "drop-shadow");
+  if (shadow) effects.push(shadow);
+  layer.effects = effects;
+  return next;
+}
+
+/** Set (or clear, with null) a layer's gradient-overlay effect. */
+export function setLayerGradientOverlay(
+  doc: PressDocument,
+  id: string,
+  overlay: GradientOverlayEffect | null,
+): PressDocument {
+  const next = cloneDoc(doc);
+  const layer = findLayer(activePage(next), id);
+  if (!layer) return next;
+  const effects: LayerEffect[] = (layer.effects ?? []).filter((e) => e.type !== "gradient-overlay");
+  if (overlay) effects.push(overlay);
+  layer.effects = effects;
+  return next;
+}
+
+/** Set (or clear, with null) a layer's stroke/outline effect. */
+export function setLayerStrokeEffect(
+  doc: PressDocument,
+  id: string,
+  stroke: StrokeEffect | null,
+): PressDocument {
+  const next = cloneDoc(doc);
+  const layer = findLayer(activePage(next), id);
+  if (!layer) return next;
+  const effects: LayerEffect[] = (layer.effects ?? []).filter((e) => e.type !== "stroke");
+  if (stroke) effects.push(stroke);
+  layer.effects = effects;
+  return next;
+}
+
+/** Set (or clear, with null) a layer's outer-glow effect. */
+export function setLayerOuterGlow(
+  doc: PressDocument,
+  id: string,
+  glow: OuterGlowEffect | null,
+): PressDocument {
+  const next = cloneDoc(doc);
+  const layer = findLayer(activePage(next), id);
+  if (!layer) return next;
+  const effects: LayerEffect[] = (layer.effects ?? []).filter((e) => e.type !== "outer-glow");
+  if (glow) effects.push(glow);
+  layer.effects = effects;
+  return next;
+}
+
+/**
+ * Merge a stroke patch onto an existing stroke (or a fresh one born from
+ * `fallbackColor`), preserving fields the patch does not name. An empty
+ * `dash: []` clears the dash back to a solid stroke. Used by the vector-stroke
+ * UI command and Anchor so width, colour, cap, join and dash edit independently.
+ */
+export function mergeStroke(
+  prev: VectorStroke | null,
+  patch: Partial<VectorStroke>,
+  fallbackColor: Rgba,
+): VectorStroke {
+  const base: VectorStroke = cloneStroke(prev) ?? { color: { ...fallbackColor }, width: 1 };
+  if (patch.color) base.color = { ...patch.color };
+  if (patch.width !== undefined) base.width = patch.width;
+  if (patch.cap !== undefined) base.cap = patch.cap;
+  if (patch.join !== undefined) base.join = patch.join;
+  if (patch.dash !== undefined) {
+    if (patch.dash && patch.dash.length) base.dash = [...patch.dash];
+    else delete base.dash;
+  }
+  if (patch.dashPhase !== undefined) base.dashPhase = patch.dashPhase;
+  return base;
+}
+
+/**
+ * Set or patch the stroke of one vector layer. Skips non-vectors and locked
+ * layers. `patch` merges onto any existing stroke via `mergeStroke`.
+ */
+export function setVectorStroke(
+  doc: PressDocument,
+  id: string,
+  patch: Partial<VectorStroke>,
+  fallbackColor: Rgba,
+): PressDocument {
+  const next = cloneDoc(doc);
+  const layer = findLayer(activePage(next), id);
+  if (!layer || layer.kind !== "vector" || layer.locked) return next;
+  layer.stroke = mergeStroke(layer.stroke, patch, fallbackColor);
   return next;
 }
 
@@ -147,6 +316,24 @@ export function applyFill(doc: PressDocument, color: Rgba): PressDocument {
       if (story) story.character.fill = { ...color };
     }
   }
+  return next;
+}
+
+/**
+ * Replace boolean operands with one compound-path result layer. Selection becomes
+ * the result. Pure document mutation — Skia work lives in `boolean-ops.ts`.
+ */
+export function applyBooleanCombine(
+  doc: PressDocument,
+  operandIds: readonly string[],
+  result: VectorLayer,
+): PressDocument {
+  const next = cloneDoc(doc);
+  const page = activePage(next);
+  const consumed = new Set(operandIds);
+  page.layers = page.layers.filter((l) => !consumed.has(l.id));
+  page.layers.push(result);
+  next.activeLayerIds = [result.id];
   return next;
 }
 

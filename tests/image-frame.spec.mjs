@@ -9,17 +9,19 @@
  *   node tests/image-frame.spec.mjs
  */
 import { createRequire } from "node:module";
+import { fileURLToPath } from "node:url";
 import { inflateSync } from "node:zlib";
 import { writeFileSync, mkdirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { ensureServer } from "./server.mjs";
 import { exportPdf } from "./pdf-download.mjs";
 
-const require_ = createRequire("file:///C:/viro%20studio/package.json");
+const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
+const require_ = createRequire(import.meta.url);
 const { chromium } = require_("playwright");
-process.env.PLAYWRIGHT_BROWSERS_PATH ||= "C:/viro studio/.pw-browsers";
+process.env.PLAYWRIGHT_BROWSERS_PATH ||= join(ROOT, ".pw-browsers");
 
-const OUT = join("C:/viro studio", "tests", "qa-shots", "image-frame");
+const OUT = join(ROOT, "tests", "qa-shots", "image-frame");
 mkdirSync(OUT, { recursive: true });
 
 const results = [];

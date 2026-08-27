@@ -1,11 +1,18 @@
-import type { Canvas, CanvasKit, Font, Image as SkImage, Paint, Surface, Typeface } from "canvaskit-wasm";
+import type { Canvas, CanvasKit, Font, Image as SkImage, Paint, PathEffect, Surface, Typeface } from "canvaskit-wasm";
 import type {
   AdjustmentLayer,
+  DropShadowEffect,
+  GradientOverlayEffect,
   Layer,
+  LayerEffect,
+  OuterGlowEffect,
   Page,
   PressDocument,
   ResampleAlgo,
   Rgba,
+  StrokeCap,
+  StrokeEffect,
+  StrokeJoin,
   ToolId,
   Transform,
   VectorLayer,
@@ -17,6 +24,77 @@ import { destWindow, sourceWindow } from "../document/image-fit";
 import { activePage } from "../document/factory";
 import { composeFrame, drawTypeFrame, nearestCaretOffset, type CaretStop, type FacePack } from "./type";
 import type { FontRegistry } from "./font-registry";
+
+/** The layer's enabled drop shadow, if any. */
+function dropShadowOf(layer: Layer): DropShadowEffect | null {
+  const fx = layer.effects;
+  if (!fx) return null;
+  for (const e of fx) if (e.type === "drop-shadow" && e.enabled) return e;
+  return null;
+}
+
+/** The layer's enabled gradient overlay, if any. */
+function gradientOverlayOf(layer: Layer): GradientOverlayEffect | null {
+  const fx = layer.effects;
+  if (!fx) return null;
+  for (const e of fx) if (e.type === "gradient-overlay" && e.enabled && e.stops.length >= 2) return e;
+  return null;
+}
+
+/** The layer's enabled stroke/outline effect, if any. */
+function strokeEffectOf(layer: Layer): StrokeEffect | null {
+  const fx = layer.effects;
+  if (!fx) return null;
+  for (const e of fx) if (e.type === "stroke" && e.enabled && e.width > 0) return e;
+  return null;
+}
+
+/** Map a document stroke cap to its CanvasKit enum. Default is butt. */
+function strokeCap(ck: CanvasKit, cap: StrokeCap) {
+  if (cap === "round") return ck.StrokeCap.Round;
+  if (cap === "square") return ck.StrokeCap.Square;
+  return ck.StrokeCap.Butt;
+}
+
+/** Map a document stroke join to its CanvasKit enum. Default is miter. */
+function strokeJoin(ck: CanvasKit, join: StrokeJoin) {
+  if (join === "round") return ck.StrokeJoin.Round;
+  if (join === "bevel") return ck.StrokeJoin.Bevel;
+  return ck.StrokeJoin.Miter;
+}
+
+/** The layer's enabled outer glow, if any. */
+function outerGlowOf(layer: Layer): OuterGlowEffect | null {
+  const fx = layer.effects;
+  if (!fx) return null;
+  for (const e of fx) if (e.type === "outer-glow" && e.enabled && e.blur >= 0) return e;
+  return null;
+}
+
+/** Everything that alters how a layer draws, folded into its render hash. */
+function hashEffect(h: number, e: LayerEffect): number {
+  h = hashStr(h, e.type);
+  h = mixHash(h, e.enabled ? 1 : 2);
+  switch (e.type) {
+    case "drop-shadow":
+      h = hashRgba(h, e.color);
+      h = hashNum(hashNum(hashNum(hashNum(h, e.offsetX), e.offsetY), e.blur), e.opacity);
+      break;
+    case "gradient-overlay":
+      h = hashNum(hashNum(h, e.angle), e.opacity);
+      for (const s of e.stops) h = hashRgba(hashNum(h, s.offset), s.color);
+      break;
+    case "stroke":
+      h = hashRgba(h, e.color);
+      h = hashNum(hashNum(h, e.width), e.opacity);
+      break;
+    case "outer-glow":
+      h = hashRgba(h, e.color);
+      h = hashNum(hashNum(h, e.blur), e.opacity);
+      break;
+  }
+  return h;
+}
 
 /** Ruler band thickness in CSS px. Chrome imports this for its own hit maths. */
 export const RULER = 18;
@@ -310,6 +388,7 @@ class PressView implements ViewState {
    */
   shapePreview: { kind: "rect" | "ellipse" | "line"; x: number; y: number; w: number; h: number } | null = null;
   textEdit: { layerId: string; anchor: number; focus: number } | null = null;
+  smartGuides: { xs: Float64Array; xn: number; ys: Float64Array; yn: number } | null = null;
 
   constructor(private readonly owner: Compositor) {}
 
@@ -1054,6 +1133,7 @@ export class Compositor {
     }
 
     this.paintSelection(ck, sk, doc, g);
+    this.paintSmartGuides(ck, sk, g);
 
     if (this.view.marquee) {
       const m = this.view.marquee;
@@ -1227,6 +1307,34 @@ export class Compositor {
     sk.drawRect(ck.LTRBRect(cx - r * 2, cy, cx + r * 2 + h, cy + h), pivot);
     sk.drawRect(ck.LTRBRect(cx, cy - r * 2, cx + h, cy + r * 2 + h), pivot);
     pivot.delete();
+  }
+
+  /**
+   * Smart-guide alignment lines drawn during a move, in the copper accent.
+   *
+   * View-only chrome: the positions are resolved in the pointer-move handler
+   * (allocation-free) and stashed on the view, and this pass reads them off the
+   * SAME overlay repaint the move already triggers. Nothing here touches the
+   * page composite. Lines span the full canvas so the alignment reads at a
+   * glance, the way Figma/InDesign draw them.
+   */
+  private paintSmartGuides(ck: CanvasKit, sk: Canvas, g: Geom): void {
+    const sg = this.view.smartGuides;
+    if (!sg || (sg.xn === 0 && sg.yn === 0)) return;
+    const h = g.hair;
+    const paint = new ck.Paint();
+    paint.setColor(rgb(ck, TOKEN.accent, 0.9));
+    const top = g.sy(g.ruler);
+    const left = g.sx(g.ruler);
+    for (let i = 0; i < sg.xn; i++) {
+      const px = g.dx(sg.xs[i]!);
+      if (px >= left && px <= g.devW) sk.drawRect(ck.LTRBRect(px, top, px + h, g.devH), paint);
+    }
+    for (let i = 0; i < sg.yn; i++) {
+      const py = g.dy(sg.ys[i]!);
+      if (py >= top && py <= g.devH) sk.drawRect(ck.LTRBRect(left, py, g.devW, py + h), paint);
+    }
+    paint.delete();
   }
 
   /** One-device-pixel rectangle outline built from filled rects — never a 2px blur. */
@@ -1507,24 +1615,125 @@ export class Compositor {
       return;
     }
     if (layer.kind === "group") {
-      const paint = new ck.Paint();
-      paint.setAlphaf(layer.opacity);
-      const blendName = SKIA_BLEND[layer.blend];
-      const modes = ck.BlendMode as unknown as Record<string, Parameters<Paint["setBlendMode"]>[0]>;
-      if (modes[blendName]) paint.setBlendMode(modes[blendName]);
-      sk.saveLayer(paint);
-      paint.delete();
-      // A group establishes a coordinate space for its children. Before v2 this
-      // line was missing, so moving a group changed the record and nothing on
-      // screen. Children carry transforms LOCAL to this space.
-      this.concatLocal(sk, layer.transform);
-      for (const child of page.layers) {
-        if (child.parentId === layer.id) this.drawTree(ck, sk, surf, doc, child);
-      }
-      sk.restore();
+      // Groups honour effects too — a drop shadow, glow or outline applies to
+      // the composited group silhouette, not each child. Renders on canvas,
+      // export and thumbs.
+      this.withEffects(ck, sk, layer, () => this.drawGroup(ck, sk, surf, doc, page, layer));
       return;
     }
-    this.drawLayer(ck, sk, doc, layer);
+    this.drawLayerWithEffects(ck, sk, doc, layer);
+  }
+
+  /** Composite a group and its children (one save-layer for opacity + blend). */
+  private drawGroup(ck: CanvasKit, sk: Canvas, surf: Surface, doc: PressDocument, page: Page, layer: Layer): void {
+    const paint = new ck.Paint();
+    paint.setAlphaf(layer.opacity);
+    const blendName = SKIA_BLEND[layer.blend];
+    const modes = ck.BlendMode as unknown as Record<string, Parameters<Paint["setBlendMode"]>[0]>;
+    if (modes[blendName]) paint.setBlendMode(modes[blendName]);
+    sk.saveLayer(paint);
+    paint.delete();
+    // A group establishes a coordinate space for its children. Before v2 this
+    // line was missing, so moving a group changed the record and nothing on
+    // screen. Children carry transforms LOCAL to this space.
+    this.concatLocal(sk, layer.transform);
+    for (const child of page.layers) {
+      if (child.parentId === layer.id) this.drawTree(ck, sk, surf, doc, child);
+    }
+    sk.restore();
+  }
+
+  /**
+   * Run `draw` once through a shadow-only image filter (Photoshop-style pre-pass
+   * that takes the exact silhouette), then again normally on top. Absent shadow
+   * costs nothing. Shared by leaf layers and groups so neither can silently
+   * ignore an enabled effect.
+   */
+  private withDropShadow(ck: CanvasKit, sk: Canvas, shadow: DropShadowEffect | null, draw: () => void): void {
+    if (shadow && shadow.enabled && shadow.blur >= 0) {
+      const paint = new ck.Paint();
+      const a = Math.min(1, Math.max(0, shadow.color.a * shadow.opacity));
+      const c = ck.Color4f(shadow.color.r, shadow.color.g, shadow.color.b, a);
+      const sigma = Math.max(0, shadow.blur) * 0.5;
+      const filter = ck.ImageFilter.MakeDropShadowOnly(shadow.offsetX, shadow.offsetY, sigma, sigma, c, null);
+      paint.setImageFilter(filter);
+      sk.saveLayer(paint);
+      draw();
+      sk.restore();
+      filter.delete();
+      paint.delete();
+    }
+    draw();
+  }
+
+  /**
+   * A soft coloured halo behind the layer (Photoshop "Outer Glow") — a blurred
+   * silhouette of the glow colour with zero offset, drawn as a pre-pass, then
+   * the layer on top. Shared by leaves and groups. Absent glow costs nothing.
+   */
+  private withOuterGlow(ck: CanvasKit, sk: Canvas, glow: OuterGlowEffect | null, draw: () => void): void {
+    if (glow && glow.enabled && glow.blur >= 0) {
+      const paint = new ck.Paint();
+      const a = Math.min(1, Math.max(0, glow.color.a * glow.opacity));
+      const c = ck.Color4f(glow.color.r, glow.color.g, glow.color.b, a);
+      const sigma = Math.max(0, glow.blur) * 0.5;
+      const filter = ck.ImageFilter.MakeDropShadowOnly(0, 0, sigma, sigma, c, null);
+      paint.setImageFilter(filter);
+      sk.saveLayer(paint);
+      draw();
+      sk.restore();
+      filter.delete();
+      paint.delete();
+    }
+    draw();
+  }
+
+  /**
+   * A solid outline around the layer's silhouette (Photoshop "Stroke"). The
+   * silhouette is dilated by the stroke width and re-tinted to the stroke
+   * colour (SrcIn keeps the dilated alpha), drawn as a pre-pass behind the
+   * layer, so a ring of `width` stands proud of the original content. Absent
+   * stroke costs nothing.
+   */
+  private withStrokeEffect(ck: CanvasKit, sk: Canvas, stroke: StrokeEffect | null, draw: () => void): void {
+    if (stroke && stroke.enabled && stroke.width > 0) {
+      const paint = new ck.Paint();
+      const a = Math.min(1, Math.max(0, stroke.color.a * stroke.opacity));
+      const c = ck.Color4f(stroke.color.r, stroke.color.g, stroke.color.b, a);
+      const r = Math.max(0.5, stroke.width);
+      const dilate = ck.ImageFilter.MakeDilate(r, r, null);
+      const cf = ck.ColorFilter.MakeBlend(c, ck.BlendMode.SrcIn);
+      const filter = ck.ImageFilter.MakeColorFilter(cf, dilate);
+      paint.setImageFilter(filter);
+      sk.saveLayer(paint);
+      draw();
+      sk.restore();
+      filter.delete();
+      cf.delete();
+      dilate.delete();
+      paint.delete();
+    }
+    draw();
+  }
+
+  /**
+   * Compose every enabled non-destructive effect around a layer's own draw.
+   * Nested so the pre-passes stack behind the content, bottom-to-top: drop
+   * shadow, then outer glow, then the outline ring closest to the layer. Each
+   * wrapper no-ops when its effect is absent. Gradient overlay is painted
+   * inside `drawLayer` (clipped to the layer's own alpha) and so is not here.
+   */
+  private withEffects(ck: CanvasKit, sk: Canvas, layer: Layer, draw: () => void): void {
+    this.withDropShadow(ck, sk, dropShadowOf(layer), () =>
+      this.withOuterGlow(ck, sk, outerGlowOf(layer), () =>
+        this.withStrokeEffect(ck, sk, strokeEffectOf(layer), draw),
+      ),
+    );
+  }
+
+  /** Draw a leaf layer, applying any enabled non-destructive effects. */
+  private drawLayerWithEffects(ck: CanvasKit, sk: Canvas, doc: PressDocument, layer: Layer): void {
+    this.withEffects(ck, sk, layer, () => this.drawLayer(ck, sk, doc, layer));
   }
 
   private applyAdjustment(ck: CanvasKit, sk: Canvas, surf: Surface, layer: AdjustmentLayer): void {
@@ -1571,8 +1780,42 @@ export class Compositor {
       this.drawImageLayer(ck, sk, doc, layer, paint);
     }
 
+    this.drawGradientOverlay(ck, sk, layer);
+
     sk.restore();
     paint.delete();
+  }
+
+  /**
+   * Paint a gradient over the layer's silhouette (SrcATop keeps it within the
+   * already-drawn content's alpha). Runs in the layer's local space, so the box
+   * is [0,0,w,h]. No effect when absent or under two stops.
+   */
+  private drawGradientOverlay(ck: CanvasKit, sk: Canvas, layer: Layer): void {
+    const g = gradientOverlayOf(layer);
+    if (!g) return;
+    const w = Math.max(1, layer.transform.w);
+    const h = Math.max(1, layer.transform.h);
+    const cx = w / 2;
+    const cy = h / 2;
+    const rad = (g.angle * Math.PI) / 180;
+    const dx = Math.cos(rad);
+    const dy = Math.sin(rad);
+    const half = (Math.abs(dx) * w + Math.abs(dy) * h) / 2;
+    const start = [cx - dx * half, cy - dy * half];
+    const end = [cx + dx * half, cy + dy * half];
+    const stops = [...g.stops].sort((a, b) => a.offset - b.offset);
+    const colors = stops.map((s) => ck.Color4f(s.color.r, s.color.g, s.color.b, s.color.a));
+    const positions = stops.map((s) => Math.min(1, Math.max(0, s.offset)));
+    const shader = ck.Shader.MakeLinearGradient(start, end, colors, positions, ck.TileMode.Clamp);
+    const paint = new ck.Paint();
+    paint.setShader(shader);
+    paint.setAlphaf(Math.min(1, Math.max(0, g.opacity)));
+    const modes = ck.BlendMode as unknown as Record<string, Parameters<Paint["setBlendMode"]>[0]>;
+    if (modes.SrcATop) paint.setBlendMode(modes.SrcATop);
+    sk.drawRect(ck.LTRBRect(0, 0, w, h), paint);
+    paint.delete();
+    shader.delete();
   }
 
   private drawImageLayer(ck: CanvasKit, sk: Canvas, doc: PressDocument, layer: Layer, paint: Paint): void {
@@ -1616,7 +1859,15 @@ export class Compositor {
   }
 
   private drawVector(ck: CanvasKit, sk: Canvas, layer: VectorLayer, paint: Paint): void {
-    if (layer.nodes.length < 2) {
+    // PRECEDENCE (v6): a non-empty `contours` list is the authoritative
+    // compound path; otherwise the legacy single `nodes`/`closed` is one contour.
+    const multi = Array.isArray(layer.contours) && layer.contours.length > 0;
+    const contours = multi
+      ? layer.contours!
+      : [{ nodes: layer.nodes, closed: layer.closed }];
+
+    // Single-node degenerate case (a just-started pen path) keeps its dot.
+    if (!multi && layer.nodes.length < 2) {
       if (layer.nodes.length === 1) {
         paint.setStyle(ck.PaintStyle.Fill);
         paint.setColor(ck.Color4f(0.878, 0.478, 0.184, 1));
@@ -1624,32 +1875,64 @@ export class Compositor {
       }
       return;
     }
+
     const builder = new ck.PathBuilder();
-    const n0 = layer.nodes[0];
-    builder.moveTo(n0.x, n0.y);
-    for (let i = 1; i < layer.nodes.length; i++) {
-      const a = layer.nodes[i - 1];
-      const b = layer.nodes[i];
-      builder.cubicTo(a.outX, a.outY, b.inX, b.inY, b.x, b.y);
+    let drawable = 0;
+    let anyClosed = false;
+    for (const c of contours) {
+      if (c.nodes.length < 2) continue;
+      drawable++;
+      if (c.closed) anyClosed = true;
+      const n0 = c.nodes[0];
+      builder.moveTo(n0.x, n0.y);
+      for (let i = 1; i < c.nodes.length; i++) {
+        const a = c.nodes[i - 1];
+        const b = c.nodes[i];
+        builder.cubicTo(a.outX, a.outY, b.inX, b.inY, b.x, b.y);
+      }
+      if (c.closed) {
+        const last = c.nodes[c.nodes.length - 1];
+        const first = c.nodes[0];
+        builder.cubicTo(last.outX, last.outY, first.inX, first.inY, first.x, first.y);
+        builder.close();
+      }
     }
-    if (layer.closed) {
-      const last = layer.nodes[layer.nodes.length - 1];
-      const first = layer.nodes[0];
-      builder.cubicTo(last.outX, last.outY, first.inX, first.inY, first.x, first.y);
-      builder.close();
+    if (drawable === 0) {
+      builder.delete();
+      return;
     }
     const path = builder.detach();
     builder.delete();
-    if (layer.fill && layer.closed) {
+    // A compound path needs an explicit fill rule so subtracted holes read as
+    // holes regardless of winding — even-odd. A single contour keeps Skia's
+    // default (winding) so existing vectors are byte-identical to v5.
+    if (multi && drawable > 1) path.setFillType(ck.FillType.EvenOdd);
+    if (layer.fill && anyClosed) {
       paint.setStyle(ck.PaintStyle.Fill);
       paint.setColor(color(ck, layer.fill, layer.fill.a * layer.opacity));
       sk.drawPath(path, paint);
     }
     if (layer.stroke) {
+      const s = layer.stroke;
       paint.setStyle(ck.PaintStyle.Stroke);
-      paint.setStrokeWidth(layer.stroke.width);
-      paint.setColor(color(ck, layer.stroke.color, layer.stroke.color.a * layer.opacity));
+      paint.setStrokeWidth(s.width);
+      paint.setColor(color(ck, s.color, s.color.a * layer.opacity));
+      if (s.cap) paint.setStrokeCap(strokeCap(ck, s.cap));
+      if (s.join) paint.setStrokeJoin(strokeJoin(ck, s.join));
+      // A dash is a path effect on the stroked geometry. Skia needs an even
+      // interval count; a stray odd/empty array falls back to a solid stroke.
+      let dashEffect: PathEffect | null = null;
+      if (s.dash && s.dash.length >= 2 && s.dash.length % 2 === 0 && s.dash.some((n) => n > 0)) {
+        dashEffect = ck.PathEffect.MakeDash(s.dash, s.dashPhase ?? 0);
+        paint.setPathEffect(dashEffect);
+      }
       sk.drawPath(path, paint);
+      // The paint is per-layer and about to be deleted, but the PathEffect is a
+      // separate WASM object the compositor treats as churn to be freed.
+      if (dashEffect) {
+        paint.setPathEffect(null);
+        dashEffect.delete();
+      }
     }
     path.delete();
   }
@@ -1672,6 +1955,40 @@ export class Compositor {
     img.delete();
     if (!bytes) throw new Error("PNG encode failed");
     return bytes;
+  }
+
+  /**
+   * A small PNG data URL rendered from the ACTUAL active page — for project and
+   * dashboard previews (GOVERNOR.md §15/§61). Never stock art: this composites
+   * the real document and downscales it with the same Skia blit the exporter
+   * uses, preserving aspect ratio within `maxEdge`.
+   */
+  thumbnailDataUrl(doc: PressDocument, maxEdge = 320): string | null {
+    const ck = this.engines.ck;
+    const img = this.compositePage(ck, doc, false);
+    if (!img) return null;
+    const iw = Math.max(1, img.width());
+    const ih = Math.max(1, img.height());
+    const scale = Math.min(1, maxEdge / Math.max(iw, ih));
+    const tw = Math.max(1, Math.round(iw * scale));
+    const th = Math.max(1, Math.round(ih * scale));
+    const surf = ck.MakeSurface(tw, th);
+    if (!surf) {
+      img.delete();
+      return null;
+    }
+    const paint = new ck.Paint();
+    this.blit(ck, surf.getCanvas(), img, { x: 0, y: 0, w: iw, h: ih }, { x: 0, y: 0, w: tw, h: th }, paint, "bilinear");
+    paint.delete();
+    const out = surf.makeImageSnapshot();
+    const encoded = out.encodeToBytes(ck.ImageFormat.PNG, 90);
+    out.delete();
+    surf.delete();
+    img.delete();
+    if (!encoded) return null;
+    let bin = "";
+    for (let i = 0; i < encoded.length; i++) bin += String.fromCharCode(encoded[i]!);
+    return `data:image/png;base64,${btoa(bin)}`;
   }
 
   /** Image Size resample: Skia FilterMode.Nearest / FilterMode.Linear / cubic Mitchell (B=C=1/3). */
@@ -2046,14 +2363,38 @@ export class Compositor {
     const t = layer.transform;
     h = hashNum(hashNum(hashNum(hashNum(hashNum(h, t.x), t.y), t.w), t.h), t.rotation);
     h = hashNum(hashNum(h, t.scaleX ?? 1), t.scaleY ?? 1);
+    // Non-destructive effects change the rendered pixels without touching the
+    // layer's own fields, so a panel thumbnail must re-render when they change.
+    if (layer.effects) for (const e of layer.effects) h = hashEffect(h, e);
     switch (layer.kind) {
       case "vector": {
         h = mixHash(h, layer.closed ? 1 : 2);
         h = hashRgba(h, layer.fill);
         h = hashRgba(h, layer.stroke ? layer.stroke.color : null);
         h = hashNum(h, layer.stroke ? layer.stroke.width : -1);
-        for (const n of layer.nodes) {
-          h = hashNum(hashNum(hashNum(hashNum(hashNum(hashNum(h, n.x), n.y), n.inX), n.inY), n.outX), n.outY);
+        if (layer.stroke) {
+          h = hashStr(h, layer.stroke.cap ?? "butt");
+          h = hashStr(h, layer.stroke.join ?? "miter");
+          h = hashNum(h, layer.stroke.dashPhase ?? 0);
+          for (const d of layer.stroke.dash ?? []) h = hashNum(h, d);
+          if (!layer.stroke.dash?.length) h = mixHash(h, 0x50_11d);
+        }
+        // v6 compound paths: fold every contour and the multi-contour fill rule
+        // so a boolean-op result invalidates thumbnails/repaints. The legacy
+        // single-contour case still hashes `nodes` exactly as before.
+        const multi = Array.isArray(layer.contours) && layer.contours.length > 0;
+        if (multi) {
+          h = mixHash(h, 0xc0_11d);
+          for (const c of layer.contours!) {
+            h = mixHash(h, c.closed ? 1 : 2);
+            for (const n of c.nodes) {
+              h = hashNum(hashNum(hashNum(hashNum(hashNum(hashNum(h, n.x), n.y), n.inX), n.inY), n.outX), n.outY);
+            }
+          }
+        } else {
+          for (const n of layer.nodes) {
+            h = hashNum(hashNum(hashNum(hashNum(hashNum(hashNum(h, n.x), n.y), n.inX), n.inY), n.outX), n.outY);
+          }
         }
         break;
       }

@@ -25,6 +25,20 @@ const SCRIPTS = [
   "anchor-bus.spec.mjs",
   // audited desktop integration - the File menu reaches the preload bridge
   "electron-bridge.spec.mjs",
+  // data-loss P0 - autosave to IndexedDB and crash/reload recovery
+  "recovery.spec.mjs",
+  // local-first platform (ADR 0004) - projects library + real thumbnails
+  "projects.spec.mjs",
+  // layer effects - drop shadow actually renders (pixel diff)
+  "effects.spec.mjs",
+  // vector stroke styling - dash/cap/join actually render (pixel diff) + v5 round-trip
+  "stroke-style.spec.mjs",
+  // RFC-6 - multi-select group transform (move/scale, one undo) + smart guides
+  "multi-transform.spec.mjs",
+  // ADR-0005 Phase-0 - boolean subtract proof (multi-contour render + v6 round-trip)
+  "booleans.spec.mjs",
+  // background removal - U²-Netp loads the non-jsep CPU wasm and produces a mask
+  "cutout.spec.mjs",
 ];
 
 function run(script) {

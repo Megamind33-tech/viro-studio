@@ -38,10 +38,14 @@ export interface MigrationReport {
   textFramesInitialised: number;
   /** v3 -> v4: document-level style/font maps created. */
   textRegistriesInitialised: number;
+  /** v4 -> v5: version stamp for vector stroke styling (dash/cap/join). */
+  strokeStylesStamped: number;
+  /** v5 -> v6: version stamp for multi-contour (compound-path) vectors. */
+  contoursStamped: number;
   notes: string[];
 }
 
-export const DOC_VERSION = 4 as const;
+export const DOC_VERSION = 6 as const;
 
 /**
  * Rebase one page's layers from absolute to local coordinates.
@@ -87,6 +91,37 @@ function normaliseImageFits(layers: Layer[], report: MigrationReport): void {
     if ((layer.fit as string) === "fill") {
       layer.fit = "stretch";
       report.imageFitsNormalised++;
+    }
+  }
+}
+
+/**
+ * v4 -> v5. Vector strokes gained optional `dash`/`cap`/`join` fields. This is a
+ * widening version stamp: a v4 stroke is `{ color, width }`, which is already a
+ * valid v5 stroke, and an absent dash/cap/join renders solid / butt / miter —
+ * pixel-identical to v4. So nothing is rewritten; the count is reported only so
+ * the stamp is not silent (MIGRATION INVARIANT: identical re-open).
+ */
+function stampStrokeStyles(doc: PressDocument, report: MigrationReport): void {
+  for (const page of doc.pages) {
+    for (const layer of page.layers) {
+      if (layer.kind === "vector" && layer.stroke) report.strokeStylesStamped++;
+    }
+  }
+}
+
+/**
+ * v5 -> v6. Vector layers gained an optional multi-contour `contours[]` field
+ * for compound paths (boolean-op results). This is a widening version stamp: a
+ * v5 vector has no `contours`, and an absent `contours` list is defined to mean
+ * the single contour `{ nodes, closed }` — which is exactly how v≤5 vectors
+ * already render. So nothing is rewritten; each existing vector is counted only
+ * so the stamp is not silent (MIGRATION INVARIANT: pixel-identical re-open).
+ */
+function stampContours(doc: PressDocument, report: MigrationReport): void {
+  for (const page of doc.pages) {
+    for (const layer of page.layers) {
+      if (layer.kind === "vector") report.contoursStamped++;
     }
   }
 }
@@ -148,6 +183,8 @@ export function migrateDocument(doc: PressDocument): MigrationReport {
     textStoriesInitialised: 0,
     textFramesInitialised: 0,
     textRegistriesInitialised: 0,
+    strokeStylesStamped: 0,
+    contoursStamped: 0,
     notes: [],
   };
   if (from >= DOC_VERSION) {
@@ -165,6 +202,10 @@ export function migrateDocument(doc: PressDocument): MigrationReport {
     report.pagesTouched++;
   }
   if (from < 4) initialiseTextModel(doc, report);
+  // v4 -> v5: widening stamp for vector stroke styling. No pixels move.
+  if (from < 5) stampStrokeStyles(doc, report);
+  // v5 -> v6: widening stamp for multi-contour vectors. No pixels move.
+  if (from < 6) stampContours(doc, report);
   doc.version = DOC_VERSION;
   return report;
 }

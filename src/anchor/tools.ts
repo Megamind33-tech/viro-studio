@@ -21,8 +21,15 @@ import type {
   PathNode,
   PressDocument,
   Rgba,
+  VectorLayer,
+  VectorStroke,
 } from "../document/types";
 import { SKIA_BLEND } from "../document/types";
+import {
+  booleanCombineVectors,
+  requireBooleanEngine,
+  type BooleanOp,
+} from "../document/boolean-ops";
 import {
   activePage,
   addGuide,
@@ -37,6 +44,7 @@ import {
 import {
   addAdjustment,
   addPage,
+  applyBooleanCombine,
   appendPathNode,
   applyFill,
   closePath,
@@ -154,6 +162,7 @@ const LAYER_KINDS = ["raster", "image-frame", "type-frame", "vector", "group", "
 assertCovers<Exclude<Layer["kind"], (typeof LAYER_KINDS)[number]>>();
 
 const REORDER_DIRECTIONS = ["forward", "backward", "front", "back"] as const;
+const BOOLEAN_OPS = ["union", "subtract", "intersect", "exclude"] as const;
 
 /** Nothing sane in this document model is larger than this; beyond it the input is garbage. */
 const MAX_COORD = 1_000_000;
@@ -243,12 +252,24 @@ function pStroke(): Schema {
     type: "object",
     description:
       "Outline for the path. Strokes are centred on the path and drawn in page pixels. " +
-      "There is no primitive to change a stroke after creation, so set it here.",
+      "There is no primitive to change a stroke after creation, so set it here. " +
+      "Optionally style it: dashes, and the line cap/join.",
     required: ["color", "width"],
     additionalProperties: false,
     properties: {
       color: pRgba("Stroke colour."),
       width: pNumber("Stroke width in page pixels.", { gt: 0, max: 10000 }),
+      dash: {
+        type: "array",
+        description:
+          "Dash pattern as an even list of on,off run lengths in page px (e.g. [12, 6]). " +
+          "Omit or leave empty for a solid stroke.",
+        maxItems: 128,
+        items: { type: "number", minimum: 0, maximum: 100000 },
+      },
+      dashPhase: pNumber("Offset into the dash pattern, in page px.", { min: 0, max: 100000 }),
+      cap: { type: "string", enum: ["butt", "round", "square"], description: "How open ends terminate. Default butt." },
+      join: { type: "string", enum: ["miter", "round", "bevel"], description: "How corners turn. Default miter." },
     },
   };
 }
@@ -447,7 +468,7 @@ function reqRgba(p: Params, key: string): Rgba {
   return v;
 }
 
-function readStroke(p: Params, key: string): { color: Rgba; width: number } | undefined {
+function readStroke(p: Params, key: string): VectorStroke | undefined {
   const raw = p[key];
   if (absent(raw)) return undefined;
   if (typeof raw !== "object" || Array.isArray(raw)) {
@@ -457,7 +478,36 @@ function readStroke(p: Params, key: string): { color: Rgba; width: number } | un
   const color = readRgba(o, "color");
   if (!color) fail(`"${key}.color" is required when "${key}" is given`);
   const width = reqNum(o, "width", { gt: 0, max: 10000 });
-  return { color, width };
+  const stroke: VectorStroke = { color, width };
+  const dash = o.dash;
+  if (!absent(dash)) {
+    if (!Array.isArray(dash)) fail(`"${key}.dash" must be an array of numbers`);
+    if (dash.length) {
+      if (dash.length % 2 !== 0) fail(`"${key}.dash" needs an even number of on,off intervals`);
+      if (dash.length > 128) fail(`"${key}.dash" has too many intervals (max 128)`);
+      const nums = dash.map((n, i) => {
+        if (typeof n !== "number" || !Number.isFinite(n) || n < 0) {
+          fail(`"${key}.dash[${i}]" must be a finite number >= 0`);
+        }
+        return n;
+      });
+      if (nums.every((n) => n === 0)) fail(`"${key}.dash" is all zeros, which draws nothing`);
+      stroke.dash = nums;
+    }
+  }
+  const phase = readNum(o, "dashPhase", { min: 0, max: 100000 });
+  if (phase !== undefined) stroke.dashPhase = phase;
+  const cap = readStr(o, "cap");
+  if (cap !== undefined) {
+    if (!["butt", "round", "square"].includes(cap)) fail(`"${key}.cap" must be butt, round or square`);
+    stroke.cap = cap as VectorStroke["cap"];
+  }
+  const join = readStr(o, "join");
+  if (join !== undefined) {
+    if (!["miter", "round", "bevel"].includes(join)) fail(`"${key}.join" must be miter, round or bevel`);
+    stroke.join = join as VectorStroke["join"];
+  }
+  return stroke;
 }
 
 function readNodes(p: Params, key: string): PathNode[] | undefined {
@@ -799,6 +849,47 @@ const OPS: Record<string, AnchorOpDef> = {
       }
       const next = ungroupSelected(sel.doc);
       return { doc: next, summary: `ungrouped ${groups.length} group(s), released ${next.activeLayerIds.length} layer(s)` };
+    },
+  },
+
+  "press.boolean": {
+    description:
+      "Combine 2+ vector layers with a Pathfinder boolean (union, subtract, intersect, exclude). " +
+      "Operands are consumed into ONE multi-contour result layer on the active page — destructive, like " +
+      "Illustrator's shape modes. Subtract = topmost minus the one beneath (or minus the union of all " +
+      "beneath when >2 are selected). Union of disjoint shapes yields one layer with multiple visible " +
+      "pieces. Undo restores all operands as one history step. Only unlocked vector layers count.",
+    params: {
+      op: pEnum("Pathfinder operation.", BOOLEAN_OPS),
+      layerIds: pLayerIds("vector operands — draw order is preserved; last id is topmost"),
+    },
+    required: ["op"],
+    run: (doc, p) => {
+      const sel = resolveSelection(doc, p);
+      const page = activePage(sel.doc);
+      const idSet = new Set(sel.layers.map((l) => l.id));
+      const ordered = page.layers.filter(
+        (l): l is VectorLayer => l.kind === "vector" && idSet.has(l.id) && !l.locked,
+      );
+      if (ordered.length < 2) {
+        fail(
+          `boolean needs at least 2 unlocked vector layers — got ${ordered.length} ` +
+            `(target was ${sel.layers.map((l) => `${l.kind} "${l.name}"`).join(", ")})`,
+        );
+      }
+      const op = reqEnum(p, "op", BOOLEAN_OPS) as BooleanOp;
+      const ck = requireBooleanEngine();
+      const result = booleanCombineVectors(ck, page, ordered, op);
+      if (!result) {
+        fail(`press.boolean ${op}: produced an empty shape — operands unchanged`);
+      }
+      const ids = ordered.map((l) => l.id);
+      const next = applyBooleanCombine(sel.doc, ids, result);
+      return {
+        doc: next,
+        summary: `${op} ${ordered.length} vector(s) → "${result.name}" (${result.contours?.length ?? 1} contour(s))`,
+        created: [result.id],
+      };
     },
   },
 

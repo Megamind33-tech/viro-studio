@@ -1,5 +1,6 @@
 import { migrateDocument } from "./document/migrate";
-import type { BlendMode, ImageFit, PressDocument, ResampleAlgo, Rgba, ToolId } from "./document/types";
+import type { BlendMode, DropShadowEffect, GradientOverlayEffect, ImageFit, Layer, OuterGlowEffect, PressDocument, ResampleAlgo, Rgba, StrokeEffect, ToolId, VectorLayer } from "./document/types";
+import { setBooleanEngineProvider, type BooleanOp } from "./document/boolean-ops";
 import {
   addImageFrame,
   addTypeFrame,
@@ -21,6 +22,9 @@ import { documentFromPreset, PRESETS } from "./document/presets";
 import {
   addAdjustment,
   addPage,
+  alignLayers,
+  distributeLayers,
+  type AlignMode,
   addVectorPath,
   appendPathNode,
   applyFill,
@@ -37,6 +41,10 @@ import {
   setImageCrop,
   setImageFit,
   setLayerBlend,
+  setLayerDropShadow,
+  setLayerGradientOverlay,
+  setLayerOuterGlow,
+  setLayerStrokeEffect,
   setLayerLocked,
   setLayerOpacity,
   setLayerTransform,
@@ -62,11 +70,33 @@ import { mimeForImageFile, sniffBytes } from "./engine/sniff";
 import type { PdfExportReport } from "./export/pdf";
 import { documentFromPsd } from "./import/psd";
 import { documentFromVdj } from "./import/vdj";
-import { pageToLocal } from "./document/transform";
-import { putUserAsset } from "./library/store";
+import { pageToLocal, worldBounds } from "./document/transform";
+import {
+  movedLayerBox,
+  resolveMoveSnap,
+  rotatedLayerBox,
+  scaleFromHandle,
+  scaledLayerBox,
+  type Frame,
+  type ResizeHandle,
+} from "./document/multi-transform";
+import {
+  deleteRecovery,
+  getRecovery,
+  putRecovery,
+  putUserAsset,
+  type RecoverySnapshot,
+} from "./library/store";
+import { flag } from "./platform/flags";
+import { projects, type ProjectRecord, type ProjectSummary } from "./platform/projects";
 
 /** Smallest edge a layer may be scaled to, in page px. */
 const MIN_SIZE = 4;
+
+/** Smart-guide snap tolerance, in screen (CSS) px, converted to page px per drag. */
+const SNAP_PX = 6;
+/** Fixed capacity of the reused smart-guide line arrays — a move can light at most a handful. */
+const GUIDE_CAP = 8;
 
 /** Cursor for each transform handle, so the affordance is visible before the drag. */
 const HANDLE_CURSOR: Record<HandleId, string> = {
@@ -111,6 +141,32 @@ export class PressApp {
   strokeWidth = 2;
   constrainImageSize = true;
   listeners = new Set<() => void>();
+  /**
+   * Autosave/recovery. The working document is written to IndexedDB shortly
+   * after each edit so a reload or crash does not lose unsaved work. `dirty`
+   * gates writes so an untouched freshly-booted document never overwrites a
+   * genuine recovery snapshot. `pendingRecovery` is a snapshot found at boot
+   * that predates this session; the UI offers to restore it.
+   */
+  private dirty = false;
+  private booted = false;
+  private autosaveTimer: ReturnType<typeof setTimeout> | 0 = 0;
+  /** Bus revision last durably written to the recovery slot. */
+  private savedRev = 0;
+  pendingRecovery: RecoverySnapshot | null = null;
+  /** Debounce for autosave writes, in ms. */
+  private static AUTOSAVE_MS = 1200;
+  /**
+   * The project this session is editing. Once the user makes a real edit a
+   * project is created (or an opened one is reused), so work is always captured
+   * in the local library, not just the crash-recovery slot.
+   */
+  currentProjectId: string | null = null;
+  private projectCreatedAt = 0;
+  private lastThumbnail: string | null = null;
+  private lastThumbAt = 0;
+  /** Regenerate the page thumbnail at most this often during active editing. */
+  private static THUMB_MS = 4000;
   dialog: "image-size" | "new" | "brightness" | null = null;
   channelThumbs: { r: string; g: string; b: string; rgb: string } | null = null;
   /** Per-op audit trail from the last Anchor batch, for the queue surface. */
@@ -138,7 +194,34 @@ export class PressApp {
      * cloning the whole document on pointerdown.
      */
     session?: string;
+    /**
+     * Smart-guide candidate lines, precomputed ONCE at pointer-down so the
+     * pointer-move loop never rebuilds them (RFC-6 perf constraint). `snapXs`
+     * are vertical-line X positions, `snapYs` horizontal-line Y positions, both
+     * in page px; `snapTol` is the tolerance in page px at the drag's zoom.
+     */
+    snapXs?: number[];
+    snapYs?: number[];
+    snapTol?: number;
   } | null = null;
+
+  /**
+   * Smart-guide snapping toggle (View ▸ Snap to Guides). On by default; holding
+   * Alt mid-drag suspends it for one gesture without changing the setting.
+   */
+  snapEnabled = true;
+
+  /**
+   * The smart-guide overlay lines, reused across every pointer event of a move
+   * so the hot path allocates nothing — only `xn`/`yn` and the slots change.
+   * The compositor reads this off the view during its overlay pass.
+   */
+  private guideLines = {
+    xs: new Float64Array(GUIDE_CAP),
+    xn: 0,
+    ys: new Float64Array(GUIDE_CAP),
+    yn: 0,
+  };
 
   constructor() {
     installUiCommands();
@@ -151,8 +234,14 @@ export class PressApp {
     return () => this.listeners.delete(fn);
   }
 
-  private emit(): void {
+  private emit(forceChrome = false): void {
+    this.trackRevision();
     this.compositor?.draw(this.doc);
+    // During a pointer gesture the canvas must repaint every frame, but rebuilding
+    // every panel (layer rows, navigator page thumb, history, …) on each coalesced
+    // move does N layerThumb + pageThumb composites plus a full innerHTML rewrite.
+    // That work is deferred to pointer-up so drag/resize stays on the hot path only.
+    if (!forceChrome && this.drag) return;
     for (const fn of this.listeners) fn();
   }
 
@@ -205,9 +294,244 @@ export class PressApp {
     }
   }
 
+  /**
+   * Detect a genuine content change via the command-bus revision. Every path
+   * that mutates the document (commit, run, Anchor batches, drag commits,
+   * undo/redo) advances the revision, while pure selection/tool repaints do
+   * not — so autosave fires on real edits only. Called from emit(), the single
+   * repaint funnel.
+   */
+  private trackRevision(): void {
+    if (!this.booted) return;
+    if (this.bus.revision() !== this.savedRev) {
+      this.dirty = true;
+      this.scheduleAutosave();
+    }
+  }
+
+  private scheduleAutosave(): void {
+    if (this.autosaveTimer) return;
+    this.autosaveTimer = setTimeout(() => {
+      this.autosaveTimer = 0;
+      void this.autosaveTick();
+    }, PressApp.AUTOSAVE_MS);
+  }
+
+  /** One debounced autosave: crash-recovery slot + the persisted project. */
+  private async autosaveTick(): Promise<void> {
+    await this.writeRecovery();
+    if (flag("platform.enabled")) await this.persistCurrentProject();
+  }
+
+  /**
+   * Persist the working document to the local recovery slot. Serialises through
+   * JSON so the stored value is a plain structured-clone-safe snapshot and never
+   * a live reference. Failures (private mode, quota) degrade to an in-memory
+   * session rather than throwing into the edit path.
+   */
+  async writeRecovery(): Promise<void> {
+    if (!this.dirty) return;
+    const rev = this.bus.revision();
+    const snapshot: RecoverySnapshot = {
+      id: "current",
+      doc: JSON.parse(JSON.stringify(this.doc)),
+      name: this.doc.name,
+      savedAt: Date.now(),
+    };
+    try {
+      await putRecovery(snapshot);
+      this.savedRev = rev;
+      // Edits may have landed while the write was in flight.
+      if (this.bus.revision() === rev) this.dirty = false;
+      else this.scheduleAutosave();
+    } catch {
+      // Non-durable environment: keep editing; the reload safety net is simply
+      // unavailable and we do not pretend otherwise.
+    }
+  }
+
+  /**
+   * Flush any pending autosave immediately. Used when the page is being hidden
+   * or unloaded so the last edits are not lost to the debounce window.
+   */
+  flushRecovery(): void {
+    if (this.autosaveTimer) {
+      clearTimeout(this.autosaveTimer);
+      this.autosaveTimer = 0;
+    }
+    void this.autosaveTick();
+  }
+
+  // ── Projects (local library; cloud provider slots in behind this) ─────────
+
+  /**
+   * Render a page thumbnail from the ACTUAL document, throttled so active
+   * editing does not pay a full composite every autosave. Returns the last
+   * thumbnail when not due, or null if rendering is unavailable.
+   */
+  private maybeThumbnail(force = false): string | null {
+    if (!this.compositor) return this.lastThumbnail;
+    const now = Date.now();
+    if (!force && this.lastThumbnail && now - this.lastThumbAt < PressApp.THUMB_MS) {
+      return this.lastThumbnail;
+    }
+    try {
+      const url = this.compositor.thumbnailDataUrl(this.doc, 360);
+      if (url) {
+        this.lastThumbnail = url;
+        this.lastThumbAt = now;
+      }
+    } catch {
+      // A thumbnail failure must never break autosave or the edit path.
+    }
+    return this.lastThumbnail;
+  }
+
+  /** Upsert the working document into the local project library. */
+  async persistCurrentProject(force = false): Promise<void> {
+    if (!this.dirty && !force) return;
+    if (!this.currentProjectId) {
+      this.currentProjectId = uid("proj");
+      this.projectCreatedAt = Date.now();
+    }
+    const now = Date.now();
+    const record: ProjectRecord = {
+      id: this.currentProjectId,
+      name: this.doc.name || "Untitled",
+      doc: JSON.parse(JSON.stringify(this.doc)),
+      thumbnail: this.maybeThumbnail(force),
+      createdAt: this.projectCreatedAt || now,
+      updatedAt: now,
+    };
+    try {
+      await projects().save(record);
+    } catch {
+      // Non-durable environment: keep editing; local library is unavailable.
+    }
+  }
+
+  /** Save the current project immediately with a freshly rendered thumbnail. */
+  async saveProjectNow(): Promise<void> {
+    await this.persistCurrentProject(true);
+    this.status = `Saved “${this.doc.name || "Untitled"}” to Projects`;
+    this.emit();
+  }
+
+  listProjects(): Promise<ProjectSummary[]> {
+    return projects().list();
+  }
+
+  /** Load a saved project as the working document. */
+  async openProject(id: string): Promise<boolean> {
+    const record = await projects().get(id);
+    if (!record || !record.doc) {
+      this.status = "Project not found";
+      this.emit();
+      return false;
+    }
+    try {
+      const doc = JSON.parse(JSON.stringify(record.doc)) as PressDocument;
+      migrateDocument(doc);
+      this.commit("Open project", doc);
+      this.currentProjectId = record.id;
+      this.projectCreatedAt = record.createdAt;
+      this.lastThumbnail = record.thumbnail;
+      this.lastThumbAt = 0;
+      // The freshly opened state is the saved baseline, not unsaved work.
+      this.savedRev = this.bus.revision();
+      this.dirty = false;
+      this.status = `Opened “${doc.name || "Untitled"}”`;
+      this.emit();
+      return true;
+    } catch (err) {
+      this.status = `Could not open project — ${err instanceof Error ? err.message : String(err)}`;
+      this.emit();
+      return false;
+    }
+  }
+
+  /** Start a fresh project from a preset, capturing it in the library. */
+  async newProject(presetId?: string): Promise<void> {
+    const preset = presetId ? PRESETS.find((p) => p.id === presetId) ?? PRESETS[0]! : PRESETS[0]!;
+    this.commit("New project", documentFromPreset(preset));
+    this.currentProjectId = uid("proj");
+    this.projectCreatedAt = Date.now();
+    this.lastThumbnail = null;
+    this.lastThumbAt = 0;
+    await this.persistCurrentProject(true);
+    this.emit();
+  }
+
+  async renameProject(id: string, name: string): Promise<void> {
+    const clean = name.trim();
+    if (!clean) return;
+    const record = await projects().get(id);
+    if (!record) return;
+    record.name = clean;
+    record.updatedAt = Date.now();
+    if (record.doc && typeof record.doc === "object") {
+      (record.doc as { name?: string }).name = clean;
+    }
+    await projects().save(record);
+    if (id === this.currentProjectId) {
+      this.doc.name = clean;
+    }
+    this.emit();
+  }
+
+  async deleteProject(id: string): Promise<void> {
+    await projects().remove(id);
+    if (id === this.currentProjectId) {
+      this.currentProjectId = null;
+    }
+    this.emit();
+  }
+
+  /**
+   * Read any recovery snapshot left by a previous session. Only surfaces a
+   * snapshot that predates this session's edits, so a normal fresh load shows
+   * no prompt.
+   */
+  private async loadPendingRecovery(): Promise<void> {
+    if (this.dirty) return;
+    try {
+      const snap = await getRecovery();
+      if (snap && snap.doc) this.pendingRecovery = snap;
+    } catch {
+      this.pendingRecovery = null;
+    }
+  }
+
+  /** Adopt the recovery snapshot as the working document. */
+  restoreRecovery(): boolean {
+    const snap = this.pendingRecovery;
+    if (!snap || !snap.doc) return false;
+    try {
+      const doc = JSON.parse(JSON.stringify(snap.doc)) as PressDocument;
+      migrateDocument(doc);
+      this.commit("Recover unsaved work", doc);
+      this.pendingRecovery = null;
+      this.status = `Recovered “${doc.name}” from ${new Date(snap.savedAt).toLocaleString()}`;
+      this.emit();
+      return true;
+    } catch (err) {
+      this.status = `Could not recover — ${err instanceof Error ? err.message : String(err)}`;
+      this.emit();
+      return false;
+    }
+  }
+
+  /** Discard the recovery snapshot; the user has chosen to start clean. */
+  discardRecovery(): void {
+    this.pendingRecovery = null;
+    void deleteRecovery();
+    this.emit();
+  }
+
   async boot(canvas: HTMLCanvasElement): Promise<void> {
     this.status = "Loading CanvasKit (Skia)…";
     this.emit();
+    await this.loadPendingRecovery();
     const { ck, source } = await loadCanvasKit();
     this.ckSource = source;
 
@@ -245,6 +569,7 @@ export class PressApp {
 
     this.engines = { ck, backend: "webgl", face: this.face, fonts: this.fonts };
     this.compositor = new Compositor(this.engines, canvas);
+    setBooleanEngineProvider(() => this.compositor?.engines.ck ?? null);
     const host = canvas.parentElement!;
     const fit = () => {
       this.compositor?.resize(host.clientWidth, host.clientHeight);
@@ -256,6 +581,17 @@ export class PressApp {
     this.bindKeys();
     this.bindPasteboard(canvas);
     this.status = `Skia ${this.engines.backend} · HarfBuzz · ${this.fonts.list().filter((f) => f.face).length} face(s) · ${colourStackLabel()}`;
+    this.booted = true;
+    // Flush the last edits before the tab is hidden or torn down, so the
+    // debounce window never costs unsaved work on reload/close.
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "hidden") this.flushRecovery();
+      });
+      window.addEventListener("pagehide", () => this.flushRecovery());
+    }
+    // Catch any edits that landed before boot completed.
+    this.trackRevision();
     this.emit();
   }
 
@@ -372,88 +708,131 @@ export class PressApp {
   private applyHandleDrag(px: number, py: number, shift: boolean): void {
     const d = this.drag;
     if (!d?.frame0 || !d.layers0 || !d.handle) return;
-    const f = d.frame0;
-    const cx = f.x + f.w / 2;
-    const cy = f.y + f.h / 2;
-    const rad = (-f.rotation * Math.PI) / 180;
-    const cos = Math.cos(rad);
-    const sin = Math.sin(rad);
-    const toLocal = (ax: number, ay: number) => {
-      const dx = ax - cx;
-      const dy = ay - cy;
-      return { x: cx + dx * cos - dy * sin, y: cy + dx * sin + dy * cos };
-    };
+    const f: Frame = d.frame0;
 
     if (d.handle === "rotate") {
+      const cx = f.x + f.w / 2;
+      const cy = f.y + f.h / 2;
       const base = Math.atan2(d.y - cy, d.x - cx);
       const now = Math.atan2(py - cy, px - cx);
       let deg = ((now - base) * 180) / Math.PI;
       // Photoshop snaps rotation to 15° increments with Shift held.
       if (shift) deg = Math.round(deg / 15) * 15;
       this.run(
-        d.layers0.map((l0) => ({
-          type: "layer.transform",
-          params: { layerId: l0.id, patch: { rotation: l0.rotation + deg }, session: d.session },
-        })),
+        d.layers0.map((l0) => {
+          const r = rotatedLayerBox(l0, f, deg);
+          return {
+            type: "layer.transform" as const,
+            params: { layerId: l0.id, patch: { x: r.x, y: r.y, rotation: r.rotation }, session: d.session },
+          };
+        }),
         { label: "Rotate", soon: true },
       );
       return;
     }
 
-    const l = toLocal(px, py);
-    const h = d.handle;
-    let left = f.x;
-    let top = f.y;
-    let right = f.x + f.w;
-    let bottom = f.y + f.h;
-    if (h.includes("w")) left = Math.min(l.x, right - MIN_SIZE);
-    if (h.includes("e")) right = Math.max(l.x, left + MIN_SIZE);
-    if (h.includes("n")) top = Math.min(l.y, bottom - MIN_SIZE);
-    if (h.includes("s")) bottom = Math.max(l.y, top + MIN_SIZE);
-
-    let w = right - left;
-    let hgt = bottom - top;
-    // Shift locks the original aspect on a corner handle.
-    const corner = h.length === 2;
-    if (shift && corner && f.w > 0 && f.h > 0) {
-      const k = Math.max(w / f.w, hgt / f.h);
-      w = f.w * k;
-      hgt = f.h * k;
-      if (h.includes("w")) left = right - w;
-      else right = left + w;
-      if (h.includes("n")) top = bottom - hgt;
-      else bottom = top + hgt;
-    }
-
-    // Rotate the new centre back out of local space so the anchored edge holds.
-    const lcx = (left + right) / 2;
-    const lcy = (top + bottom) / 2;
-    const back = (f.rotation * Math.PI) / 180;
-    const bc = Math.cos(back);
-    const bs = Math.sin(back);
-    const ddx = lcx - cx;
-    const ddy = lcy - cy;
-    const nx = cx + ddx * bc - ddy * bs - w / 2;
-    const ny = cy + ddx * bs + ddy * bc - hgt / 2;
-
-    const kx = f.w > 0 ? w / f.w : 1;
-    const ky = f.h > 0 ? hgt / f.h : 1;
+    const s = scaleFromHandle(f, d.handle as ResizeHandle, px, py, { shift, minSize: MIN_SIZE });
     this.run(
-      d.layers0.map((l0) => ({
-        type: "layer.transform",
-        params: {
-          layerId: l0.id,
-          patch: {
-            x: nx + (l0.x - f.x) * kx,
-            y: ny + (l0.y - f.y) * ky,
-            w: Math.max(MIN_SIZE, l0.w * kx),
-            h: Math.max(MIN_SIZE, l0.h * ky),
+      d.layers0.map((l0) => {
+        const box = scaledLayerBox(l0, f, s, MIN_SIZE);
+        return {
+          type: "layer.transform" as const,
+          params: {
+            layerId: l0.id,
+            patch: { x: box.x, y: box.y, w: box.w, h: box.h },
+            session: d.session,
           },
-          session: d.session,
-        },
-      })),
+        };
+      }),
       { label: "Scale", soon: true },
     );
+  }
+
+  /**
+   * Begin a move gesture for `picked`, capturing each member's pointer-down box
+   * and — when snapping is on and the frame is axis-aligned — the candidate
+   * guide lines ONCE, so the pointer-move loop rebuilds nothing (RFC-6 perf).
+   */
+  private beginMoveDrag(p: { x: number; y: number }, picked: Layer[]): void {
+    if (!this.compositor) return;
+    const frame = this.compositor.selectionFrame(this.doc);
+    const layers0 = picked.map((l) => ({ id: l.id, ...l.transform }));
+    const drag: NonNullable<PressApp["drag"]> = {
+      mode: "move",
+      session: uid("drag"),
+      x: p.x,
+      y: p.y,
+      lx: p.x,
+      ly: p.y,
+      layers0,
+      ...(frame ? { frame0: frame } : {}),
+    };
+    if (this.snapEnabled && frame && frame.rotation === 0) {
+      const exclude = new Set(picked.map((l) => l.id));
+      const cand = this.buildSnapCandidates(exclude);
+      drag.snapXs = cand.xs;
+      drag.snapYs = cand.ys;
+      drag.snapTol = SNAP_PX / this.compositor.view.zoom;
+      this.guideLines.xn = 0;
+      this.guideLines.yn = 0;
+      this.compositor.view.smartGuides = this.guideLines;
+    }
+    this.drag = drag;
+  }
+
+  /**
+   * Snap-target lines for a move, computed once at pointer-down: the page frame,
+   * its margins and centre, plus every OTHER top-level layer's edges and centre.
+   * Excludes the layers being moved so a selection never snaps to itself.
+   */
+  private buildSnapCandidates(exclude: Set<string>): { xs: number[]; ys: number[] } {
+    const page = activePage(this.doc);
+    const xs: number[] = [0, page.widthPx / 2, page.widthPx];
+    const ys: number[] = [0, page.heightPx / 2, page.heightPx];
+    const m = page.margin;
+    xs.push(m.left, page.widthPx - m.right);
+    ys.push(m.top, page.heightPx - m.bottom);
+    for (const l of page.layers) {
+      if (l.parentId || exclude.has(l.id) || l.kind === "adjustment") continue;
+      const b = worldBounds(page, l);
+      xs.push(b.x, b.x + b.w / 2, b.x + b.w);
+      ys.push(b.y, b.y + b.h / 2, b.y + b.h);
+    }
+    return { xs, ys };
+  }
+
+  /**
+   * One step of a move drag: raw delta from pointer-down, nudged onto the
+   * nearest smart guide (unless Alt suspends snapping), then applied to every
+   * member from its OWN pointer-down box so the set moves rigidly. The whole
+   * gesture coalesces to one undo entry via the shared `session` key.
+   *
+   * Allocation on this path is limited to the per-event command array the bus
+   * already requires; the snap candidates and guide-line arrays are reused.
+   */
+  private applyMoveDrag(px: number, py: number, alt: boolean): void {
+    const d = this.drag;
+    if (!d?.layers0) return;
+    let dx = px - d.x;
+    let dy = py - d.y;
+    const guides = this.guideLines;
+    guides.xn = 0;
+    guides.yn = 0;
+    if (!alt && this.snapEnabled && d.frame0 && d.snapXs && d.snapYs && d.snapTol) {
+      const snap = resolveMoveSnap(d.frame0, dx, dy, d.snapXs, d.snapYs, d.snapTol);
+      dx += snap.ox;
+      dy += snap.oy;
+      if (snap.guideX !== null && guides.xn < GUIDE_CAP) guides.xs[guides.xn++] = snap.guideX;
+      if (snap.guideY !== null && guides.yn < GUIDE_CAP) guides.ys[guides.yn++] = snap.guideY;
+    }
+    const cmds: Command[] = d.layers0.map((l0) => {
+      const mv = movedLayerBox(l0, dx, dy);
+      return {
+        type: "layer.transform",
+        params: { layerId: l0.id, patch: { x: mv.x, y: mv.y }, session: d.session },
+      };
+    });
+    if (cmds.length) this.run(cmds, { label: "Move", soon: true });
   }
 
   /** Line endpoint, snapped to the nearest 45° when Shift is held. */
@@ -505,12 +884,23 @@ export class PressApp {
             return;
           }
         }
+        // Group move: pressing INSIDE the union frame of a 2+ selection drags
+        // every member together, without collapsing the selection to the layer
+        // under the cursor. Shift falls through to additive single-hit select.
+        const selected = selectedLayers(this.doc);
+        if (selected.length > 1 && handle === "move" && !e.shiftKey) {
+          const picked = selected.filter((l) => !l.locked && l.parentId === null);
+          if (picked.length) {
+            this.beginMoveDrag(p, picked);
+            return;
+          }
+        }
         const hit = hitTest(this.doc, p.x, p.y);
         const next = cloneDoc(this.doc);
         next.activeLayerIds = hit ? [hit.id] : [];
         this.doc = next;
         if (hit && !hit.locked) {
-          this.drag = { mode: "move", x: p.x, y: p.y, lx: hit.transform.x, ly: hit.transform.y, session: uid("drag") };
+          this.beginMoveDrag(p, [hit]);
         }
         this.emit();
         return;
@@ -591,14 +981,7 @@ export class PressApp {
         return;
       }
       if (this.drag.mode === "move") {
-        const d = this.drag;
-        const cmds: Command[] = selectedLayers(this.doc)
-          .filter((l) => !l.locked)
-          .map((l) => ({
-            type: "layer.transform",
-            params: { layerId: l.id, patch: { x: d.lx + (p.x - d.x), y: d.ly + (p.y - d.y) }, session: d.session },
-          }));
-        if (cmds.length) this.run(cmds, { label: "Move", soon: true });
+        this.applyMoveDrag(p.x, p.y, e.altKey);
         return;
       }
       if (this.drag.mode === "crop") {
@@ -728,13 +1111,19 @@ export class PressApp {
       if (this.drag.mode === "marquee" && this.compositor.view.marquee) {
         this.doc = selectIntersecting(this.doc, this.compositor.view.marquee);
         this.compositor.view.marquee = null;
-        this.emit();
+        this.compositor.view.smartGuides = null;
+        this.drag = null;
+        this.emit(true);
+        return;
       }
-      const wasResize = this.drag.mode === "resize";
+      const ended = this.drag.mode;
       this.drag = null;
+      // Smart guides are a mid-drag affordance only; drop them on release.
+      if (this.compositor.view.smartGuides) this.compositor.view.smartGuides = null;
       // The drag repaints through a frame-coalesced path, so the last pointer
-      // position may still be unpainted when the button comes up.
-      if (wasResize) this.emit();
+      // position may still be unpainted when the button comes up. Refresh panels
+      // once the gesture ends — they were skipped during the drag for perf.
+      if (ended === "resize" || ended === "move" || ended === "crop") this.emit(true);
     });
     canvas.addEventListener("dblclick", (e) => {
       if (!this.compositor) return;
@@ -755,7 +1144,7 @@ export class PressApp {
       e.preventDefault();
       const factor = e.deltaY < 0 ? 1.08 : 1 / 1.08;
       this.compositor.view.zoom = Math.min(16, Math.max(0.05, this.compositor.view.zoom * factor));
-      this.emit();
+      this.emitSoon();
     }, { passive: false });
   }
 
@@ -959,6 +1348,89 @@ export class PressApp {
     this.run({ type: "layer.locked", params: { layerId: id, locked: v } });
   }
 
+  /** Align the current multi-selection to its shared bounds. One undo step. */
+  alignSelected(mode: AlignMode): void {
+    const ids = this.doc.activeLayerIds;
+    if (ids.length < 2) return;
+    this.commit(`Align ${mode}`, alignLayers(this.doc, ids, mode));
+  }
+
+  /** Evenly distribute the current selection along an axis. One undo step. */
+  distributeSelected(axis: "h" | "v"): void {
+    const ids = this.doc.activeLayerIds;
+    if (ids.length < 3) return;
+    this.commit(`Distribute ${axis}`, distributeLayers(this.doc, ids, axis));
+  }
+
+  /** Set or clear (null) the drop-shadow effect on a layer. One undo step. */
+  setDropShadow(id: string, shadow: DropShadowEffect | null): void {
+    this.commit("Drop shadow", setLayerDropShadow(this.doc, id, shadow));
+  }
+
+  /** Set or clear (null) the gradient-overlay effect on a layer. One undo step. */
+  setGradientOverlay(id: string, overlay: GradientOverlayEffect | null): void {
+    this.commit("Gradient overlay", setLayerGradientOverlay(this.doc, id, overlay));
+  }
+
+  /** Set or clear (null) the stroke/outline effect on a layer. One undo step. */
+  setStrokeEffect(id: string, stroke: StrokeEffect | null): void {
+    this.commit("Stroke effect", setLayerStrokeEffect(this.doc, id, stroke));
+  }
+
+  /** Set or clear (null) the outer-glow effect on a layer. One undo step. */
+  setOuterGlow(id: string, glow: OuterGlowEffect | null): void {
+    this.commit("Outer glow", setLayerOuterGlow(this.doc, id, glow));
+  }
+
+  /** A sensible default stroke/outline used when the effect is first enabled. */
+  static defaultStrokeEffect(): StrokeEffect {
+    return {
+      type: "stroke",
+      enabled: true,
+      color: { r: 0.88, g: 0.48, b: 0.18, a: 1 },
+      width: 6,
+      opacity: 1,
+    };
+  }
+
+  /** A sensible default outer glow used when the effect is first enabled. */
+  static defaultOuterGlow(): OuterGlowEffect {
+    return {
+      type: "outer-glow",
+      enabled: true,
+      color: { r: 1, g: 0.9, b: 0.4, a: 1 },
+      blur: 16,
+      opacity: 0.85,
+    };
+  }
+
+  /** A sensible default gradient overlay used when the effect is first enabled. */
+  static defaultGradientOverlay(): GradientOverlayEffect {
+    return {
+      type: "gradient-overlay",
+      enabled: true,
+      angle: 90,
+      stops: [
+        { offset: 0, color: { r: 0.88, g: 0.48, b: 0.18, a: 1 } },
+        { offset: 1, color: { r: 0.12, g: 0.12, b: 0.14, a: 1 } },
+      ],
+      opacity: 1,
+    };
+  }
+
+  /** A sensible default drop shadow, used when the effect is first enabled. */
+  static defaultDropShadow(): DropShadowEffect {
+    return {
+      type: "drop-shadow",
+      enabled: true,
+      color: { r: 0, g: 0, b: 0, a: 1 },
+      offsetX: 6,
+      offsetY: 8,
+      blur: 12,
+      opacity: 0.45,
+    };
+  }
+
   setFg(r: number, g: number, b: number): void {
     if (this.compositor) this.compositor.view.fg = { r, g, b, a: 1 };
     const sel = selectedLayers(this.doc);
@@ -1005,6 +1477,29 @@ export class PressApp {
     const id = this.doc.activeLayerIds[0];
     if (!id) return;
     this.run({ type: "layer.reorder", params: { layerId: id, dir } });
+  }
+
+  /**
+   * ADR 0005 Phase A Pathfinder. Combine 2+ selected vector layers with the
+   * given boolean op, consuming operands into one multi-contour result layer in a
+   * single derived-inverse history step (undo restores all operands).
+   */
+  booleanSelected(op: BooleanOp): boolean {
+    const ok = this.run({ type: "vector.boolean", params: { op } });
+    if (ok) {
+      const result = selectedLayers(this.doc).find((l) => l.kind === "vector");
+      if (result?.kind === "vector") {
+        const n = result.contours?.length ?? 1;
+        this.status = `Pathfinder ${op} → "${result.name}" (${n} contour${n === 1 ? "" : "s"})`;
+        this.emit();
+      }
+    }
+    return ok;
+  }
+
+  /** Minus Front — topmost minus the one beneath. */
+  subtractSelected(): boolean {
+    return this.booleanSelected("subtract");
   }
 
   selectLayer(id: string, additive: boolean): void {
@@ -1174,7 +1669,7 @@ export class PressApp {
     if (lower.endsWith(".vdj") || lower.endsWith(".json")) {
       const text = new TextDecoder().decode(bytes);
       const json = JSON.parse(text);
-      if (typeof json.version === "number" && json.version >= 1 && json.version <= 3 && json.pages && json.stories) {
+      if (typeof json.version === "number" && json.version >= 1 && json.version <= 6 && json.pages && json.stories) {
         // A v1 file holds ABSOLUTE child coordinates. v2 composes group
         // transforms, so it MUST be rebased on the way in or every grouped
         // document would open shifted by its own group origin.
@@ -1229,6 +1724,15 @@ export class PressApp {
   toggleGuides(): void {
     if (!this.compositor) return;
     this.compositor.view.showGuides = !this.compositor.view.showGuides;
+    this.emit();
+  }
+
+  /** Toggle smart-guide snapping (edges/centres/page). Off suspends snap + guides. */
+  toggleSnap(): void {
+    this.snapEnabled = !this.snapEnabled;
+    if (!this.snapEnabled && this.compositor?.view.smartGuides) {
+      this.compositor.view.smartGuides = null;
+    }
     this.emit();
   }
 
