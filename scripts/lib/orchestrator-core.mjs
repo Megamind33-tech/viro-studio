@@ -111,8 +111,14 @@ export function activePackets(state) {
   );
 }
 
+export function leasedPackets(state) {
+  return Object.keys(state.leases)
+    .map((id) => state.packets[id])
+    .filter(Boolean);
+}
+
 export function conflictingPacket(packet, state) {
-  return activePackets(state).find(
+  return leasedPackets(state).find(
     (other) => other.id !== packet.id && scopesOverlap(packet.scope, other.scope),
   ) ?? null;
 }
@@ -156,7 +162,7 @@ export function importManifest(state, manifest) {
     stamp(state, "packet.imported", { packet: incoming.id });
     return { changed: true, packet: incoming };
   }
-  const mutable = current.status === "QUEUED" && !current.assigned_agent;
+  const mutable = current.status === "QUEUED" && !current.assigned_agent && !state.leases[current.id];
   current.title = incoming.title;
   current.priority = incoming.priority;
   current.outcome = incoming.outcome;
@@ -187,9 +193,16 @@ export function claimPacket(state, { agentId, role, preferredId = null, machine 
   packet.assigned_role = role;
   packet.heartbeat_at = now;
   packet.status = packet.stage === "verify" ? "VERIFY" : packet.stage === "critic" ? "CRITIC" : packet.stage === "release" ? "RELEASE" : "ACTIVE";
-  packet.work_branch = `agent/${packet.id.toLowerCase()}/${slug(agentId)}`;
+  packet.work_branch = packet.work_branch ?? `agent/${packet.id.toLowerCase()}/${slug(agentId)}`;
   state.agents[agentId] = { role, machine, packet: packet.id, heartbeat_at: now };
-  state.leases[packet.id] = { packet: packet.id, scope: packet.scope, acquired_at: now, owner: agentId };
+  const existingLease = state.leases[packet.id];
+  state.leases[packet.id] = {
+    packet: packet.id,
+    scope: packet.scope,
+    acquired_at: existingLease?.acquired_at ?? now,
+    current_agent: agentId,
+    current_stage: packet.stage,
+  };
   return packet;
 }
 
@@ -201,6 +214,7 @@ export function heartbeat(state, agentId) {
   const now = stamp(state, "agent.heartbeat", { agent: agentId, packet: packet.id });
   agent.heartbeat_at = now;
   packet.heartbeat_at = now;
+  if (state.leases[packet.id]) state.leases[packet.id].heartbeat_at = now;
   return packet;
 }
 
@@ -209,6 +223,10 @@ function clearAssignment(state, packet) {
   packet.assigned_agent = null;
   packet.assigned_role = null;
   packet.heartbeat_at = null;
+  if (state.leases[packet.id]) {
+    state.leases[packet.id].current_agent = null;
+    state.leases[packet.id].current_stage = packet.stage;
+  }
 }
 
 export function advancePacket(state, { agentId, packetId, evidence = [] }) {
@@ -311,6 +329,7 @@ export function teamBoard(state) {
       status: packet.status,
       owner: packet.assigned_agent ?? "—",
       role: packet.assigned_role ?? requiredRole(packet) ?? "—",
+      leased: state.leases[packet.id] ? "yes" : "no",
       dependencies: packet.dependencies.join(",") || "—",
       branch: packet.work_branch ?? "—",
       attempts: packet.attempts,
