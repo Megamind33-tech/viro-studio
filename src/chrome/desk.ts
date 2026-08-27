@@ -845,6 +845,7 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
   function toggle(id: string): void {
     const node = el(id);
     node.hidden = !node.hidden;
+    if (!node.hidden) node.scrollIntoView({ block: "nearest", inline: "nearest" });
     render();
   }
 

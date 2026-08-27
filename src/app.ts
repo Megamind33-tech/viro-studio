@@ -1163,14 +1163,13 @@ export class PressApp {
         this.emit(true);
         return;
       }
-      const ended = this.drag.mode;
       this.drag = null;
       // Smart guides are a mid-drag affordance only; drop them on release.
       if (this.compositor.view.smartGuides) this.compositor.view.smartGuides = null;
-      // The drag repaints through a frame-coalesced path, so the last pointer
-      // position may still be unpainted when the button comes up. Refresh panels
-      // once the gesture ends — they were skipped during the drag for perf.
-      if (ended === "resize" || ended === "move" || ended === "crop") this.emit(true);
+      // Chrome was skipped for the whole gesture (`emit` returns while `this.drag`
+      // is set, including the `run()` that commits a new rect/star/type frame).
+      // Rebuild panels once the pointer is up so Layers is not left on "No layers".
+      this.emit(true);
     });
     canvas.addEventListener("dblclick", (e) => {
       if (!this.compositor) return;
