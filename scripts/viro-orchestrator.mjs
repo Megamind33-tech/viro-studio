@@ -11,6 +11,7 @@ import {
   rejectPacket,
   blockPacket,
   unblockPacket,
+  reconcilePacket,
   staleAssignments,
   reapAssignment,
   teamBoard,
@@ -230,7 +231,7 @@ function validateState(state) {
 }
 
 function help() {
-  console.log(`VIRO resident orchestrator\n\nCommands:\n  bootstrap\n  sync\n  status\n  check\n  claim --agent ID --role ROLE [--packet VIRO-0002] [--machine NAME]\n  brief --agent ID\n  heartbeat --agent ID\n  advance --agent ID --packet VIRO-0002 --evidence "proof one||proof two"\n  reject --agent ID --packet VIRO-0002 --reason "specific failure"\n  block --packet VIRO-0002 --reason "external blocker"\n  unblock --packet VIRO-0002\n  reap --packet VIRO-0002 --reason "agent disappeared"\n\nShared writes require GITHUB_TOKEN with repository Contents read/write permission.\nAll machines must point at the same GitHub repository; the control state lives on the configured control branch.`);
+  console.log(`VIRO resident orchestrator\n\nCommands:\n  bootstrap\n  sync\n  status\n  check\n  claim --agent ID --role ROLE [--packet VIRO-0005] [--machine NAME]\n  brief --agent ID\n  heartbeat --agent ID\n  advance --agent ID --packet VIRO-0005 --evidence "proof one||proof two"\n  reject --agent ID --packet VIRO-0005 --reason "specific failure"\n  block --packet VIRO-0005 --reason "external blocker"\n  unblock --packet VIRO-0005\n  reconcile --packet VIRO-0002 --evidence "commit proof||test proof" [--by governor]\n  reap --packet VIRO-0005 --reason "agent disappeared"\n\nShared writes require GITHUB_TOKEN with repository Contents read/write permission.\nIf direct api.github.com access is blocked but authenticated git fetch/push works, use scripts/viro-orchestrator-git.mjs instead.\nAll transports operate on the same configured control branch/state.`);
 }
 
 async function main() {
@@ -335,6 +336,15 @@ async function main() {
     const packetId = requireFlag(flags, "packet");
     await store.mutate(`unblock ${packetId}`, (draft) => unblockPacket(draft, { packetId }));
     console.log(`${packetId}: returned to queue.`);
+    return;
+  }
+
+  if (command === "reconcile") {
+    const packetId = requireFlag(flags, "packet");
+    const evidence = splitEvidence(flags.evidence);
+    const by = flags.by ? String(flags.by) : "governor";
+    const { result } = await store.mutate(`reconcile ${packetId}`, (draft) => reconcilePacket(draft, { packetId, evidence, by }));
+    console.log(`${result.id}: RECONCILED as already delivered; dependency edges are satisfied.`);
     return;
   }
 
