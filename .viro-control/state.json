@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 3,
-  "updated_at": "2026-08-27T16:41:36.413Z",
+  "revision": 4,
+  "updated_at": "2026-08-27T16:47:19.204Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -21,43 +21,24 @@
       "dependencies": [],
       "critic_needed": false,
       "stage": "audit",
-      "status": "ACTIVE",
-      "assigned_agent": "claude-audit-cloud1",
-      "assigned_role": "gap-auditor",
+      "status": "BLOCKED",
+      "assigned_agent": null,
+      "assigned_role": null,
       "work_branch": "agent/viro-0002/claude-audit-cloud1",
-      "heartbeat_at": "2026-08-27T16:41:36.413Z",
+      "heartbeat_at": null,
       "attempts": 0,
       "evidence": [],
       "last_handoff": null,
-      "rejection": null
+      "rejection": {
+        "by": "claude-audit-cloud1",
+        "stage": "audit",
+        "reason": "GAP AUDIT FINDING (claude-audit-cloud1, main @ 6d4d7b6): the packet's before-state is stale. Document v6 multi-contour vectors, the v5->v6 widening migration, EvenOdd compound-path rendering and contour validation already landed on main via 84936c2, and Phase-A Pathfinder booleans via 9a22f8e. All six acceptance criteria already pass: tsc exit 0; test:unit 316/316; build exit 0; engines PASS; tests/booleans.spec.mjs 17/17 with runtime pixel proof of the rendered hole. Acceptance criterion 6 is contradicted -- main already ships the Pathfinder controls (real, not decorative). No build work remains, so no Builder should be deployed. Governor must decide: close as already-delivered and reconcile WORK-REGISTRY rows VIRO-0003/0004/0006, which are still QUEUED behind this packet but are already implemented on main. Audit evidence: docs/agents/deliveries/VIRO-0002.json on branch claude/viro-team-worker-onboarding-kwgi8n (commit a84c78e).",
+        "at": "2026-08-27T16:47:19.204Z"
+      }
     }
   },
-  "agents": {
-    "claude-audit-cloud1": {
-      "role": "gap-auditor",
-      "machine": "claude-code-cloud-vm",
-      "packet": "VIRO-0002",
-      "heartbeat_at": "2026-08-27T16:41:36.413Z"
-    }
-  },
-  "leases": {
-    "VIRO-0002": {
-      "packet": "VIRO-0002",
-      "scope": [
-        "src/document/types.ts",
-        "src/document/migrate.ts",
-        "src/document/factory.ts",
-        "src/app.ts",
-        "src/engine/compositor.ts",
-        "tests/**",
-        "docs/agents/deliveries/VIRO-0002.json"
-      ],
-      "acquired_at": "2026-08-27T16:38:31.590Z",
-      "current_agent": "claude-audit-cloud1",
-      "current_stage": "audit",
-      "heartbeat_at": "2026-08-27T16:41:36.413Z"
-    }
-  },
+  "agents": {},
+  "leases": {},
   "events": [
     {
       "at": "2026-08-27T16:16:00.000Z",
@@ -78,6 +59,13 @@
       "type": "agent.heartbeat",
       "agent": "claude-audit-cloud1",
       "packet": "VIRO-0002"
+    },
+    {
+      "at": "2026-08-27T16:47:19.204Z",
+      "type": "packet.blocked",
+      "packet": "VIRO-0002",
+      "by": "claude-audit-cloud1",
+      "reason": "GAP AUDIT FINDING (claude-audit-cloud1, main @ 6d4d7b6): the packet's before-state is stale. Document v6 multi-contour vectors, the v5->v6 widening migration, EvenOdd compound-path rendering and contour validation already landed on main via 84936c2, and Phase-A Pathfinder booleans via 9a22f8e. All six acceptance criteria already pass: tsc exit 0; test:unit 316/316; build exit 0; engines PASS; tests/booleans.spec.mjs 17/17 with runtime pixel proof of the rendered hole. Acceptance criterion 6 is contradicted -- main already ships the Pathfinder controls (real, not decorative). No build work remains, so no Builder should be deployed. Governor must decide: close as already-delivered and reconcile WORK-REGISTRY rows VIRO-0003/0004/0006, which are still QUEUED behind this packet but are already implemented on main. Audit evidence: docs/agents/deliveries/VIRO-0002.json on branch claude/viro-team-worker-onboarding-kwgi8n (commit a84c78e)."
     }
   ]
 }
