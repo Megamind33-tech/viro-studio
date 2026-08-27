@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 15,
-  "updated_at": "2026-08-27T21:19:50.594Z",
+  "revision": 16,
+  "updated_at": "2026-08-27T21:22:43.221Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -72,7 +72,7 @@
       "assigned_agent": "claude-export-pc1",
       "assigned_role": "builder",
       "work_branch": "agent/viro-0005/claude-audit-cloud1",
-      "heartbeat_at": "2026-08-27T21:05:16.500Z",
+      "heartbeat_at": "2026-08-27T21:22:43.221Z",
       "attempts": 0,
       "evidence": [
         {
@@ -162,7 +162,7 @@
       "role": "builder",
       "machine": null,
       "packet": "VIRO-0005",
-      "heartbeat_at": "2026-08-27T21:05:16.500Z"
+      "heartbeat_at": "2026-08-27T21:22:43.221Z"
     }
   },
   "leases": {
@@ -175,7 +175,8 @@
       ],
       "acquired_at": "2026-08-27T17:19:55.733Z",
       "current_agent": "claude-export-pc1",
-      "current_stage": "build"
+      "current_stage": "build",
+      "heartbeat_at": "2026-08-27T21:22:43.221Z"
     }
   },
   "events": [
@@ -274,6 +275,12 @@
       "at": "2026-08-27T21:19:50.594Z",
       "type": "packet.reconciled_from_manifest",
       "packet": "VIRO-0002"
+    },
+    {
+      "at": "2026-08-27T21:22:43.221Z",
+      "type": "agent.heartbeat",
+      "agent": "claude-export-pc1",
+      "packet": "VIRO-0005"
     }
   ]
 }
