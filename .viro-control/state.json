@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 21,
-  "updated_at": "2026-08-27T22:19:22.435Z",
+  "revision": 22,
+  "updated_at": "2026-08-27T22:20:11.848Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -67,12 +67,12 @@
         "VIRO-0002"
       ],
       "critic_needed": true,
-      "stage": "build",
-      "status": "ACTIVE",
-      "assigned_agent": "claude-export-pc1",
-      "assigned_role": "builder",
+      "stage": "verify",
+      "status": "QUEUED",
+      "assigned_agent": null,
+      "assigned_role": null,
       "work_branch": "agent/viro-0005/claude-audit-cloud1",
-      "heartbeat_at": "2026-08-27T22:08:31.870Z",
+      "heartbeat_at": null,
       "attempts": 0,
       "evidence": [
         {
@@ -134,37 +134,62 @@
           "by": "claude-audit-cloud1",
           "item": "Audit recorded in docs/agents/deliveries/VIRO-0005.json, commit f82d58e on claude/viro-team-worker-onboarding-kwgi8n; AGENT POLICY PASS",
           "at": "2026-08-27T17:27:33.021Z"
+        },
+        {
+          "stage": "build",
+          "by": "claude-export-pc1",
+          "item": "commit 8c6f2dba66136be5ea773e4cba1feb03805c2733 pushed to origin/agent/viro-0005/claude-audit-cloud1",
+          "at": "2026-08-27T22:20:11.832Z"
+        },
+        {
+          "stage": "build",
+          "by": "claude-export-pc1",
+          "item": "npx tsc --noEmit clean",
+          "at": "2026-08-27T22:20:11.848Z"
+        },
+        {
+          "stage": "build",
+          "by": "claude-export-pc1",
+          "item": "321/321 unit tests (316 baseline + 5 new targeted pdf-compound tests)",
+          "at": "2026-08-27T22:20:11.848Z"
+        },
+        {
+          "stage": "build",
+          "by": "claude-export-pc1",
+          "item": "npm run build exit 0",
+          "at": "2026-08-27T22:20:11.848Z"
+        },
+        {
+          "stage": "build",
+          "by": "claude-export-pc1",
+          "item": "npm run test:engines PASS",
+          "at": "2026-08-27T22:20:11.848Z"
+        },
+        {
+          "stage": "build",
+          "by": "claude-export-pc1",
+          "item": "real PDFs generated for subtract-ring/disjoint-union/legacy-single-contour with report.vectorPaths=1 and rasterFallbacks=[] for both compound cases",
+          "at": "2026-08-27T22:20:11.848Z"
         }
       ],
       "last_handoff": {
-        "from": "audit",
-        "to": "build",
-        "by": "claude-audit-cloud1",
-        "at": "2026-08-27T17:27:33.021Z",
+        "from": "build",
+        "to": "verify",
+        "by": "claude-export-pc1",
+        "at": "2026-08-27T22:20:11.848Z",
         "evidence": [
-          "Before-state CONFIRMED and escalated: grep over src/export/ finds zero 'contours' references; emitVector (pdf.ts:532) walks only layer.nodes/layer.closed",
-          "Root cause: booleanCombineVectors (boolean-ops.ts:325) returns nodes: [], so the guard at pdf.ts:541-543 'if (!n) return' drops EVERY boolean result — the layer is silently absent, not mis-filled",
-          "Measured in the real app via Vite-served exportPagePdf: subtract ring (contours=2, nodes=0) -> report.vectorPaths=0, rasterFallbacks=[]; disjoint union (contours=2, nodes=0) -> identical",
-          "Inflated FlateDecode content streams: single-contour control m=1 c=4 h=1; ring m=0 c=0 h=0; union m=0 c=0 h=0 (only page background re/f remains)",
-          "PdfExportReport untruthful: report.vectorPaths += 1 (pdf.ts:590) never reached and no rasterFallbacks entry pushed",
-          "Builder constraint: pdf-lib exports no fillEvenOdd, but PDFOperatorNames.FillEvenOdd 'f*' / FillEvenOddAndStroke 'B*' plus PDFOperator.of are available — no new dependency",
-          "Parity target: compositor sets EvenOdd only when 'multi && drawable > 1' (compositor.ts:1909) and fills on 'layer.fill && anyClosed' vs exporter 'layer.closed'",
-          "Test-harness blocker: src/export/pdf.ts cannot be imported by npm run test:unit — ERR_UNSUPPORTED_TYPESCRIPT_SYNTAX at pdf.ts:144 parameter property; no existing test imports it",
-          "Baseline green before any change: npx tsc --noEmit exit 0; npm run test:unit 316/316 pass 0 fail 0 skipped; npm run build exit 0",
-          "Audit recorded in docs/agents/deliveries/VIRO-0005.json, commit f82d58e on claude/viro-team-worker-onboarding-kwgi8n; AGENT POLICY PASS"
+          "commit 8c6f2dba66136be5ea773e4cba1feb03805c2733 pushed to origin/agent/viro-0005/claude-audit-cloud1",
+          "npx tsc --noEmit clean",
+          "321/321 unit tests (316 baseline + 5 new targeted pdf-compound tests)",
+          "npm run build exit 0",
+          "npm run test:engines PASS",
+          "real PDFs generated for subtract-ring/disjoint-union/legacy-single-contour with report.vectorPaths=1 and rasterFallbacks=[] for both compound cases"
         ]
       },
       "rejection": null
     }
   },
-  "agents": {
-    "claude-export-pc1": {
-      "role": "builder",
-      "machine": null,
-      "packet": "VIRO-0005",
-      "heartbeat_at": "2026-08-27T22:08:31.870Z"
-    }
-  },
+  "agents": {},
   "leases": {
     "VIRO-0005": {
       "packet": "VIRO-0005",
@@ -174,8 +199,8 @@
         "docs/agents/deliveries/VIRO-0005.json"
       ],
       "acquired_at": "2026-08-27T17:19:55.733Z",
-      "current_agent": "claude-export-pc1",
-      "current_stage": "build",
+      "current_agent": null,
+      "current_stage": "verify",
       "heartbeat_at": "2026-08-27T22:08:31.870Z"
     }
   },
@@ -307,6 +332,14 @@
       "at": "2026-08-27T22:19:22.435Z",
       "type": "packet.reconciled_from_manifest",
       "packet": "VIRO-0002"
+    },
+    {
+      "at": "2026-08-27T22:20:11.848Z",
+      "type": "packet.advanced",
+      "packet": "VIRO-0005",
+      "from": "build",
+      "to": "verify",
+      "by": "claude-export-pc1"
     }
   ]
 }
