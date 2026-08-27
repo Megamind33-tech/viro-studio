@@ -1946,10 +1946,10 @@ export class PressApp {
   }
 
   /**
-   * Vector PDF. The document graph is walked and emitted as PDF path and text
-   * operators — not a page screenshot. Type goes in as real glyphs against an
-   * embedded, subset Noto Sans, positioned at the coordinates HarfBuzz shaped
-   * for the canvas, so the PDF cannot reflow away from what the user sees.
+   * Vector PDF of every page. The document graph is walked and emitted as PDF
+   * path and text operators — not a page screenshot. Type goes in as real glyphs
+   * against an embedded, subset Noto Sans, positioned at the coordinates HarfBuzz
+   * shaped for the canvas, so the PDF cannot reflow away from what the user sees.
    * The only raster in the file is the raster that belongs there: placed images,
    * plus the sub-stack under an adjustment layer, which is a pixel operation.
    */
@@ -1966,6 +1966,7 @@ export class PressApp {
       });
       download(bytes, `${this.doc.name}.pdf`, "application/pdf");
       const bits = [
+        `${report.pageCount} page${report.pageCount === 1 ? "" : "s"}`,
         `${report.pagePt.w} × ${report.pagePt.h} pt`,
         `${report.vectorPaths} path${report.vectorPaths === 1 ? "" : "s"}`,
         `${report.glyphs} glyph${report.glyphs === 1 ? "" : "s"} in ${report.textRuns} run${report.textRuns === 1 ? "" : "s"}`,

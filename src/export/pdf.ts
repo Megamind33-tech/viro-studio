@@ -43,6 +43,7 @@ import {
   PDFOperator,
   PDFOperatorNames as Op,
   type PDFImage,
+  type PDFPage,
   appendBezierCurve,
   beginText,
   clip,
@@ -87,8 +88,10 @@ import type { FontRegistry } from "../engine/font-registry";
  * ------------------------------------------------------------------ */
 
 export interface PdfExportReport {
-  /** Page size in PDF points. */
+  /** First page size in PDF points. Later pages may differ; see `pageCount`. */
   pagePt: { w: number; h: number };
+  /** Every document page is a PDF page — not only the active one. */
+  pageCount: number;
   vectorPaths: number;
   /** One per set line — a `BT … TJ … ET` run. */
   textRuns: number;
@@ -140,12 +143,21 @@ interface SubsetEmbedder {
 /** A face embedded once per document, addressable by HarfBuzz glyph id. */
 class EmbeddedFace {
   private readonly reverseCmap = new Map<number, number>();
+  private readonly emb: SubsetEmbedder;
+  private readonly makeResource: (page: PDFPage) => PDFName;
+  resource: PDFName;
+  readonly upem: number;
 
   constructor(
-    private readonly emb: SubsetEmbedder,
-    readonly resource: PDFName,
-    readonly upem: number,
+    emb: SubsetEmbedder,
+    resource: PDFName,
+    upem: number,
+    makeResource: (page: PDFPage) => PDFName,
   ) {
+    this.emb = emb;
+    this.resource = resource;
+    this.upem = upem;
+    this.makeResource = makeResource;
     // Priming the reverse cmap also primes fontkit's own glyph cache *with*
     // code points, which is what gives the /ToUnicode CMap something to say —
     // and /ToUnicode is what makes the text searchable rather than merely
@@ -154,6 +166,11 @@ class EmbeddedFace {
       const g = emb.font.glyphForCodePoint(cp);
       if (g && !this.reverseCmap.has(g.id)) this.reverseCmap.set(g.id, cp);
     }
+  }
+
+  /** Font resource names are per PDF page; the subset itself is document-wide. */
+  bindTo(page: PDFPage): void {
+    this.resource = this.makeResource(page);
   }
 
   /** Include one HarfBuzz glyph id in the subset. Returns its PDF code and advance in font units. */
@@ -277,16 +294,18 @@ export async function exportPagePdf(
   opts: PdfExportOptions,
 ): Promise<{ bytes: Uint8Array; report: PdfExportReport }> {
   const { doc, fonts } = opts;
-  let face = opts.face;
-  const page = doc.pages.find((p) => p.id === doc.activePageId) ?? doc.pages[0];
-  if (!page) throw new Error("document has no page");
+  const face = opts.face;
+  if (!doc.pages.length) throw new Error("document has no page");
 
-  const ptW = (page.widthPx / doc.ppi) * 72;
-  const ptH = (page.heightPx / doc.ppi) * 72;
+  const first = doc.pages[0]!;
+  const firstPtW = (first.widthPx / doc.ppi) * 72;
+  const firstPtH = (first.heightPx / doc.ppi) * 72;
   const k = 72 / doc.ppi;
+  const mixedSize = doc.pages.some((p) => p.widthPx !== first.widthPx || p.heightPx !== first.heightPx);
 
   const report: PdfExportReport = {
-    pagePt: { w: round(ptW, 3), h: round(ptH, 3) },
+    pagePt: { w: round(firstPtW, 3), h: round(firstPtH, 3) },
+    pageCount: doc.pages.length,
     vectorPaths: 0,
     textRuns: 0,
     glyphs: 0,
@@ -294,211 +313,214 @@ export async function exportPagePdf(
     rasterFallbacks: [],
     notes: [],
   };
+  if (mixedSize) {
+    report.notes.push("Pages in this file are not all the same size; each PDF page matches its Press page.");
+  }
 
   const pdf = await PDFDocument.create();
-  const pdfPage = pdf.addPage([ptW, ptH]);
-  const ops: PDFOperator[] = [];
-
-  // ── resources ───────────────────────────────────────────────────────────
-
-  const gsCache = new Map<string, PDFName>();
-  const gsName = (fillA: number, strokeA: number, blend: BlendMode): PDFName => {
-    const ca = round(clamp01(fillA), 4);
-    const CA = round(clamp01(strokeA), 4);
-    const bm = PDF_BLEND[blend] ?? "Normal";
-    const key = `${ca}|${CA}|${bm}`;
-    const hit = gsCache.get(key);
-    if (hit) return hit;
-    const dict = PDFDict.withContext(pdf.context);
-    dict.set(PDFName.of("Type"), PDFName.of("ExtGState"));
-    dict.set(PDFName.of("ca"), PDFNumber.of(ca));
-    dict.set(PDFName.of("CA"), PDFNumber.of(CA));
-    dict.set(PDFName.of("BM"), PDFName.of(bm));
-    const name = pdfPage.node.newExtGState("GS", dict);
-    gsCache.set(key, name);
-    return name;
-  };
-
-  let embedded: EmbeddedFace | null = null;
   const embeddedById = new Map<string, EmbeddedFace>();
-  const faceFor = async (pack: FacePack | null): Promise<EmbeddedFace | null> => {
-    if (!pack) return null;
-    const cached = embeddedById.get(pack.id);
-    if (cached) return cached;
-    if (embedded && pack.id === face?.id) return embedded;
-    // The package ships a UMD bundle; depending on the bundler's CJS interop the
-    // module object is either the fontkit instance itself or hangs off `default`.
-    const mod = (await import("@pdf-lib/fontkit")) as unknown as {
-      create?: unknown;
-      default?: unknown;
-    };
-    const kit = typeof mod.create === "function" ? mod : mod.default;
-    pdf.registerFontkit(kit as Parameters<PDFDocument["registerFontkit"]>[0]);
-    const pdfFont = await pdf.embedFont(new Uint8Array(pack.bytes.slice(0)), {
-      subset: true,
-      customName: pack.name.replace(/\s+/g, ""),
-    });
-    const emb = (pdfFont as unknown as { embedder: SubsetEmbedder }).embedder;
-    const resource = pdfPage.node.newFontDictionary("F", pdfFont.ref);
-    const next = new EmbeddedFace(emb, resource, pack.upem);
-    embeddedById.set(pack.id, next);
-    if (!embedded) embedded = next;
-    return next;
-  };
+  const imageEmbedCache = new Map<string, PDFImage | null>();
+  let fontkitReady = false;
+  let groupNoted = false;
 
-  const imageCache = new Map<string, PDFName | null>();
-  const imageFor = async (assetId: string): Promise<PDFName | null> => {
-    const hit = imageCache.get(assetId);
-    if (hit !== undefined) return hit;
-    let name: PDFName | null = null;
-    const asset = doc.assets[assetId];
-    if (asset) {
-      const raw = dataUrlBytes(asset.dataUrl);
-      let img: PDFImage | null = null;
-      try {
-        if (raw && (raw.mime === "image/png" || /^\x89PNG/.test(String.fromCharCode(...raw.bytes.slice(0, 4))))) {
-          img = await pdf.embedPng(raw.bytes);
-        } else if (raw && (raw.mime === "image/jpeg" || raw.mime === "image/jpg")) {
-          img = await pdf.embedJpg(raw.bytes);
-        } else {
-          const png = await toPngBytes(asset.dataUrl);
-          if (png) img = await pdf.embedPng(png);
+  for (const page of doc.pages) {
+    const ptW = (page.widthPx / doc.ppi) * 72;
+    const ptH = (page.heightPx / doc.ppi) * 72;
+    const pdfPage = pdf.addPage([ptW, ptH]);
+    const ops: PDFOperator[] = [];
+
+    const gsCache = new Map<string, PDFName>();
+    const gsName = (fillA: number, strokeA: number, blend: BlendMode): PDFName => {
+      const ca = round(clamp01(fillA), 4);
+      const CA = round(clamp01(strokeA), 4);
+      const bm = PDF_BLEND[blend] ?? "Normal";
+      const key = `${ca}|${CA}|${bm}`;
+      const hit = gsCache.get(key);
+      if (hit) return hit;
+      const dict = PDFDict.withContext(pdf.context);
+      dict.set(PDFName.of("Type"), PDFName.of("ExtGState"));
+      dict.set(PDFName.of("ca"), PDFNumber.of(ca));
+      dict.set(PDFName.of("CA"), PDFNumber.of(CA));
+      dict.set(PDFName.of("BM"), PDFName.of(bm));
+      const name = pdfPage.node.newExtGState("GS", dict);
+      gsCache.set(key, name);
+      return name;
+    };
+
+    const faceFor = async (pack: FacePack | null): Promise<EmbeddedFace | null> => {
+      if (!pack) return null;
+      const cached = embeddedById.get(pack.id);
+      if (cached) {
+        cached.bindTo(pdfPage);
+        return cached;
+      }
+      if (!fontkitReady) {
+        const mod = (await import("@pdf-lib/fontkit")) as unknown as {
+          create?: unknown;
+          default?: unknown;
+        };
+        const kit = typeof mod.create === "function" ? mod : mod.default;
+        pdf.registerFontkit(kit as Parameters<PDFDocument["registerFontkit"]>[0]);
+        fontkitReady = true;
+      }
+      const pdfFont = await pdf.embedFont(new Uint8Array(pack.bytes.slice(0)), {
+        subset: true,
+        customName: pack.name.replace(/\s+/g, ""),
+      });
+      const emb = (pdfFont as unknown as { embedder: SubsetEmbedder }).embedder;
+      const makeResource = (pg: PDFPage) => pg.node.newFontDictionary("F", pdfFont.ref);
+      const next = new EmbeddedFace(emb, makeResource(pdfPage), pack.upem, makeResource);
+      embeddedById.set(pack.id, next);
+      return next;
+    };
+
+    const imageCache = new Map<string, PDFName | null>();
+    const imageFor = async (assetId: string): Promise<PDFName | null> => {
+      const hit = imageCache.get(assetId);
+      if (hit !== undefined) return hit;
+      let name: PDFName | null = null;
+      let img = imageEmbedCache.get(assetId);
+      if (img === undefined) {
+        img = null;
+        const asset = doc.assets[assetId];
+        if (asset) {
+          const raw = dataUrlBytes(asset.dataUrl);
+          try {
+            if (raw && (raw.mime === "image/png" || /^\x89PNG/.test(String.fromCharCode(...raw.bytes.slice(0, 4))))) {
+              img = await pdf.embedPng(raw.bytes);
+            } else if (raw && (raw.mime === "image/jpeg" || raw.mime === "image/jpg")) {
+              img = await pdf.embedJpg(raw.bytes);
+            } else {
+              const png = await toPngBytes(asset.dataUrl);
+              if (png) img = await pdf.embedPng(png);
+            }
+          } catch {
+            const png = await toPngBytes(asset.dataUrl).catch(() => null);
+            if (png) img = await pdf.embedPng(png);
+          }
         }
-      } catch {
-        const png = await toPngBytes(asset.dataUrl).catch(() => null);
-        if (png) img = await pdf.embedPng(png);
+        imageEmbedCache.set(assetId, img);
       }
       if (img) name = pdfPage.node.newXObject("Img", img.ref);
-    }
-    imageCache.set(assetId, name);
-    return name;
-  };
+      imageCache.set(assetId, name);
+      return name;
+    };
 
-  // ── page frame ──────────────────────────────────────────────────────────
-
-  ops.push(pushGraphicsState());
-  ops.push(concatTransformationMatrix(k, 0, 0, -k, 0, ptH));
-  // The compositor clips content to the trim; so does this.
-  ops.push(rectangle(0, 0, page.widthPx, page.heightPx), clip(), endPath());
-
-  if (page.background.a > 0) {
     ops.push(pushGraphicsState());
-    ops.push(setGraphicsState(gsName(page.background.a, page.background.a, "srcOver")));
-    ops.push(setFillingRgbColor(clamp01(page.background.r), clamp01(page.background.g), clamp01(page.background.b)));
-    ops.push(rectangle(0, 0, page.widthPx, page.heightPx), fillOp());
-    ops.push(popGraphicsState());
-  }
+    ops.push(concatTransformationMatrix(k, 0, 0, -k, 0, ptH));
+    ops.push(rectangle(0, 0, page.widthPx, page.heightPx), clip(), endPath());
 
-  // ── adjustment layers: the one thing with no vector form ────────────────
-
-  const cut = flattenCut(page);
-  let vectorLayers = page.layers;
-  if (cut >= 0) {
-    const flattened = page.layers.slice(0, cut + 1);
-    if (opts.rasterise) {
-      const stub: PressDocument = {
-        ...doc,
-        pages: doc.pages.map((p) => (p.id === page.id ? { ...p, layers: flattened } : p)),
-      };
-      const png = opts.rasterise(stub);
-      const img = await pdf.embedPng(png);
-      const name = pdfPage.node.newXObject("Flat", img.ref);
+    if (page.background.a > 0) {
       ops.push(pushGraphicsState());
-      ops.push(concatTransformationMatrix(page.widthPx, 0, 0, -page.heightPx, 0, page.heightPx));
-      ops.push(drawObject(name));
+      ops.push(setGraphicsState(gsName(page.background.a, page.background.a, "srcOver")));
+      ops.push(setFillingRgbColor(clamp01(page.background.r), clamp01(page.background.g), clamp01(page.background.b)));
+      ops.push(rectangle(0, 0, page.widthPx, page.heightPx), fillOp());
       ops.push(popGraphicsState());
-      report.images += 1;
     }
-    for (const l of flattened) {
-      if (l.kind === "adjustment") report.rasterFallbacks.push(`${l.name} (adjustment)`);
-    }
-    report.rasterFallbacks.push(
-      `${flattened.length} layer(s) beneath the last adjustment, flattened to one raster`,
-    );
-    report.notes.push(
-      "An adjustment layer resamples the accumulated composite; PDF has no vector equivalent, " +
-        "so the stack up to and including the last adjustment is embedded as a raster and only " +
-        "the layers above it are vector.",
-    );
-    vectorLayers = page.layers.slice(cut + 1);
-  }
 
-  // ── layer walk ──────────────────────────────────────────────────────────
-
-  const byId = new Map(vectorLayers.map((l) => [l.id, l] as const));
-  let groupNoted = false;
-  const emit = async (layer: Layer, inheritedAlpha: number): Promise<void> => {
-    if (!layer.visible) return;
-
-    if (layer.kind === "group") {
-      const alpha = inheritedAlpha * layer.opacity;
-      if ((layer.opacity < 1 || layer.blend !== "srcOver") && !groupNoted) {
-        groupNoted = true;
+    const cut = flattenCut(page);
+    let vectorLayers = page.layers;
+    if (cut >= 0) {
+      const flattened = page.layers.slice(0, cut + 1);
+      if (opts.rasterise) {
+        const stub: PressDocument = {
+          ...doc,
+          activePageId: page.id,
+          pages: doc.pages.map((p) => (p.id === page.id ? { ...p, layers: flattened } : p)),
+        };
+        const png = opts.rasterise(stub);
+        const img = await pdf.embedPng(png);
+        const name = pdfPage.node.newXObject("Flat", img.ref);
+        ops.push(pushGraphicsState());
+        ops.push(concatTransformationMatrix(page.widthPx, 0, 0, -page.heightPx, 0, page.heightPx));
+        ops.push(drawObject(name));
+        ops.push(popGraphicsState());
+        report.images += 1;
+      }
+      for (const l of flattened) {
+        if (l.kind === "adjustment") report.rasterFallbacks.push(`${l.name} (adjustment)`);
+      }
+      report.rasterFallbacks.push(
+        `${flattened.length} layer(s) beneath the last adjustment, flattened to one raster`,
+      );
+      if (!report.notes.some((n) => n.startsWith("An adjustment layer"))) {
         report.notes.push(
-          "The canvas composites a group into its own layer before applying the group's " +
-            "opacity and blend; this export folds group opacity into each child instead and " +
-            "drops the group-level blend, so overlapping children inside a semi-transparent " +
-            "group show through one another where the canvas would not.",
+          "An adjustment layer resamples the accumulated composite; PDF has no vector equivalent, " +
+            "so the stack up to and including the last adjustment is embedded as a raster and only " +
+            "the layers above it are vector.",
         );
       }
-      ops.push(pushGraphicsState());
-      // A group establishes a coordinate space for its children, exactly as on
-      // canvas. Omitting this is what made grouped artwork export in the wrong
-      // place while the canvas showed it correctly.
-      emitLocalMatrix(ops, layer.transform);
-      for (const child of vectorLayers) {
-        if (child.parentId === layer.id) await emit(child, alpha);
-      }
-      ops.push(popGraphicsState());
-      return;
+      vectorLayers = page.layers.slice(cut + 1);
     }
-    if (layer.kind === "adjustment") return;
 
-    const t = layer.transform;
-    ops.push(pushGraphicsState());
-    emitLocalMatrix(ops, t);
+    const byId = new Map(vectorLayers.map((l) => [l.id, l] as const));
+    const emit = async (layer: Layer, inheritedAlpha: number): Promise<void> => {
+      if (!layer.visible) return;
 
-    if (layer.kind === "vector") {
-      emitVector(ops, layer, inheritedAlpha, gsName, report);
-    } else if (layer.kind === "type-frame") {
-      const story = doc.stories.find((s) => s.id === layer.storyId);
-      const pack = story ? (fonts?.resolve(story.character.fontId) ?? face) : null;
-      const ef = pack ? await faceFor(pack) : null;
-      if (story && ef && pack) {
-        emitType(ops, layer, story, pack, ef, inheritedAlpha, gsName, report);
-      } else if (story && !pack) {
-        report.notes.push(`Type frame "${layer.name}" was skipped: no face was loaded.`);
+      if (layer.kind === "group") {
+        const alpha = inheritedAlpha * layer.opacity;
+        if ((layer.opacity < 1 || layer.blend !== "srcOver") && !groupNoted) {
+          groupNoted = true;
+          report.notes.push(
+            "The canvas composites a group into its own layer before applying the group's " +
+              "opacity and blend; this export folds group opacity into each child instead and " +
+              "drops the group-level blend, so overlapping children inside a semi-transparent " +
+              "group show through one another where the canvas would not.",
+          );
+        }
+        ops.push(pushGraphicsState());
+        emitLocalMatrix(ops, layer.transform);
+        for (const child of vectorLayers) {
+          if (child.parentId === layer.id) await emit(child, alpha);
+        }
+        ops.push(popGraphicsState());
+        return;
       }
-    } else if (layer.kind === "image-frame" || layer.kind === "raster") {
-      const id = layer.assetId;
-      const asset = id ? doc.assets[id] : null;
-      if (id && asset) {
-        const name = await imageFor(id);
-        if (name) {
-          emitImage(ops, layer, asset.width, asset.height, name, inheritedAlpha, gsName);
-          report.images += 1;
-        } else {
-          report.notes.push(`Image "${layer.name}" could not be embedded and was skipped.`);
+      if (layer.kind === "adjustment") return;
+
+      const t = layer.transform;
+      ops.push(pushGraphicsState());
+      emitLocalMatrix(ops, t);
+
+      if (layer.kind === "vector") {
+        emitVector(ops, layer, inheritedAlpha, gsName, report);
+      } else if (layer.kind === "type-frame") {
+        const story = doc.stories.find((s) => s.id === layer.storyId);
+        const pack = story ? (fonts?.resolve(story.character.fontId) ?? face) : null;
+        const ef = pack ? await faceFor(pack) : null;
+        if (story && ef && pack) {
+          emitType(ops, layer, story, pack, ef, inheritedAlpha, gsName, report);
+        } else if (story && !pack) {
+          report.notes.push(`Type frame "${layer.name}" was skipped: no face was loaded.`);
+        }
+      } else if (layer.kind === "image-frame" || layer.kind === "raster") {
+        const id = layer.assetId;
+        const asset = id ? doc.assets[id] : null;
+        if (id && asset) {
+          const name = await imageFor(id);
+          if (name) {
+            emitImage(ops, layer, asset.width, asset.height, name, inheritedAlpha, gsName);
+            report.images += 1;
+          } else {
+            report.notes.push(`Image "${layer.name}" could not be embedded and was skipped.`);
+          }
         }
       }
+
+      ops.push(popGraphicsState());
+    };
+
+    for (const layer of vectorLayers) {
+      if (layer.parentId && byId.has(layer.parentId)) continue;
+      await emit(layer, 1);
     }
 
     ops.push(popGraphicsState());
-  };
-
-  for (const layer of vectorLayers) {
-    if (layer.parentId && byId.has(layer.parentId)) continue;
-    await emit(layer, 1);
+    for (let i = 0; i < ops.length; i += 2048) pdfPage.pushOperators(...ops.slice(i, i + 2048));
   }
 
-  ops.push(popGraphicsState());
-  // Spread-applied in slices: a busy page runs to tens of thousands of operators
-  // and a single spread of that size is an argument-count gamble.
-  for (let i = 0; i < ops.length; i += 2048) pdfPage.pushOperators(...ops.slice(i, i + 2048));
-
-  // ── metadata that describes the file it is actually on ──────────────────
-
   const parts = [
+    `${report.pageCount} page(s)`,
     `${report.vectorPaths} vector path(s)`,
     `${report.textRuns} text run(s) / ${report.glyphs} glyph(s)`,
     `${report.images} embedded raster(s)`,
