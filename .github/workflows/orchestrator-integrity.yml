@@ -5,22 +5,34 @@ on:
     paths:
       - ".viro/**"
       - ".claude/agents/**"
+      - ".cursor/**"
+      - "AGENTS.md"
       - "CLAUDE.md"
       - "docs/agents/**"
       - "scripts/viro-orchestrator.mjs"
+      - "scripts/viro-release.mjs"
       - "scripts/lib/orchestrator-core.mjs"
+      - "scripts/lib/release-gate.mjs"
       - "tests/orchestrator.test.mjs"
+      - "tests/release-gate.test.mjs"
       - ".github/workflows/orchestrator-integrity.yml"
+      - ".github/workflows/auto-merge-approved.yml"
   push:
     branches: [main]
     paths:
       - ".viro/**"
       - ".claude/agents/**"
+      - ".cursor/**"
+      - "AGENTS.md"
       - "CLAUDE.md"
       - "docs/agents/**"
       - "scripts/viro-orchestrator.mjs"
+      - "scripts/viro-release.mjs"
       - "scripts/lib/orchestrator-core.mjs"
+      - "scripts/lib/release-gate.mjs"
       - "tests/orchestrator.test.mjs"
+      - "tests/release-gate.test.mjs"
+      - ".github/workflows/auto-merge-approved.yml"
 
 permissions:
   contents: read
@@ -34,7 +46,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
-      - name: Test scheduling, leases and handoffs
-        run: node --test tests/orchestrator.test.mjs
-      - name: Prove CLI loads without credentials
+      - name: Test scheduling, leases, handoffs and release gates
+        run: node --test tests/orchestrator.test.mjs tests/release-gate.test.mjs
+      - name: Prove orchestrator CLI loads without credentials
         run: node scripts/viro-orchestrator.mjs help
+      - name: Prove release CLI loads without credentials
+        run: node scripts/viro-release.mjs help
