@@ -1,0 +1,36 @@
+name: VIRO Approved Auto Merge
+
+on:
+  workflow_run:
+    workflows:
+      - Agent Delivery Gate
+      - Orchestrator Integrity
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  checks: read
+
+env:
+  GITHUB_TOKEN: ${{ github.token }}
+  GITHUB_REPOSITORY: ${{ github.repository }}
+
+jobs:
+  merge-approved:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Merge every independently approved packet whose required checks are green
+        run: node scripts/viro-release.mjs sweep

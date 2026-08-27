@@ -14,16 +14,26 @@ Before any non-trivial product work begins, use the resident orchestrator descri
 
 Shared work state is controlled by `scripts/viro-orchestrator.mjs`. No Builder, specialist engineer, Verifier, Critic, or Release Manager may begin a packet without a successful orchestrator claim and assignment brief.
 
-The orchestrator owns coordination, not product judgment. It prevents duplicated work by maintaining a shared GitHub-backed queue, dependency graph, packet-level path leases, stable agent identities, handoffs and stale-worker recovery across computers and coding tools.
+The exhaustive unresolved-work inventory is `docs/agents/WORK-REGISTRY.md`. It is an inventory, not permission to self-select work. A registry item becomes executable only when the Governor activates it through a delivery manifest and the Orchestrator grants a conflict-free claim.
+
+For any terminal-capable external worker (Claude Code, Cursor, Codex-style agents or another coding tool), use `docs/agents/UNIVERSAL-WORKER-PROMPT.md` as the standard reporting, handoff and redeployment contract. Automatic release behavior is governed by `docs/agents/AUTO-MERGE.md`.
+
+The orchestrator owns coordination and release execution, not product judgment. It prevents duplicated work by maintaining a shared GitHub-backed queue, dependency graph, packet-level path leases, stable agent identities, handoffs and stale-worker recovery across computers and coding tools.
 
 Required behavior:
 - synchronize delivery manifests before assignment;
 - check shared state for collisions;
 - one agent may own only one packet at a time;
 - overlapping packet scopes cannot run concurrently;
-- the packet lease survives Builder → Verifier → Critic → Release handoffs;
+- the packet lease survives Builder → Verifier → Critic → Release handoffs and remains held until the packet is really merged or explicitly blocked;
 - rejected work returns to the same packet rather than spawning a parallel rewrite;
 - agents work on the branch and paths named in their assignment brief;
+- after every handoff, the worker returns to the Orchestrator for redeployment instead of choosing its own next task;
+- an agent may not redeploy itself into verifier/critic/release for a packet it built;
+- no worker manually merges a packet to `main`;
+- only a release-manager may approve the exact release-candidate SHA;
+- after release approval, the Orchestrator automatically merges when required checks are green and records the real merge SHA before setting DONE;
+- a commit pushed after approval invalidates approval and requires fresh release review;
 - external blockers and stale assignments return to Governor control.
 
 ## Mandatory pipeline
@@ -35,11 +45,10 @@ Every non-trivial task follows this sequence:
 3. **Builder** — implements only within its assigned domain and allowed paths.
 4. **Verifier** — independently reproduces acceptance tests and regression gates.
 5. **Critic** — independently judges product/UX quality and rejects weak or generic output.
-6. **Release Manager** — integrates only when verifier and critic both pass, then records the before→after delta.
+6. **Release Manager** — validates independent verdicts, final delta, scope and exact release candidate, then submits release approval.
+7. **Orchestrator Release Worker** — automatically merges the approved PR to `main` only after required GitHub checks are green; only then marks the packet DONE.
 
-The resident Orchestrator routes the packet between these roles but may not perform their substantive responsibilities.
-
-Builders may not verify or approve their own work. Critics may not repair the work they judge. The Governor may not silently broaden scope.
+Builders may not verify or approve their own work. Critics may not repair the work they judge. The Release Manager may not merge manually. The Governor may not silently broaden scope.
 
 ## No sideways development
 
@@ -80,9 +89,13 @@ A capability is DONE only when all applicable conditions are true:
 - runtime evidence exists for user-visible work;
 - verifier verdict is PASS;
 - critic verdict is PASS for user-visible work;
-- the delivery manifest records a concrete before→after delta.
+- the delivery manifest records a concrete before→after delta;
+- the release-manager approved the exact PR head SHA;
+- required release checks are green;
+- GitHub returned a real merge SHA for a merge into `main`;
+- the Orchestrator recorded that merge and released the packet lease.
 
-Otherwise classify the work as PARTIAL, BLOCKED, or REJECTED.
+Approval without merge is not DONE. CI green without independent approval is not DONE. A manually merged branch is a process violation and must not be represented as an Orchestrator-complete packet.
 
 ## Parallelism rule
 
@@ -90,21 +103,24 @@ Parallel agents must own disjoint production areas defined in `docs/agents/OWNER
 
 ## Required reading by role
 
-- Orchestrator: `GOVERNOR.md`, `CLAUDE.md`, `docs/agents/ORCHESTRATOR.md`, `docs/agents/PIPELINE.md`, `docs/agents/OWNERSHIP.md`
-- Governor: `GOVERNOR.md`, `docs/agents/PIPELINE.md`, `docs/agents/OWNERSHIP.md`, orchestrator state
+- Orchestrator: `GOVERNOR.md`, `CLAUDE.md`, `docs/agents/ORCHESTRATOR.md`, `docs/agents/PIPELINE.md`, `docs/agents/OWNERSHIP.md`, `docs/agents/WORK-REGISTRY.md`, `docs/agents/AUTO-MERGE.md`
+- Governor: `GOVERNOR.md`, `docs/agents/PIPELINE.md`, `docs/agents/OWNERSHIP.md`, `docs/agents/WORK-REGISTRY.md`, orchestrator state
 - Auditor: above + relevant source/tests + current delivery manifests
 - Builder: above + orchestrator assignment brief + assigned `.claude/agents/*.md` role file
 - Verifier: `GOVERNOR.md`, delivery manifest, orchestrator evidence history, tests, runtime evidence
 - Critic: `docs/AAA-BRIEF.md`, `docs/CRITIC.md`, delivery manifest, screenshots/runtime
-- Release Manager: all verdicts + orchestrator evidence + CI result + before/after delta
+- Release Manager: all verdicts + orchestrator evidence + CI result + before/after delta + `docs/agents/AUTO-MERGE.md`
 
 ## Reporting format
 
 Every agent handoff ends with exactly these facts:
-- `STATUS:` PASS | PARTIAL | BLOCKED | REJECTED
+- `STATUS:` PASS | PARTIAL | BLOCKED | REJECTED | IDLE_NO_ASSIGNMENT
+- `PACKET:` packet id or `none`
+- `ROLE:` current orchestrator role
 - `CHANGED:` concrete files or `none`
 - `PROVED:` commands/evidence actually run or inspected
 - `FAILED:` remaining failures or `none`
-- `NEXT_OWNER:` exact role that should receive the work
+- `HANDOFF:` next orchestrator stage/role, auto-merge gate, or `none`
+- `REDEPLOYMENT:` new packet id or `IDLE_NO_ASSIGNMENT`
 
 Do not use percentages unless they are derived from an explicit checklist with counted items.
