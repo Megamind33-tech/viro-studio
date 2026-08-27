@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 7,
-  "updated_at": "2026-08-27T17:19:44.200Z",
+  "revision": 8,
+  "updated_at": "2026-08-27T17:19:55.733Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -68,19 +68,38 @@
       ],
       "critic_needed": true,
       "stage": "audit",
-      "status": "QUEUED",
-      "assigned_agent": null,
-      "assigned_role": null,
-      "work_branch": null,
-      "heartbeat_at": null,
+      "status": "ACTIVE",
+      "assigned_agent": "claude-audit-cloud1",
+      "assigned_role": "gap-auditor",
+      "work_branch": "agent/viro-0005/claude-audit-cloud1",
+      "heartbeat_at": "2026-08-27T17:19:55.733Z",
       "attempts": 0,
       "evidence": [],
       "last_handoff": null,
       "rejection": null
     }
   },
-  "agents": {},
-  "leases": {},
+  "agents": {
+    "claude-audit-cloud1": {
+      "role": "gap-auditor",
+      "machine": "claude-code-cloud-vm",
+      "packet": "VIRO-0005",
+      "heartbeat_at": "2026-08-27T17:19:55.733Z"
+    }
+  },
+  "leases": {
+    "VIRO-0005": {
+      "packet": "VIRO-0005",
+      "scope": [
+        "src/export/pdf.ts",
+        "tests/**",
+        "docs/agents/deliveries/VIRO-0005.json"
+      ],
+      "acquired_at": "2026-08-27T17:19:55.733Z",
+      "current_agent": "claude-audit-cloud1",
+      "current_stage": "audit"
+    }
+  },
   "events": [
     {
       "at": "2026-08-27T16:16:00.000Z",
@@ -127,6 +146,14 @@
       "at": "2026-08-27T17:19:44.200Z",
       "type": "packet.reconciled_from_manifest",
       "packet": "VIRO-0002"
+    },
+    {
+      "at": "2026-08-27T17:19:55.733Z",
+      "type": "packet.claimed",
+      "packet": "VIRO-0005",
+      "agent": "claude-audit-cloud1",
+      "role": "gap-auditor",
+      "machine": "claude-code-cloud-vm"
     }
   ]
 }
