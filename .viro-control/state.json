@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 10,
-  "updated_at": "2026-08-27T17:27:33.021Z",
+  "revision": 11,
+  "updated_at": "2026-08-27T17:27:41.055Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -240,6 +240,11 @@
       "from": "audit",
       "to": "build",
       "by": "claude-audit-cloud1"
+    },
+    {
+      "at": "2026-08-27T17:27:41.055Z",
+      "type": "packet.reconciled_from_manifest",
+      "packet": "VIRO-0002"
     }
   ]
 }
