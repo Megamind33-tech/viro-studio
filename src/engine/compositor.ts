@@ -2728,6 +2728,9 @@ export class Compositor {
     const p = story.paragraph;
     h = hashStr(h, p.align);
     h = hashNum(hashNum(h, p.firstLineIndent), p.spaceAfter);
+    h = hashNum(h, p.startIndent ?? 0);
+    h = hashNum(h, p.endIndent ?? 0);
+    h = hashNum(h, p.spaceBefore ?? 0);
     return h;
   }
 }

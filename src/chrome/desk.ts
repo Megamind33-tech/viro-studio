@@ -1252,6 +1252,9 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
     }
     el("para-first").addEventListener("change", () => patchParagraph());
     el("para-after").addEventListener("change", () => patchParagraph());
+    el("para-left").addEventListener("change", () => patchParagraph());
+    el("para-right").addEventListener("change", () => patchParagraph());
+    el("para-before").addEventListener("change", () => patchParagraph());
     el("stroke-w").addEventListener("change", () => patchStroke());
     el("stroke-cap").addEventListener("change", () => patchStroke());
     el("stroke-join").addEventListener("change", () => patchStroke());
@@ -1267,13 +1270,19 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
     if (!sel) return;
     const first = parseNum(el<HTMLInputElement>("para-first").value);
     const after = parseNum(el<HTMLInputElement>("para-after").value);
-    if (first == null && after == null) return;
+    const left = parseNum(el<HTMLInputElement>("para-left").value);
+    const right = parseNum(el<HTMLInputElement>("para-right").value);
+    const before = parseNum(el<HTMLInputElement>("para-before").value);
+    if (first == null && after == null && left == null && right == null && before == null) return;
     app.run({
       type: "type.paragraphSpacing",
       params: {
         layerId: sel.id,
         ...(first != null ? { firstLineIndent: first } : {}),
         ...(after != null ? { spaceAfter: after } : {}),
+        ...(left != null ? { startIndent: left } : {}),
+        ...(right != null ? { endIndent: right } : {}),
+        ...(before != null ? { spaceBefore: before } : {}),
       },
     });
   }
@@ -1929,6 +1938,9 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
     }
     fillIfIdle("para-first", story ? fmt(story.paragraph.firstLineIndent, 1) : "");
     fillIfIdle("para-after", story ? fmt(story.paragraph.spaceAfter, 1) : "");
+    fillIfIdle("para-left", story ? fmt(story.paragraph.startIndent ?? 0, 1) : "");
+    fillIfIdle("para-right", story ? fmt(story.paragraph.endIndent ?? 0, 1) : "");
+    fillIfIdle("para-before", story ? fmt(story.paragraph.spaceBefore ?? 0, 1) : "");
     document.querySelectorAll<HTMLElement>("#para-align [data-align]").forEach((b) => {
       b.classList.toggle("is-on", story?.paragraph.align === b.dataset.align);
     });
@@ -2511,7 +2523,7 @@ const TRANSFORM_FIELDS = [
 const STORY_FIELDS = [
   "opt-font", "opt-size", "opt-lead", "opt-track", "opt-weight", "opt-italic",
   "ch-font", "ch-size", "ch-lead", "ch-track", "ch-weight", "ch-italic",
-  "para-first", "para-after",
+  "para-first", "para-after", "para-left", "para-right", "para-before",
 ] as const;
 const LAYER_FIELDS = ["blend", "opacity", "lock-btn"] as const;
 

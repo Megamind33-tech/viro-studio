@@ -234,6 +234,38 @@ check("underline is stored on the story", under.stored === true);
 check("underline actually renders (not decorative)", under.changed === true, `before=${under.beforeLen}B after=${under.afterLen}B`);
 check("undo removes the underline", under.undoCleared === true);
 
+const indentG = await page.evaluate(async () => {
+  const P = window.__press;
+  window.viroAnchor.applyDetailed([
+    { op: "press.add_type_frame", params: { x: 80, y: 200, w: 1600, h: 360, text: "INDENT", size: 120, leading: 140 }, reason: "indent fixture" },
+  ]);
+  const layers = P.doc.pages[0].layers;
+  const id = layers[layers.length - 1].id;
+  const before = P.compositor.thumbnailDataUrl(P.doc, 256);
+  P.run({ type: "type.paragraphSpacing", params: { layerId: id, startIndent: 280 } });
+  const story = P.doc.stories.find((s) => s.id === P.doc.pages[0].layers.find((l) => l.id === id)?.storyId);
+  const after = P.compositor.thumbnailDataUrl(P.doc, 256);
+  P.undo();
+  const undone = P.doc.stories.find((s) => s.id === P.doc.pages[0].layers.find((l) => l.id === id)?.storyId);
+  return {
+    stored: story?.paragraph.startIndent === 280,
+    changed: typeof before === "string" && typeof after === "string" && before !== after,
+    undoCleared: (undone?.paragraph.startIndent ?? 0) === 0,
+    fields: {
+      left: Boolean(document.getElementById("para-left")),
+      right: Boolean(document.getElementById("para-right")),
+      before: Boolean(document.getElementById("para-before")),
+    },
+    beforeLen: (before || "").length,
+    afterLen: (after || "").length,
+  };
+});
+
+check("left indent is stored on the story", indentG.stored === true);
+check("left indent actually moves the type (not decorative)", indentG.changed === true, `before=${indentG.beforeLen}B after=${indentG.afterLen}B`);
+check("undo restores the indent", indentG.undoCleared === true);
+check("Paragraph panel has Left, Right, and Before fields", indentG.fields.left && indentG.fields.right && indentG.fields.before);
+
 const fillG = await page.evaluate(async () => {
   const P = window.__press;
   window.viroAnchor.applyDetailed([

@@ -371,6 +371,29 @@ export function setParagraphAlign(doc: PressDocument, layerId: string, align: Al
   return next;
 }
 
+export interface ParagraphSpacingPatch {
+  firstLineIndent?: number;
+  startIndent?: number;
+  endIndent?: number;
+  spaceBefore?: number;
+  spaceAfter?: number;
+}
+
+/** Story-level indents and paragraph spacing the type engine actually composes. */
+export function setParagraphSpacing(doc: PressDocument, layerId: string, patch: ParagraphSpacingPatch): PressDocument {
+  const next = cloneDoc(doc);
+  const layer = findLayer(activePage(next), layerId);
+  if (!layer || layer.kind !== "type-frame") return next;
+  const story = next.stories.find((s) => s.id === layer.storyId);
+  if (!story) return next;
+  if (patch.firstLineIndent !== undefined) story.paragraph.firstLineIndent = patch.firstLineIndent;
+  if (patch.startIndent !== undefined) story.paragraph.startIndent = patch.startIndent;
+  if (patch.endIndent !== undefined) story.paragraph.endIndent = patch.endIndent;
+  if (patch.spaceBefore !== undefined) story.paragraph.spaceBefore = patch.spaceBefore;
+  if (patch.spaceAfter !== undefined) story.paragraph.spaceAfter = patch.spaceAfter;
+  return next;
+}
+
 export function applyFill(doc: PressDocument, color: Rgba): PressDocument {
   const next = cloneDoc(doc);
   for (const layer of selectedLayers(next)) {

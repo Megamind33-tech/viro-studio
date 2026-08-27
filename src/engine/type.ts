@@ -341,10 +341,10 @@ function breakParagraph(
   return lines;
 }
 
-function linePen(face: FacePack, text: string, x0: number, last: boolean, m: Metrics, measure: number, align: Story["paragraph"]["align"]): { pen: number; gap: number; lineW: number } {
+function linePen(face: FacePack, text: string, x0: number, last: boolean, m: Metrics, rightEdge: number, align: Story["paragraph"]["align"]): { pen: number; gap: number; lineW: number } {
   const run = shapeRun(face, text, m.key);
   const lineW = run.width * m.scale + m.track * run.glyphs.length;
-  const room = Math.max(0, measure - x0);
+  const room = Math.max(0, rightEdge - x0);
   const slack = room - lineW;
   let pen = x0;
   let gap = 0;
@@ -360,8 +360,18 @@ function linePen(face: FacePack, text: string, x0: number, last: boolean, m: Met
 export function composeFrame(face: FacePack, story: Story, frameW: number, frameH: number): ComposeResult {
   const m = metricsFor(face, story);
   const measure = Math.max(1, frameW);
-  const indent = Math.max(0, Math.min(story.paragraph.firstLineIndent || 0, measure - 1));
+  const startInd = Number.isFinite(story.paragraph.startIndent) ? (story.paragraph.startIndent as number) : 0;
+  const endInd = Number.isFinite(story.paragraph.endIndent) ? (story.paragraph.endIndent as number) : 0;
+  const firstInd = Number.isFinite(story.paragraph.firstLineIndent) ? story.paragraph.firstLineIndent : 0;
   const spaceAfter = Math.max(0, story.paragraph.spaceAfter || 0);
+  const spaceBefore = Math.max(0, Number.isFinite(story.paragraph.spaceBefore) ? (story.paragraph.spaceBefore as number) : 0);
+  const left = Math.max(0, Math.min(startInd, measure - 2));
+  const rightPad = Math.max(0, Math.min(endInd, measure - left - 2));
+  const rightEdge = measure - rightPad;
+  const x0Rest = left;
+  const x0First = Math.max(0, Math.min(left + firstInd, rightEdge - 1));
+  const firstW = Math.max(1, rightEdge - x0First);
+  const restW = Math.max(1, rightEdge - x0Rest);
   const align = story.paragraph.align;
 
   const glyphs: ShapedGlyph[] = [];
@@ -380,7 +390,7 @@ export function composeFrame(face: FacePack, story: Story, frameW: number, frame
       return;
     }
     const run = shapeRun(face, text, m.key);
-    const { pen: startPen, gap, lineW } = linePen(face, text, x0, last, m, measure, align);
+    const { pen: startPen, gap, lineW } = linePen(face, text, x0, last, m, rightEdge, align);
     let pen = startPen;
     const baseline = y - shift;
 
@@ -409,7 +419,7 @@ export function composeFrame(face: FacePack, story: Story, frameW: number, frame
   let storyAt = 0;
 
   const emitStops = (line: string, lineStart: number, x0: number, last: boolean, baseline: number) => {
-    const { pen: startPen } = linePen(face, line, x0, last, m, measure, align);
+    const { pen: startPen } = linePen(face, line, x0, last, m, rightEdge, align);
     const bounds = graphemeBoundaries(line);
     for (const local of bounds) {
       const prefix = line.slice(0, local);
@@ -425,11 +435,12 @@ export function composeFrame(face: FacePack, story: Story, frameW: number, frame
   for (let p = 0; p < paras.length; p++) {
     const para = paras[p]!;
     const paraStart = storyAt;
-    const lines = breakParagraph(face, para, measure - indent, measure, m);
+    y += spaceBefore;
+    const lines = breakParagraph(face, para, firstW, restW, m);
     let searchFrom = 0;
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i]!;
-      const x0 = i === 0 ? indent : 0;
+      const x0 = i === 0 ? x0First : x0Rest;
       const last = i === lines.length - 1;
       let lineStart = line.length ? para.indexOf(line, searchFrom) : searchFrom;
       if (lineStart < 0) lineStart = searchFrom;
@@ -444,7 +455,7 @@ export function composeFrame(face: FacePack, story: Story, frameW: number, frame
   }
 
   if (!caretStops.length) {
-    caretStops.push({ offset: 0, x: indent, y: m.ascent - shift, height: m.leading });
+    caretStops.push({ offset: 0, x: x0First, y: m.ascent - shift + spaceBefore, height: m.leading });
   }
 
   return {
@@ -452,7 +463,7 @@ export function composeFrame(face: FacePack, story: Story, frameW: number, frame
     overflow,
     lineCount,
     heightPx: lineCount ? lastBaseline + m.descent : 0,
-    firstBaselinePx: m.ascent - shift,
+    firstBaselinePx: m.ascent - shift + spaceBefore,
     caretStops,
     lines: decoLines,
   };

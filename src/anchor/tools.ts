@@ -69,6 +69,7 @@ import {
   setLayerTransform,
   setLayerVisible,
   setParagraphAlign,
+  setParagraphSpacing,
   setStoryText,
   ungroupSelected,
 } from "../document/ops";
@@ -1218,6 +1219,41 @@ const OPS: Record<string, AnchorOpDef> = {
       storyOf(doc, layer);
       const align = reqEnum(p, "align", ALIGNS);
       return { doc: setParagraphAlign(doc, id, align), summary: `${name(layer)} align → ${align}` };
+    },
+  },
+
+  "press.set_paragraph": {
+    description:
+      "Story-level left/right indent, first-line indent, and space before/after. These change how HarfBuzz " +
+      "composes the frame (wrap measure and baseline), not a decorative inset.",
+    params: {
+      layerId: pLayerId("a type-frame layer"),
+      startIndent: pNumber("Left indent in page px, applied to every line.", { min: -100_000, max: 100_000 }),
+      endIndent: pNumber("Right indent in page px; shrinks the wrap measure.", { min: -100_000, max: 100_000 }),
+      firstLineIndent: pNumber("Extra indent on the first line (negative is a hanging indent).", { min: -100_000, max: 100_000 }),
+      spaceBefore: pNumber("Space before each paragraph, in page px.", { min: 0, max: 100_000 }),
+      spaceAfter: pNumber("Space after each paragraph, in page px.", { min: 0, max: 100_000 }),
+    },
+    required: [],
+    run: (doc, p) => {
+      const id = resolveLayerId(doc, p);
+      const layer = requireLayer(doc, id, { kinds: ["type-frame"] });
+      storyOf(doc, layer);
+      const patch = {
+        startIndent: readNum(p, "startIndent", { min: -100_000, max: 100_000 }),
+        endIndent: readNum(p, "endIndent", { min: -100_000, max: 100_000 }),
+        firstLineIndent: readNum(p, "firstLineIndent", { min: -100_000, max: 100_000 }),
+        spaceBefore: readNum(p, "spaceBefore", { min: 0, max: 100_000 }),
+        spaceAfter: readNum(p, "spaceAfter", { min: 0, max: 100_000 }),
+      };
+      const given = Object.entries(patch).filter(([, v]) => v !== undefined);
+      if (!given.length) {
+        fail('give at least one of "startIndent", "endIndent", "firstLineIndent", "spaceBefore", "spaceAfter"');
+      }
+      return {
+        doc: setParagraphSpacing(doc, id, patch),
+        summary: `${name(layer)} ${given.map(([k, v]) => `${k}=${round(v as number)}`).join(" ")}`,
+      };
     },
   },
 

@@ -158,6 +158,7 @@ const OVERRIDES = {
   "press.add_round_rect": { fill: "#E07A2F", radius: 16 },
   "press.add_polygon": { fill: "#1B5BE0", sides: 6 },
   "press.add_star": { fill: "#E07A2F", points: 5 },
+  "press.set_paragraph": { startIndent: 48 },
 };
 
 /** Synthesise a valid op envelope for a tool from its schema. */

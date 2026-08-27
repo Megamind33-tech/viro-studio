@@ -72,6 +72,7 @@ import {
   setLayerOpacity,
   setLayerVisible,
   setParagraphAlign,
+  setParagraphSpacing,
   setStoryText,
   ungroupSelected,
 } from "./ops";
@@ -825,25 +826,24 @@ const DEFS: CommandDef<never>[] = [
       const layerId = v.str(o, "layerId", "type.paragraphSpacing");
       v.requireLayer(doc, layerId, "type.paragraphSpacing", { kind: "type-frame" });
       const firstLineIndent = v.num(o, "firstLineIndent", "type.paragraphSpacing", { min: -100_000, max: 100_000 });
+      const startIndent = v.num(o, "startIndent", "type.paragraphSpacing", { min: -100_000, max: 100_000 });
+      const endIndent = v.num(o, "endIndent", "type.paragraphSpacing", { min: -100_000, max: 100_000 });
+      const spaceBefore = v.num(o, "spaceBefore", "type.paragraphSpacing", { min: -100_000, max: 100_000 });
       const spaceAfter = v.num(o, "spaceAfter", "type.paragraphSpacing", { min: -100_000, max: 100_000 });
-      if (firstLineIndent === undefined && spaceAfter === undefined) {
-        throw new CommandError(`type.paragraphSpacing: give at least one of "firstLineIndent", "spaceAfter"`);
+      if (
+        firstLineIndent === undefined &&
+        startIndent === undefined &&
+        endIndent === undefined &&
+        spaceBefore === undefined &&
+        spaceAfter === undefined
+      ) {
+        throw new CommandError(
+          `type.paragraphSpacing: give at least one of "firstLineIndent", "startIndent", "endIndent", "spaceBefore", "spaceAfter"`,
+        );
       }
-      return { layerId, firstLineIndent, spaceAfter };
+      return { layerId, firstLineIndent, startIndent, endIndent, spaceBefore, spaceAfter };
     },
-    // No primitive exists in ops.ts for these two fields, so the command owns
-    // the mutation. It stays copy-on-write like everything else.
-    apply: (p, doc) => {
-      const next = cloneDoc(doc);
-      const page = next.pages.find((pg) => pg.id === next.activePageId);
-      const layer = page?.layers.find((l) => l.id === p.layerId);
-      if (!layer || layer.kind !== "type-frame") return next;
-      const story = next.stories.find((s) => s.id === layer.storyId);
-      if (!story) return next;
-      if (p.firstLineIndent !== undefined) story.paragraph.firstLineIndent = p.firstLineIndent;
-      if (p.spaceAfter !== undefined) story.paragraph.spaceAfter = p.spaceAfter;
-      return next;
-    },
+    apply: (p, doc) => setParagraphSpacing(doc, p.layerId, p),
   }),
 
   // ── vector stroke ──

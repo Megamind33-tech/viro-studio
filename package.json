@@ -18,7 +18,7 @@
     "test:engines": "node tests/engines.mjs",
     "test:chrome": "playwright test",
     "test": "npm run test:engines && npm run test:unit && npm run test:chrome && npm run test:slices",
-    "test:unit": "node --experimental-strip-types --import ./tests/ts-register.mjs --test tests/transform.test.mjs tests/image-fit.test.mjs tests/text-model.test.mjs tests/command-bus.test.mjs tests/anchor-command.test.mjs tests/ui-commands.test.mjs tests/flags.test.mjs tests/effects.test.mjs tests/align.test.mjs tests/stroke-style.test.mjs tests/multi-transform.test.mjs tests/boolean-ops.test.mjs tests/enhance.test.mjs tests/font-catalog.test.mjs tests/auth.test.mjs tests/shapes.test.mjs tests/workflows.test.mjs tests/paint.test.mjs tests/frames.test.mjs tests/pdf-export.test.mjs",
+    "test:unit": "node --experimental-strip-types --import ./tests/ts-register.mjs --test tests/transform.test.mjs tests/image-fit.test.mjs tests/text-model.test.mjs tests/command-bus.test.mjs tests/anchor-command.test.mjs tests/ui-commands.test.mjs tests/flags.test.mjs tests/effects.test.mjs tests/align.test.mjs tests/stroke-style.test.mjs tests/multi-transform.test.mjs tests/boolean-ops.test.mjs tests/enhance.test.mjs tests/font-catalog.test.mjs tests/auth.test.mjs tests/shapes.test.mjs tests/workflows.test.mjs tests/paint.test.mjs tests/frames.test.mjs tests/pdf-export.test.mjs tests/type-compose.test.mjs",
     "test:slices": "node tests/slices.mjs"
   },
   "dependencies": {
