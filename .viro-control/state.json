@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 2,
-  "updated_at": "2026-08-27T16:38:31.590Z",
+  "revision": 3,
+  "updated_at": "2026-08-27T16:41:36.413Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -25,7 +25,7 @@
       "assigned_agent": "claude-audit-cloud1",
       "assigned_role": "gap-auditor",
       "work_branch": "agent/viro-0002/claude-audit-cloud1",
-      "heartbeat_at": "2026-08-27T16:38:31.590Z",
+      "heartbeat_at": "2026-08-27T16:41:36.413Z",
       "attempts": 0,
       "evidence": [],
       "last_handoff": null,
@@ -37,7 +37,7 @@
       "role": "gap-auditor",
       "machine": "claude-code-cloud-vm",
       "packet": "VIRO-0002",
-      "heartbeat_at": "2026-08-27T16:38:31.590Z"
+      "heartbeat_at": "2026-08-27T16:41:36.413Z"
     }
   },
   "leases": {
@@ -54,7 +54,8 @@
       ],
       "acquired_at": "2026-08-27T16:38:31.590Z",
       "current_agent": "claude-audit-cloud1",
-      "current_stage": "audit"
+      "current_stage": "audit",
+      "heartbeat_at": "2026-08-27T16:41:36.413Z"
     }
   },
   "events": [
@@ -71,6 +72,12 @@
       "agent": "claude-audit-cloud1",
       "role": "gap-auditor",
       "machine": "claude-code-cloud-vm"
+    },
+    {
+      "at": "2026-08-27T16:41:36.413Z",
+      "type": "agent.heartbeat",
+      "agent": "claude-audit-cloud1",
+      "packet": "VIRO-0002"
     }
   ]
 }
