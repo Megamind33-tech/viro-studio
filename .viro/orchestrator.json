@@ -5,5 +5,14 @@
   "lease_ttl_minutes": 90,
   "max_packets_per_agent": 1,
   "require_remote_for_writes": true,
-  "delivery_directory": "docs/agents/deliveries"
+  "delivery_directory": "docs/agents/deliveries",
+  "release": {
+    "target_branch": "main",
+    "merge_method": "squash",
+    "delete_branch": true,
+    "required_checks": [
+      "Delivery policy",
+      "Product regression gates"
+    ]
+  }
 }
