@@ -16,6 +16,7 @@ import {
   teamBoard,
   assignmentBrief,
   activePackets,
+  leasedPackets,
   scopesOverlap,
   requiredRole,
 } from "./lib/orchestrator-core.mjs";
@@ -196,22 +197,24 @@ async function manifestsFromDisk(config) {
   return manifests;
 }
 
-function printBoard(state) {
+function printBoard(state, ttlMinutes) {
   console.table(teamBoard(state));
-  const stale = staleAssignments(state, 90);
+  const stale = staleAssignments(state, ttlMinutes);
   if (stale.length) console.log(`Stale assignments: ${stale.map((p) => p.id).join(", ")}`);
 }
 
 function validateState(state) {
   const errors = [];
-  const active = activePackets(state);
-  for (let i = 0; i < active.length; i += 1) {
-    for (let j = i + 1; j < active.length; j += 1) {
-      if (scopesOverlap(active[i].scope, active[j].scope)) {
-        errors.push(`scope collision: ${active[i].id} <-> ${active[j].id}`);
+  const leased = leasedPackets(state);
+  for (let i = 0; i < leased.length; i += 1) {
+    for (let j = i + 1; j < leased.length; j += 1) {
+      if (scopesOverlap(leased[i].scope, leased[j].scope)) {
+        errors.push(`scope lease collision: ${leased[i].id} <-> ${leased[j].id}`);
       }
     }
   }
+
+  const active = activePackets(state);
   const agentIds = new Set();
   for (const packet of active) {
     if (!packet.assigned_agent) continue;
@@ -252,13 +255,13 @@ async function main() {
       return manifests.map((m) => m.id);
     });
     console.log(`Synced ${manifests.length} delivery manifest(s).`);
-    printBoard(state);
+    printBoard(state, config.lease_ttl_minutes);
     return;
   }
 
   if (command === "status") {
     const { state } = await store.read();
-    printBoard(state);
+    printBoard(state, config.lease_ttl_minutes);
     return;
   }
 
