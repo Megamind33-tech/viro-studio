@@ -2204,12 +2204,22 @@ export class Compositor {
   }
 
   snapshotPagePng(doc: PressDocument): Uint8Array {
+    return this.snapshotPage(doc, "png");
+  }
+
+  /** Raster of the active page as JPEG. Not a vector file; not every page. */
+  snapshotPageJpeg(doc: PressDocument, quality = 92): Uint8Array {
+    return this.snapshotPage(doc, "jpeg", quality);
+  }
+
+  private snapshotPage(doc: PressDocument, format: "png" | "jpeg", quality = 100): Uint8Array {
     const ck = this.engines.ck;
     const img = this.compositePage(ck, doc, false);
     if (!img) throw new Error("page composite failed");
-    const bytes = img.encodeToBytes(ck.ImageFormat.PNG, 100);
+    const fmt = format === "jpeg" ? ck.ImageFormat.JPEG : ck.ImageFormat.PNG;
+    const bytes = img.encodeToBytes(fmt, quality);
     img.delete();
-    if (!bytes) throw new Error("PNG encode failed");
+    if (!bytes) throw new Error(`${format.toUpperCase()} encode failed`);
     return bytes;
   }
 

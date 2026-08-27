@@ -1946,6 +1946,19 @@ export class PressApp {
   }
 
   /**
+   * JPEG of the active page — the same Skia composite PNG export uses, encoded
+   * as JPEG. A multi-page document still exports only the active page; File →
+   * Export PDF is the path that writes every page.
+   */
+  exportJpeg(): void {
+    if (!this.compositor) return;
+    const bytes = this.compositor.snapshotPageJpeg(this.doc);
+    download(bytes, `${this.doc.name}.jpg`, "image/jpeg");
+    this.status = `JPEG exported — active page ${this.doc.pages.findIndex((p) => p.id === this.doc.activePageId) + 1} of ${this.doc.pages.length}, raster of the Skia composite.`;
+    this.emit();
+  }
+
+  /**
    * Vector PDF of every page. The document graph is walked and emitted as PDF
    * path and text operators — not a page screenshot. Type goes in as real glyphs
    * against an embedded, subset Noto Sans, positioned at the coordinates HarfBuzz

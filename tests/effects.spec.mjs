@@ -337,6 +337,22 @@ check("page.guidesClear drops every guide", guideOps.afterClear === 0 && guideOp
 check("undo restores guides after Clear Guides", guideOps.afterUndo === guideOps.countBeforeClear, `undo=${guideOps.afterUndo}`);
 check("View menu has Clear Guides and Snap to Guides", guideOps.clearBtn && guideOps.snapBtn && guideOps.snapOn === true);
 
+const jpegG = await page.evaluate(() => {
+  const P = window.__press;
+  const bytes = P.compositor.snapshotPageJpeg(P.doc);
+  const jpegBtn = Boolean(document.querySelector('[data-cmd="export-jpeg"]'));
+  const pdfBtn = Boolean(document.querySelector('[data-cmd="export-pdf"]'));
+  return {
+    jpegBtn,
+    pdfBtn,
+    magic: bytes && bytes.length > 4 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff,
+    len: bytes ? bytes.length : 0,
+  };
+});
+
+check("File menu has Export JPEG and Export PDF", jpegG.jpegBtn && jpegG.pdfBtn);
+check("JPEG snapshot is a real JFIF/JPEG (FF D8 FF), not a renamed PNG", jpegG.magic === true, `len=${jpegG.len}`);
+
 check("no page errors", pageErrors.length === 0, pageErrors.join(" | "));
 
 console.log(`\n${results.length - failed}/${results.length} checks passed`);

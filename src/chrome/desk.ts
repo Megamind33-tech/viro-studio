@@ -590,6 +590,9 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
       case "export-png":
         app.exportPng();
         return;
+      case "export-jpeg":
+        app.exportJpeg();
+        return;
       case "export-pdf":
         void app.exportPdf();
         return;
