@@ -100,6 +100,11 @@ const CASES = {
   "layer.locked": { valid: { layerId: "ly_rect", locked: true }, invalid: { layerId: "ly_rect", locked: 1 }, match: /must be true or false/ },
   "layer.reorder": { valid: { layerId: "ly_rect", dir: 1 }, invalid: { layerId: "ly_rect", dir: 2 }, match: /must be 1 \(forward\) or -1/ },
   "layer.fill": { valid: { color: COPPER }, invalid: { color: { r: 224, g: 122, b: 47 } }, match: /float 0-1/ },
+  "vector.gradientFill": {
+    valid: { type: "linear", angle: 90, stops: [{ offset: 0, color: COPPER }, { offset: 1, color: RED }] },
+    invalid: { type: "rainbow", angle: 90, stops: [{ offset: 0, color: COPPER }, { offset: 1, color: RED }] },
+    match: /must be linear or radial/,
+  },
 
   "vector.addRect": { valid: { x: 10, y: 10, w: 100, h: 50, fill: COPPER }, invalid: { x: 10, y: 10, w: 0, h: 50, fill: COPPER }, match: /greater than 0/ },
   "vector.addEllipse": { valid: { x: 10, y: 10, w: 100, h: 50, fill: COPPER }, invalid: { x: 10, y: 10, w: 100, h: -5, fill: COPPER }, match: /greater than 0/ },

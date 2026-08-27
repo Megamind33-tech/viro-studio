@@ -16,8 +16,10 @@ import type {
   Rgba,
   Story,
   Swatch,
+  VectorFill,
   VectorStroke,
 } from "./types";
+import { isGradientFill } from "./paint";
 
 let n = 0;
 export function uid(prefix: string): string {
@@ -1085,7 +1087,42 @@ export function applyImageSize(
 
 const STROKE_CAPS = new Set(["butt", "round", "square"]);
 const STROKE_JOINS = new Set(["miter", "round", "bevel"]);
-/** A dashed rule made of 64 on/off pairs is already excessive; cap the parser surface. */
+/** A gradient with dozens of stops is already a shader; cap the parser surface. */
+export const MAX_GRADIENT_STOPS = 32;
+
+/** Validate a v7 vector fill (solid RGBA or a linear/radial gradient). */
+export function validateVectorFill(fill: VectorFill, where: string): string[] {
+  const errs: string[] = [];
+  if (isGradientFill(fill)) {
+    if (fill.type !== "linear" && fill.type !== "radial") {
+      errs.push(`${where}: gradient type must be linear or radial`);
+    }
+    if (!Number.isFinite(fill.angle)) errs.push(`${where}: gradient angle must be finite`);
+    if (!Array.isArray(fill.stops) || fill.stops.length < 2) {
+      errs.push(`${where}: gradient needs at least 2 stops`);
+      return errs;
+    }
+    if (fill.stops.length > MAX_GRADIENT_STOPS) {
+      errs.push(`${where}: gradient has too many stops (max ${MAX_GRADIENT_STOPS})`);
+    }
+    for (let i = 0; i < fill.stops.length; i++) {
+      const s = fill.stops[i]!;
+      if (!Number.isFinite(s.offset) || s.offset < 0 || s.offset > 1) {
+        errs.push(`${where}: stop ${i} offset must be 0..1`);
+      }
+      const c = s.color;
+      if (!c || ![c.r, c.g, c.b, c.a].every((n) => Number.isFinite(n) && n >= 0 && n <= 1)) {
+        errs.push(`${where}: stop ${i} colour must be float 0-1 {r,g,b,a}`);
+      }
+    }
+    return errs;
+  }
+  const c = fill;
+  if (![c.r, c.g, c.b, c.a].every((n) => Number.isFinite(n) && n >= 0 && n <= 1)) {
+    errs.push(`${where}: fill colour must be float 0-1 {r,g,b,a}`);
+  }
+  return errs;
+}
 export const MAX_DASH_INTERVALS = 128;
 /** A compound path with thousands of subpaths is a corrupt/hostile file; cap it. */
 export const MAX_CONTOURS = 4096;
@@ -1160,8 +1197,8 @@ export function validateStroke(stroke: VectorStroke, where: string): string[] {
 /** Structural check against types.ts. Returns a list of problems; empty means valid. */
 export function validateDocument(doc: PressDocument): string[] {
   const errs: string[] = [];
-  if (![1, 2, 3, 4, 5, 6].includes(doc.version)) {
-    errs.push("version must be 1, 2, 3, 4, 5 or 6");
+  if (![1, 2, 3, 4, 5, 6, 7].includes(doc.version)) {
+    errs.push("version must be 1, 2, 3, 4, 5, 6 or 7");
   }
   if (!doc.name) errs.push("name is empty");
   if (!(doc.ppi > 0)) errs.push(`ppi must be > 0 (got ${doc.ppi})`);
@@ -1241,6 +1278,7 @@ export function validateDocument(doc: PressDocument): string[] {
           if (!layer.fill && !layer.stroke) errs.push(`${where}: vector has neither fill nor stroke`);
           if (layer.nodes.length < 2) errs.push(`${where}: vector needs at least 2 nodes`);
         }
+        if (layer.fill) for (const e of validateVectorFill(layer.fill, where)) errs.push(e);
         if (layer.stroke) for (const e of validateStroke(layer.stroke, where)) errs.push(e);
       }
     }

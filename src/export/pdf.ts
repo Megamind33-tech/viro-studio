@@ -78,6 +78,7 @@ import type {
 } from "../document/types";
 import { localMatrix } from "../document/transform";
 import { destWindow, sourceWindow } from "../document/image-fit";
+import { fillAlpha, fillExportRgb, isGradientFill } from "../document/paint";
 import { composeFrame, type FacePack, type ShapedGlyph } from "../engine/type";
 import type { FontRegistry } from "../engine/font-registry";
 
@@ -555,15 +556,21 @@ function emitVector(
     return;
   }
 
-  const doFill = !!layer.fill && layer.closed;
+  const doFill = !!layer.fill && (layer.closed || (Array.isArray(layer.contours) && layer.contours.some((c) => c.closed)));
   const doStroke = !!layer.stroke;
   if (!doFill && !doStroke) return;
 
-  const fillA = layer.fill ? layer.fill.a * alpha : 0;
+  const fillA = fillAlpha(layer.fill) * alpha;
   const strokeA = layer.stroke ? layer.stroke.color.a * alpha : 0;
   ops.push(setGraphicsState(gsName(fillA, strokeA, layer.blend)));
   if (layer.fill) {
-    ops.push(setFillingRgbColor(clamp01(layer.fill.r), clamp01(layer.fill.g), clamp01(layer.fill.b)));
+    const c = fillExportRgb(layer.fill);
+    ops.push(setFillingRgbColor(clamp01(c.r), clamp01(c.g), clamp01(c.b)));
+    if (isGradientFill(layer.fill)) {
+      report.notes.push(
+        `Vector "${layer.name}" has a gradient fill; PDF writes the start colour as a solid. PNG/canvas keep the shader.`,
+      );
+    }
   }
   if (layer.stroke) {
     const c = layer.stroke.color;

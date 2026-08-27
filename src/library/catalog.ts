@@ -1,4 +1,5 @@
 import type { PathNode, PressDocument, Rgba } from "../document/types";
+import { isGradientFill } from "../document/paint";
 import {
   draftAsset,
   draftColumnGuides,
@@ -1867,7 +1868,9 @@ export function documentPreviewSvg(doc: PressDocument, maxEdge = 240, pageIndex 
         })),
         layer.closed,
       );
-      const fill = layer.fill && layer.closed ? css(layer.fill) : "none";
+      const fill = layer.fill && layer.closed
+        ? css(isGradientFill(layer.fill) ? layer.fill.stops[0]!.color : layer.fill)
+        : "none";
       const stroke = layer.stroke ? css(layer.stroke.color) : "none";
       const sw = layer.stroke ? Math.max(0.4, layer.stroke.width * scale) : 0;
       parts.push(

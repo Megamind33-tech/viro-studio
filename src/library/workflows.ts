@@ -159,6 +159,97 @@ export const WORKFLOWS: Workflow[] = [
       ];
     },
   },
+  {
+    id: "quote-card",
+    name: "Quote card",
+    blurb: "A dark plate, a pull quote, and an attribution. Live type frames.",
+    build: (ctx) => {
+      const inset = Math.round(Math.min(ctx.width, ctx.height) * 0.1);
+      const w = ctx.width - inset * 2;
+      const h = ctx.height - inset * 2;
+      return [
+        {
+          op: "press.add_round_rect",
+          params: { x: inset, y: inset, w, h, radius: 28, fill: "#16161A", name: "Quote plate" },
+          reason: "dark plate behind the quote",
+        },
+        {
+          op: "press.add_type_frame",
+          params: {
+            x: inset + 48,
+            y: inset + Math.round(h * 0.22),
+            w: w - 96,
+            h: Math.round(h * 0.42),
+            text: "“Set the type first. The decoration can wait.”",
+            size: 42,
+            leading: 52,
+            fill: { r: 1, g: 1, b: 1, a: 1 },
+            name: "Quote",
+          },
+          reason: "pull quote on the plate",
+        },
+        {
+          op: "press.add_type_frame",
+          params: {
+            x: inset + 48,
+            y: inset + Math.round(h * 0.68),
+            w: w - 96,
+            h: 48,
+            text: "— the composing room",
+            size: 18,
+            leading: 24,
+            fill: { r: 0.88, g: 0.48, b: 0.18, a: 1 },
+            name: "Attribution",
+          },
+          reason: "attribution under the quote",
+        },
+      ];
+    },
+  },
+  {
+    id: "poster-masthead",
+    name: "Poster masthead",
+    blurb: "Full-bleed copper block, display title, and a folio line.",
+    build: (ctx) => {
+      const w = ctx.width;
+      return [
+        {
+          op: "press.add_rect",
+          params: { x: 0, y: 0, w, h: Math.round(ctx.height * 0.42), fill: "#E07A2F", name: "Masthead field" },
+          reason: "copper field the title sits on",
+        },
+        {
+          op: "press.add_type_frame",
+          params: {
+            x: Math.round(w * 0.08),
+            y: Math.round(ctx.height * 0.12),
+            w: Math.round(w * 0.84),
+            h: Math.round(ctx.height * 0.22),
+            text: "PRESS",
+            size: 128,
+            leading: 140,
+            fill: { r: 0.12, g: 0.12, b: 0.14, a: 1 },
+            name: "Poster title",
+          },
+          reason: "display title on the masthead",
+        },
+        {
+          op: "press.add_type_frame",
+          params: {
+            x: Math.round(w * 0.08),
+            y: Math.round(ctx.height * 0.48),
+            w: Math.round(w * 0.84),
+            h: 64,
+            text: "Vol. 01  ·  Issue 01  ·  Printed, not generated",
+            size: 22,
+            leading: 28,
+            name: "Folio",
+          },
+          reason: "folio line under the field",
+        },
+      ];
+    },
+  },
 ];
 
 export function workflowById(id: string): Workflow | undefined {

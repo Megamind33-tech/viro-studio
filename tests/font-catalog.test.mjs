@@ -8,7 +8,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { catalogFaceUrl, catalogRecordId, searchCatalog } from "../src/engine/font-catalog.ts";
+import { catalogFaceUrl, catalogRecordId, parseCatalogRecordId, searchCatalog } from "../src/engine/font-catalog.ts";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const raw = JSON.parse(readFileSync(join(ROOT, "public/fonts/catalog.json"), "utf8"));
@@ -41,4 +41,10 @@ test("catalogFaceUrl points at a Fontsource TTF, not a decorative name", () => {
   const url = catalogFaceUrl(inter, 400, false);
   assert.match(url, /^https:\/\/cdn\.jsdelivr\.net\/fontsource\/fonts\/.+@latest\/.+-400-normal\.ttf$/);
   assert.equal(catalogRecordId(inter, 400, false), `gf-${inter.id}-400-n`);
+});
+
+test("parseCatalogRecordId round-trips family ids that contain hyphens", () => {
+  const parsed = parseCatalogRecordId("gf-source-sans-3-700-i");
+  assert.deepEqual(parsed, { familyId: "source-sans-3", weight: 700, italic: true });
+  assert.equal(parseCatalogRecordId("noto-sans"), null);
 });

@@ -508,9 +508,9 @@ select.ctrl {
 }
 
 .group.grow {
-  /* The one elastic group still keeps a floor: tabs plus a usable body. */
-  flex: 1 1 160px;
-  min-height: 120px;
+  /* Layers must stay tall enough to show rows, not a collapsed "No layers". */
+  flex: 1 1 240px;
+  min-height: 220px;
 }
 
 .tabs {
@@ -583,7 +583,7 @@ select.ctrl {
 
 .layer-list {
   flex: 1 1 0;
-  min-height: 88px;
+  min-height: 140px;
   overflow: auto;
   padding-bottom: var(--space-2);
   background: #282828;

@@ -44,6 +44,13 @@ export function catalogRecordId(family: CatalogFamily, weight: number, italic: b
   return `gf-${family.id}-${weight}-${style}`;
 }
 
+/** Inverse of `catalogRecordId`. Family ids may contain hyphens. */
+export function parseCatalogRecordId(id: string): { familyId: string; weight: number; italic: boolean } | null {
+  const m = /^gf-(.+)-(\d{2,4})-([ni])$/.exec(id);
+  if (!m) return null;
+  return { familyId: m[1]!, weight: Number(m[2]), italic: m[3] === "i" };
+}
+
 function closestWeight(weights: number[], want: number): number {
   let best = weights[0] ?? 400;
   let dist = Math.abs(best - want);

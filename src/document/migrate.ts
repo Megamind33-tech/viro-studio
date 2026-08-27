@@ -42,10 +42,12 @@ export interface MigrationReport {
   strokeStylesStamped: number;
   /** v5 -> v6: version stamp for multi-contour (compound-path) vectors. */
   contoursStamped: number;
+  /** v6 -> v7: version stamp for vector gradient fills. */
+  gradientFillsStamped: number;
   notes: string[];
 }
 
-export const DOC_VERSION = 6 as const;
+export const DOC_VERSION = 7 as const;
 
 /**
  * Rebase one page's layers from absolute to local coordinates.
@@ -127,6 +129,19 @@ function stampContours(doc: PressDocument, report: MigrationReport): void {
 }
 
 /**
+ * v6 -> v7. Vector fills widened from `Rgba | null` to `Rgba | GradientFill | null`.
+ * A v6 solid fill has no `type` field and is already a valid v7 fill; nothing is
+ * rewritten (MIGRATION INVARIANT: pixel-identical re-open).
+ */
+function stampGradientFills(doc: PressDocument, report: MigrationReport): void {
+  for (const page of doc.pages) {
+    for (const layer of page.layers) {
+      if (layer.kind === "vector" && layer.fill) report.gradientFillsStamped++;
+    }
+  }
+}
+
+/**
  * v3 -> v4. This migration is additive: current rendering continues to use the
  * story defaults while later typography slices can author sparse ranges and
  * explicit point/area/path semantics without guessing at file-open time.
@@ -185,6 +200,7 @@ export function migrateDocument(doc: PressDocument): MigrationReport {
     textRegistriesInitialised: 0,
     strokeStylesStamped: 0,
     contoursStamped: 0,
+    gradientFillsStamped: 0,
     notes: [],
   };
   if (from >= DOC_VERSION) {
@@ -206,6 +222,8 @@ export function migrateDocument(doc: PressDocument): MigrationReport {
   if (from < 5) stampStrokeStyles(doc, report);
   // v5 -> v6: widening stamp for multi-contour vectors. No pixels move.
   if (from < 6) stampContours(doc, report);
+  // v6 -> v7: widening stamp for vector gradient fills. No pixels move.
+  if (from < 7) stampGradientFills(doc, report);
   doc.version = DOC_VERSION;
   return report;
 }

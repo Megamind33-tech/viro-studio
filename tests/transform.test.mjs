@@ -320,11 +320,11 @@ test("MIGRATION INVARIANT v5 -> v6: a v5 vector reopens byte-identically as a v6
   assert.equal(needsMigration(doc), true);
   const r = migrateDocument(doc);
   assert.equal(r.from, 5);
-  assert.equal(r.to, 6);
   assert.equal(r.to, DOC_VERSION);
   // Every existing vector is counted, but NOTHING is rewritten.
   assert.equal(r.contoursStamped, 1);
-  assert.equal(doc.version, 6);
+  assert.equal(r.gradientFillsStamped, 1);
+  assert.equal(doc.version, DOC_VERSION);
 
   const migratedVector = doc.pages[0].layers[0];
   // The stamp adds no `contours` field and moves no node — pixel-identical.
@@ -332,9 +332,9 @@ test("MIGRATION INVARIANT v5 -> v6: a v5 vector reopens byte-identically as a v6
   assert.deepEqual(migratedVector.nodes, before.pages[0].layers[0].nodes);
   assert.equal(migratedVector.closed, true);
 
-  // Only the version differs between the v5 input and the v6 output.
-  before.version = 6;
-  assert.deepEqual(doc, before, "migrating v5 -> v6 must change only the version field");
+  // Only the version differs between the v5 input and the current output.
+  before.version = DOC_VERSION;
+  assert.deepEqual(doc, before, "migrating v5 -> current must change only the version field");
 });
 
 test("a v6 multi-contour vector (rect with a rect hole) round-trips through JSON save/open unchanged", () => {
@@ -366,7 +366,11 @@ test("a v6 multi-contour vector (rect with a rect hole) round-trips through JSON
     ],
   };
   const doc = { version: 6, pages: [{ id: "p", layers: [layer] }] };
-  assert.equal(needsMigration(doc), false, "a v6 document is current — no migration");
+  assert.equal(needsMigration(doc), true, "a v6 document needs the v7 gradient-fill stamp");
+  const r = migrateDocument(doc);
+  assert.equal(r.from, 6);
+  assert.equal(r.to, DOC_VERSION);
+  assert.equal(doc.version, DOC_VERSION);
   const round = JSON.parse(JSON.stringify(doc));
   assert.deepEqual(round.pages[0].layers[0].contours, layer.contours);
   assert.equal(round.pages[0].layers[0].contours.length, 2);

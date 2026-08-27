@@ -17,7 +17,7 @@
  * there, which is why `stats().snapshotEntries` should be read as "document
  * replacements", not as migration debt.
  */
-import type { Align, BlendMode, CharacterStyle, ImageFit, ParagraphStyle, PressDocument, ResampleAlgo, Rgba, StrokeCap, StrokeJoin, VectorLayer } from "./types";
+import type { Align, BlendMode, CharacterStyle, GradientFill, GradientStop, ImageFit, ParagraphStyle, PressDocument, ResampleAlgo, Rgba, StrokeCap, StrokeJoin, VectorLayer } from "./types";
 import { SKIA_BLEND } from "./types";
 import { applyCharacterRange, applyParagraphRange, assertTextRange, replaceStoryRange, type TextAffinity } from "./text-model";
 import { CommandError, deriveInverse, registerCommand, v, type CommandDef } from "./commands";
@@ -39,6 +39,7 @@ import {
   cloneDoc,
   findLayer,
   MAX_DASH_INTERVALS,
+  MAX_GRADIENT_STOPS,
   selectedLayers,
 } from "./factory";
 import {
@@ -48,6 +49,7 @@ import {
   addVectorPath,
   appendPathNode,
   applyFill,
+  applyVectorFill,
   closePath,
   deleteSelected,
   duplicateSelected,
@@ -358,6 +360,38 @@ const DEFS: CommandDef<never>[] = [
     label: "Fill",
     validate: (raw) => ({ color: rgba(v.obj(raw, "layer.fill").color, "layer.fill", "color") }),
     apply: (p, doc) => applyFill(doc, p.color),
+  }),
+  define({
+    type: "vector.gradientFill",
+    label: "Gradient fill",
+    validate: (raw) => {
+      const o = v.obj(raw, "vector.gradientFill");
+      if (o.type !== "linear" && o.type !== "radial") {
+        throw new CommandError(`vector.gradientFill: "type" must be linear or radial`);
+      }
+      const angle = v.num(o, "angle", "vector.gradientFill", { min: -3600, max: 3600 });
+      if (!Array.isArray(o.stops) || o.stops.length < 2) {
+        throw new CommandError(`vector.gradientFill: "stops" needs at least 2 entries`);
+      }
+      if (o.stops.length > MAX_GRADIENT_STOPS) {
+        throw new CommandError(`vector.gradientFill: "stops" has too many entries (max ${MAX_GRADIENT_STOPS})`);
+      }
+      const stops: GradientStop[] = o.stops.map((s, i) => {
+        const so = v.obj(s, "vector.gradientFill");
+        const offset = so.offset;
+        if (typeof offset !== "number" || !Number.isFinite(offset) || offset < 0 || offset > 1) {
+          throw new CommandError(`vector.gradientFill: stops[${i}].offset must be 0..1`);
+        }
+        return { offset, color: rgba(so.color, "vector.gradientFill", "color") };
+      });
+      const fill: GradientFill = { type: o.type, angle: angle ?? 90, stops };
+      return { fill };
+    },
+    apply: (p, doc) => {
+      const next = applyVectorFill(doc, p.fill);
+      if (next === doc) throw new CommandError(`vector.gradientFill: select at least one unlocked vector`);
+      return next;
+    },
   }),
 
   // ── creation ──

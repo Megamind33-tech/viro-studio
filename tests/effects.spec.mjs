@@ -234,6 +234,36 @@ check("underline is stored on the story", under.stored === true);
 check("underline actually renders (not decorative)", under.changed === true, `before=${under.beforeLen}B after=${under.afterLen}B`);
 check("undo removes the underline", under.undoCleared === true);
 
+const grad = await page.evaluate(async () => {
+  const P = window.__press;
+  window.viroAnchor.applyDetailed([
+    { op: "press.add_rect", params: { x: 200, y: 200, w: 1200, h: 800, fill: "#e07a2f" }, reason: "gradient-fill fixture" },
+  ]);
+  const layers = P.doc.pages[0].layers;
+  const id = layers[layers.length - 1].id;
+  const before = P.compositor.thumbnailDataUrl(P.doc, 256);
+  P.applyLinearFill();
+  const fill = P.doc.pages[0].layers.find((l) => l.id === id)?.fill;
+  const stored = fill && fill.type === "linear" && Array.isArray(fill.stops) && fill.stops.length >= 2;
+  const after = P.compositor.thumbnailDataUrl(P.doc, 256);
+  P.undo();
+  const undone = P.doc.pages[0].layers.find((l) => l.id === id)?.fill;
+  const undoCleared = undone && typeof undone.r === "number" && !undone.type;
+  return {
+    stored: !!stored,
+    changed: typeof before === "string" && before !== after,
+    undoCleared: !!undoCleared,
+    version: P.doc.version,
+    beforeLen: (before || "").length,
+    afterLen: (after || "").length,
+  };
+});
+
+check("linear gradient fill is stored on the vector", grad.stored === true);
+check("linear gradient fill actually renders (not a solid alias)", grad.changed === true, `before=${grad.beforeLen}B after=${grad.afterLen}B`);
+check("undo restores the solid fill", grad.undoCleared === true);
+check("document is v7 after a gradient fill", grad.version === 7, `version=${grad.version}`);
+
 check("no page errors", pageErrors.length === 0, pageErrors.join(" | "));
 
 console.log(`\n${results.length - failed}/${results.length} checks passed`);

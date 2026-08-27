@@ -2,6 +2,7 @@ import type { Canvas, CanvasKit, Font, Image as SkImage, Paint, PathEffect, Surf
 import type {
   AdjustmentLayer,
   DropShadowEffect,
+  GradientFill,
   GradientOverlayEffect,
   InnerShadowEffect,
   Layer,
@@ -17,10 +18,12 @@ import type {
   StrokeJoin,
   ToolId,
   Transform,
+  VectorFill,
   VectorLayer,
   ViewState,
 } from "../document/types";
 import { SKIA_BLEND } from "../document/types";
+import { isGradientFill } from "../document/paint";
 import { applyPt, localMatrix } from "../document/transform";
 import { destWindow, sourceWindow } from "../document/image-fit";
 import { activePage } from "../document/factory";
@@ -244,6 +247,20 @@ function hashStr(h: number, s: string): number {
 function hashRgba(h: number, c: Rgba | null): number {
   if (!c) return mixHash(h, 0x9e37);
   return hashNum(hashNum(hashNum(hashNum(h, c.r), c.g), c.b), c.a);
+}
+
+function hashFill(h: number, fill: VectorFill | null): number {
+  if (!fill) return mixHash(h, 0x9e37);
+  if (isGradientFill(fill)) {
+    h = mixHash(h, fill.type === "linear" ? 0x11ea : 0x11eb);
+    h = hashNum(h, fill.angle);
+    for (const s of fill.stops) {
+      h = hashNum(h, s.offset);
+      h = hashRgba(h, s.color);
+    }
+    return h;
+  }
+  return hashRgba(h, fill);
 }
 
 function rgb(ck: CanvasKit, hex: number, a = 1): Float32Array {
@@ -1943,28 +1960,46 @@ export class Compositor {
   private drawGradientOverlay(ck: CanvasKit, sk: Canvas, layer: Layer): void {
     const g = gradientOverlayOf(layer);
     if (!g) return;
-    const w = Math.max(1, layer.transform.w);
-    const h = Math.max(1, layer.transform.h);
-    const cx = w / 2;
-    const cy = h / 2;
-    const rad = (g.angle * Math.PI) / 180;
-    const dx = Math.cos(rad);
-    const dy = Math.sin(rad);
-    const half = (Math.abs(dx) * w + Math.abs(dy) * h) / 2;
-    const start = [cx - dx * half, cy - dy * half];
-    const end = [cx + dx * half, cy + dy * half];
-    const stops = [...g.stops].sort((a, b) => a.offset - b.offset);
-    const colors = stops.map((s) => ck.Color4f(s.color.r, s.color.g, s.color.b, s.color.a));
-    const positions = stops.map((s) => Math.min(1, Math.max(0, s.offset)));
-    const shader = ck.Shader.MakeLinearGradient(start, end, colors, positions, ck.TileMode.Clamp);
+    const fill: GradientFill = { type: "linear", angle: g.angle, stops: g.stops };
+    const shader = this.makeFillShader(ck, fill, layer.transform.w, layer.transform.h);
+    if (!shader) return;
     const paint = new ck.Paint();
     paint.setShader(shader);
     paint.setAlphaf(Math.min(1, Math.max(0, g.opacity)));
     const modes = ck.BlendMode as unknown as Record<string, Parameters<Paint["setBlendMode"]>[0]>;
     if (modes.SrcATop) paint.setBlendMode(modes.SrcATop);
+    const w = Math.max(1, layer.transform.w);
+    const h = Math.max(1, layer.transform.h);
     sk.drawRect(ck.LTRBRect(0, 0, w, h), paint);
     paint.delete();
     shader.delete();
+  }
+
+  /** Linear or radial shader in the layer's local [0,0,w,h] box. Caller deletes. */
+  private makeFillShader(ck: CanvasKit, fill: GradientFill, w: number, h: number) {
+    if (fill.stops.length < 2) return null;
+    const boxW = Math.max(1, w);
+    const boxH = Math.max(1, h);
+    const stops = [...fill.stops].sort((a, b) => a.offset - b.offset);
+    const colors = stops.map((s) => ck.Color4f(s.color.r, s.color.g, s.color.b, s.color.a));
+    const positions = stops.map((s) => Math.min(1, Math.max(0, s.offset)));
+    if (fill.type === "radial") {
+      const r = Math.hypot(boxW, boxH) / 2;
+      return ck.Shader.MakeRadialGradient([boxW / 2, boxH / 2], Math.max(1, r), colors, positions, ck.TileMode.Clamp);
+    }
+    const cx = boxW / 2;
+    const cy = boxH / 2;
+    const rad = (fill.angle * Math.PI) / 180;
+    const dx = Math.cos(rad);
+    const dy = Math.sin(rad);
+    const half = (Math.abs(dx) * boxW + Math.abs(dy) * boxH) / 2;
+    return ck.Shader.MakeLinearGradient(
+      [cx - dx * half, cy - dy * half],
+      [cx + dx * half, cy + dy * half],
+      colors,
+      positions,
+      ck.TileMode.Clamp,
+    );
   }
 
   private drawImageLayer(ck: CanvasKit, sk: Canvas, doc: PressDocument, layer: Layer, paint: Paint): void {
@@ -2058,8 +2093,19 @@ export class Compositor {
     if (multi && drawable > 1) path.setFillType(ck.FillType.EvenOdd);
     if (layer.fill && anyClosed) {
       paint.setStyle(ck.PaintStyle.Fill);
-      paint.setColor(color(ck, layer.fill, layer.fill.a * layer.opacity));
-      sk.drawPath(path, paint);
+      if (isGradientFill(layer.fill)) {
+        const shader = this.makeFillShader(ck, layer.fill, layer.transform.w, layer.transform.h);
+        if (shader) {
+          paint.setShader(shader);
+          paint.setAlphaf(Math.min(1, Math.max(0, layer.opacity)));
+          sk.drawPath(path, paint);
+          paint.setShader(null);
+          shader.delete();
+        }
+      } else {
+        paint.setColor(color(ck, layer.fill, layer.fill.a * layer.opacity));
+        sk.drawPath(path, paint);
+      }
     }
     if (layer.stroke) {
       const s = layer.stroke;
@@ -2518,7 +2564,7 @@ export class Compositor {
     switch (layer.kind) {
       case "vector": {
         h = mixHash(h, layer.closed ? 1 : 2);
-        h = hashRgba(h, layer.fill);
+        h = hashFill(h, layer.fill);
         h = hashRgba(h, layer.stroke ? layer.stroke.color : null);
         h = hashNum(h, layer.stroke ? layer.stroke.width : -1);
         if (layer.stroke) {

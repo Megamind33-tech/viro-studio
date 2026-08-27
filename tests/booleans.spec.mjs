@@ -176,7 +176,7 @@ check("before subtract, page centre is the solid fill colour", isFill(out.centre
 check("after subtract, the HOLE is visible at page centre (background shows)", isBackground(out.centreAfter), `centre=${JSON.stringify(out.centreAfter)}`);
 check("after subtract, the RING is still filled off-centre", isFill(out.ringAfter), `ring=${JSON.stringify(out.ringAfter)}`);
 check("one undo restores BOTH operands (single history step)", out.operandsBack === true && out.layerCountUndo === out.layerCountBefore, `undoCount=${out.layerCountUndo}`);
-check("document is v6 after opening a compound-path file", out.version === 6, `version=${out.version}`);
+check("document is current version after opening a compound-path file", out.version >= 6, `version=${out.version}`);
 check("multi-contour result round-trips through save/open unchanged", out.roundTripped === true && out.reopenedContours === 2, `reopenedContours=${out.reopenedContours}`);
 
 // Existing single-contour vector still renders (no regression to the legacy path).

@@ -12,7 +12,7 @@ import { setLayerLocked, setLayerVisible } from "../document/ops";
 import { listUserAssets, type UserAsset } from "../library/store";
 import { WORKFLOWS, workflowById } from "../library/workflows";
 import { authAvailable, currentUser, signIn, signUp } from "../platform/auth";
-import { loadFontCatalog, searchCatalog, type CatalogFamily } from "../engine/font-catalog";
+import { loadFontCatalog, parseCatalogRecordId, searchCatalog, type CatalogFamily } from "../engine/font-catalog";
 import type { Preset, PresetCategory, PresetMargin, PresetUnit } from "../document/presets";
 import {
   DEFAULT_PRESET_ID,
@@ -638,6 +638,12 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
       case "flip-v":
         app.flipSelected("v");
         return;
+      case "fill-gradient":
+        app.applyLinearFill();
+        return;
+      case "fill-radial":
+        app.applyRadialFill();
+        return;
       case "help-shortcuts":
         state.helpOpen = true;
         el("dlg-help").hidden = false;
@@ -967,6 +973,21 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
     el<HTMLSelectElement>("ch-font").addEventListener("change", () => {
       void app.setFont(el<HTMLSelectElement>("ch-font").value);
     });
+    const applyWeight = () => {
+      const w = parseNum(el<HTMLSelectElement>("ch-weight").value) ?? 400;
+      const italic = el<HTMLInputElement>("ch-italic").checked;
+      void app.setTypeWeight(w, italic);
+    };
+    el<HTMLSelectElement>("ch-weight").addEventListener("change", applyWeight);
+    el<HTMLInputElement>("ch-italic").addEventListener("change", applyWeight);
+    el<HTMLSelectElement>("opt-weight").addEventListener("change", () => {
+      el<HTMLSelectElement>("ch-weight").value = el<HTMLSelectElement>("opt-weight").value;
+      applyWeight();
+    });
+    el<HTMLInputElement>("opt-italic").addEventListener("change", () => {
+      el<HTMLInputElement>("ch-italic").checked = el<HTMLInputElement>("opt-italic").checked;
+      applyWeight();
+    });
     el<HTMLInputElement>("opt-feather").addEventListener("change", (e) => {
       state.feather = parseNum((e.target as HTMLInputElement).value) ?? 0;
     });
@@ -1146,7 +1167,11 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
       const catalogBtn = t.closest<HTMLElement>("[data-catalog]");
       if (catalogBtn?.dataset.catalog) {
         const fam = fontCatalog?.find((f) => f.id === catalogBtn.dataset.catalog);
-        if (fam) void app.applyCatalogFont(fam);
+        if (fam) {
+          const w = parseNum(el<HTMLSelectElement>("ch-weight").value) ?? 400;
+          const italic = el<HTMLInputElement>("ch-italic").checked;
+          void app.applyCatalogFont(fam, w, italic);
+        }
       }
       const assetBtn = t.closest<HTMLElement>("[data-asset]");
       if (assetBtn?.dataset.asset) {
@@ -1882,6 +1907,7 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
     fillIfIdle("ch-lead", story ? fmt(story.character.leading, 1) : "");
     fillIfIdle("ch-track", story ? fmt(story.character.tracking, 1) : "");
     fillIfIdle("ch-shift", story ? fmt(story.character.baselineShift ?? 0, 1) : "");
+    syncTypeWeight(story?.character.fontId);
     for (const [id, on] of [
       ["opt-underline", !!story?.character.underline],
       ["opt-strike", !!story?.character.strikethrough],
@@ -1900,7 +1926,7 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
     setDisabled(TRANSFORM_FIELDS, !sel);
     setDisabled(LAYER_FIELDS, !sel);
     setDisabled(STORY_FIELDS, !story);
-    setDisabled(["opt-underline", "opt-strike", "ch-underline", "ch-strike", "ch-shift"], !story);
+    setDisabled(["opt-underline", "opt-strike", "ch-underline", "ch-strike", "ch-shift", "ch-weight", "ch-italic", "opt-weight", "opt-italic"], !story);
     setDisabled(["stroke-w"], sel?.kind !== "vector");
     // Cap/join/dash only apply once a vector actually carries a stroke.
     const hasStroke = sel?.kind === "vector" && !!sel.stroke;
@@ -2100,6 +2126,30 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
     }
   }
 
+  function syncTypeWeight(fontId?: string): void {
+    const parsed = fontId ? parseCatalogRecordId(fontId) : null;
+    const rec = fontId ? app.fonts.get(fontId) : undefined;
+    let weight = 400;
+    let italic = false;
+    if (parsed) {
+      weight = parsed.weight;
+      italic = parsed.italic;
+    } else if (rec) {
+      italic = /italic/i.test(rec.style);
+      if (/bold|black|heavy/i.test(rec.style)) weight = 700;
+      else if (/semibold|demi/i.test(rec.style)) weight = 600;
+      else if (/medium/i.test(rec.style)) weight = 500;
+      else if (/light/i.test(rec.style)) weight = 300;
+      else if (/thin/i.test(rec.style)) weight = 100;
+    }
+    fillIfIdle("ch-weight", String(weight));
+    fillIfIdle("opt-weight", String(weight));
+    for (const id of ["ch-italic", "opt-italic"] as const) {
+      const box = document.getElementById(id) as HTMLInputElement | null;
+      if (box && document.activeElement !== box) box.checked = italic;
+    }
+  }
+
   function renderFontList(fontId?: string): void {
     const host = document.getElementById("lib-fonts");
     if (!host) return;
@@ -2219,8 +2269,13 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
         // A real composite of this layer alone. `layerThumb` returns null when
         // there are genuinely no pixels to show (empty group, adjustment
         // layer, degenerate transform) — in that case the kind mark stands in
-        // rather than the panel inventing an image.
-        const url = app.compositor?.layerThumb(app.doc, layer.id, THUMB) ?? null;
+        // rather than the panel inventing an image. A throw must not wipe the list.
+        let url: string | null = null;
+        try {
+          url = app.compositor?.layerThumb(app.doc, layer.id, THUMB) ?? null;
+        } catch {
+          url = null;
+        }
         const cell = url
           ? `<span class="thumb"><img src="${url}" alt="" draggable="false" /></span>`
           : `<span class="thumb is-empty">${layerKindMark(layer.kind)}</span>`;
@@ -2238,7 +2293,15 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
       }
     };
     walk(rootsOf(page), 0);
-    el("layer-list").innerHTML = rows.join("") || `<div class="empty">No layers</div>`;
+    const tab = document.getElementById("tab-layers");
+    if (tab) tab.textContent = page.layers.length ? `Layers (${page.layers.length})` : "Layers";
+    const empty =
+      page.layers.length === 0
+        ? "No layers"
+        : state.layerKind !== "all"
+          ? `No ${state.layerKind} layers`
+          : "No layers";
+    el("layer-list").innerHTML = rows.join("") || `<div class="empty">${empty}</div>`;
   }
 
   function renderPaths(page: ReturnType<typeof activePage>): void {
@@ -2436,8 +2499,8 @@ const TRANSFORM_FIELDS = [
   "tr-x", "tr-y", "tr-w", "tr-h", "tr-r",
 ] as const;
 const STORY_FIELDS = [
-  "opt-font", "opt-size", "opt-lead", "opt-track",
-  "ch-font", "ch-size", "ch-lead", "ch-track",
+  "opt-font", "opt-size", "opt-lead", "opt-track", "opt-weight", "opt-italic",
+  "ch-font", "ch-size", "ch-lead", "ch-track", "ch-weight", "ch-italic",
   "para-first", "para-after",
 ] as const;
 const LAYER_FIELDS = ["blend", "opacity", "lock-btn"] as const;

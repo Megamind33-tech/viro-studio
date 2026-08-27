@@ -24,6 +24,7 @@
 
 import type { Layer, Page, PressDocument, Rgba } from "../document/types";
 import { frameHeightFor, pageGrid, rectNodes } from "../document/factory";
+import { fillExportRgb } from "../document/paint";
 import { documentFromTemplate, TEMPLATES } from "../library/catalog";
 import type { AnchorOp } from "./tools";
 
@@ -379,7 +380,7 @@ export function opsFromTemplate(target: PressDocument, templateId: string, opts:
     }
 
     if (l.kind === "vector") {
-      const fill = l.fill ? reInk(rgbaToHex(l.fill)) : null;
+      const fill = l.fill ? reInk(rgbaToHex(fillExportRgb(l.fill))) : null;
       const stroke = l.stroke ? { color: reInk(rgbaToHex(l.stroke.color)), width: Math.max(0.25, S(l.stroke.width)) } : null;
       if (!fill && !stroke) {
         skipped += 1;

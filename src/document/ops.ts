@@ -16,7 +16,9 @@ import type {
   Transform,
   VectorLayer,
   VectorStroke,
+  VectorFill,
 } from "./types";
+import { cloneVectorFill } from "./paint";
 import { replaceStoryRange } from "./text-model";
 import { applyPt, decompose, localMatrix, mul, scaleXOf, scaleYOf, worldBounds } from "./transform";
 import { activePage, cloneDoc, cloneStroke, findLayer, selectedLayers, uid } from "./factory";
@@ -380,6 +382,26 @@ export function applyFill(doc: PressDocument, color: Rgba): PressDocument {
     }
   }
   return next;
+}
+
+/** Set a vector's fill to a solid or a gradient. One layer, one undo step. */
+export function setVectorFill(doc: PressDocument, layerId: string, fill: VectorFill | null): PressDocument {
+  const next = cloneDoc(doc);
+  const layer = findLayer(activePage(next), layerId);
+  if (!layer || layer.kind !== "vector" || layer.locked) return next;
+  layer.fill = fill === null ? null : cloneVectorFill(fill);
+  return next;
+}
+
+export function applyVectorFill(doc: PressDocument, fill: VectorFill): PressDocument {
+  const next = cloneDoc(doc);
+  let changed = false;
+  for (const layer of selectedLayers(next)) {
+    if (layer.locked || layer.kind !== "vector") continue;
+    layer.fill = cloneVectorFill(fill);
+    changed = true;
+  }
+  return changed ? next : doc;
 }
 
 /**

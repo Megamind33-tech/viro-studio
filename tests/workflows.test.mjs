@@ -29,6 +29,14 @@ test("headline lockup creates a line and two type frames", () => {
   assert.equal(ops.filter((o) => o.op === "press.add_type_frame").length, 2);
 });
 
+test("quote card is a plate plus two type frames", () => {
+  const wf = WORKFLOWS.find((w) => w.id === "quote-card");
+  assert.ok(wf);
+  const ops = wf.build({ width: 1080, height: 1350, fg: { r: 0.88, g: 0.48, b: 0.18, a: 1 } });
+  assert.ok(ops.some((o) => o.op === "press.add_round_rect"));
+  assert.equal(ops.filter((o) => o.op === "press.add_type_frame").length, 2);
+});
+
 test("star badge uses press.add_star, not a baked icon", () => {
   const wf = WORKFLOWS.find((w) => w.id === "star-badge");
   assert.ok(wf);

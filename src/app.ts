@@ -55,6 +55,7 @@ import {
   setParagraphAlign,
   setStoryText,
   ungroupSelected,
+  applyVectorFill,
 } from "./document/ops";
 import {
   ANCHOR_TOOLS,
@@ -67,7 +68,8 @@ import { Compositor, type Engines, type HandleId } from "./engine/compositor";
 import { colourStackLabel, loadLcms, rgb8ToLab, type Lcms } from "./engine/lcms";
 import { cutoutAvailable, cutoutDataUrl } from "./engine/cutout";
 import { enhanceDataUrl, type EnhanceKind } from "./engine/enhance";
-import { type CatalogFamily } from "./engine/font-catalog";
+import { type CatalogFamily, loadFontCatalog, parseCatalogRecordId } from "./engine/font-catalog";
+import { linearGradientFill } from "./document/paint";
 import { nearestCaretOffset, type FacePack } from "./engine/type";
 import { fontRegistry, type FontRegistry } from "./engine/font-registry";
 import { makeFallbackFace } from "./engine/latin-fallback";
@@ -1487,6 +1489,74 @@ export class PressApp {
     }
   }
 
+  /**
+   * Switch the selected type frame to another weight/italic of the same family.
+   * Catalog faces fetch the real TTF; bundled Noto maps onto the three shipped files.
+   */
+  async setTypeWeight(weight: number, italic: boolean): Promise<void> {
+    const layer = selectedLayers(this.doc).find((l) => l.kind === "type-frame");
+    if (!layer || layer.kind !== "type-frame") {
+      this.status = "Select type to change weight";
+      this.emit();
+      return;
+    }
+    const story = this.doc.stories.find((s) => s.id === layer.storyId);
+    if (!story) return;
+    const rec = this.fonts.get(story.character.fontId);
+    const parsed = parseCatalogRecordId(story.character.fontId);
+    if (parsed) {
+      try {
+        const list = await loadFontCatalog();
+        const fam = list.find((f) => f.id === parsed.familyId);
+        if (!fam) {
+          this.status = "That catalog family is no longer in the index";
+          this.emit();
+          return;
+        }
+        await this.applyCatalogFont(fam, weight, italic);
+      } catch (err) {
+        this.status = err instanceof Error ? err.message : String(err);
+        this.emit();
+      }
+      return;
+    }
+    if (rec?.family === "Noto Sans") {
+      const id = italic ? "noto-sans-italic" : weight >= 600 ? "noto-sans-bold" : "noto-sans";
+      await this.setFont(id);
+      this.status = this.fonts.get(id)?.name ?? id;
+      return;
+    }
+    this.status = rec
+      ? `${rec.family} has no other weights loaded — pick a Google family from Fonts`
+      : "Select a catalog family to choose weight";
+    this.emit();
+  }
+
+  /** Fill selected vectors with a linear gradient from foreground to background. */
+  applyLinearFill(): void {
+    const fg = this.compositor?.view.fg ?? { r: 0.88, g: 0.48, b: 0.18, a: 1 };
+    const bg = this.compositor?.view.bg ?? { r: 0.12, g: 0.12, b: 0.14, a: 1 };
+    const next = applyVectorFill(this.doc, linearGradientFill(fg, bg, 90));
+    if (next === this.doc) {
+      this.status = "Select an unlocked vector for a gradient fill";
+      this.emit();
+      return;
+    }
+    this.commit("Gradient fill", next);
+  }
+
+  applyRadialFill(): void {
+    const fg = this.compositor?.view.fg ?? { r: 0.88, g: 0.48, b: 0.18, a: 1 };
+    const bg = this.compositor?.view.bg ?? { r: 0.12, g: 0.12, b: 0.14, a: 1 };
+    const next = applyVectorFill(this.doc, { type: "radial", angle: 0, stops: linearGradientFill(fg, bg, 0).stops });
+    if (next === this.doc) {
+      this.status = "Select an unlocked vector for a radial fill";
+      this.emit();
+      return;
+    }
+    this.commit("Radial fill", next);
+  }
+
   openAuthDialog(): void {
     this.dialog = "auth";
     this.emit(true);
@@ -1786,7 +1856,7 @@ export class PressApp {
     if (lower.endsWith(".vdj") || lower.endsWith(".json")) {
       const text = new TextDecoder().decode(bytes);
       const json = JSON.parse(text);
-      if (typeof json.version === "number" && json.version >= 1 && json.version <= 6 && json.pages && json.stories) {
+      if (typeof json.version === "number" && json.version >= 1 && json.version <= 7 && json.pages && json.stories) {
         // A v1 file holds ABSOLUTE child coordinates. v2 composes group
         // transforms, so it MUST be rebased on the way in or every grouped
         // document would open shifted by its own group origin.

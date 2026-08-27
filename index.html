@@ -42,6 +42,9 @@
             <button type="button" data-cmd="flip-h">Flip Horizontal</button>
             <button type="button" data-cmd="flip-v">Flip Vertical</button>
             <div class="sep"></div>
+            <button type="button" data-cmd="fill-gradient">Linear Gradient Fill</button>
+            <button type="button" data-cmd="fill-radial">Radial Gradient Fill</button>
+            <div class="sep"></div>
             <button type="button" data-cmd="duplicate">Duplicate<span class="kbd">Ctrl+J</span></button>
             <button type="button" data-cmd="delete">Delete<span class="kbd">Del</span></button>
           </div>
@@ -175,6 +178,20 @@
           <label class="field"><span>Size</span><input class="num w3" id="opt-size" inputmode="decimal" /></label>
           <button type="button" class="btn" data-cmd="type-size-down" title="Smaller (Ctrl+Shift+,)">−</button>
           <button type="button" class="btn" data-cmd="type-size-up" title="Larger (Ctrl+Shift+.)">+</button>
+          <label class="field"><span>Weight</span>
+            <select class="ctrl" id="opt-weight" aria-label="Type weight">
+              <option value="100">Thin</option>
+              <option value="200">Extra Light</option>
+              <option value="300">Light</option>
+              <option value="400" selected>Regular</option>
+              <option value="500">Medium</option>
+              <option value="600">Semibold</option>
+              <option value="700">Bold</option>
+              <option value="800">Extra Bold</option>
+              <option value="900">Black</option>
+            </select>
+          </label>
+          <label class="check"><input type="checkbox" id="opt-italic" />Italic</label>
           <label class="field"><span>Leading</span><input class="num w3" id="opt-lead" inputmode="decimal" /></label>
           <label class="field"><span>Tracking</span><input class="num w3" id="opt-track" inputmode="decimal" /></label>
           <label class="check"><input type="checkbox" id="opt-underline" />U</label>
@@ -372,6 +389,22 @@
               <label class="field"><span>Track</span><input class="num w3" id="ch-track" /></label>
             </div>
             <div class="row fill">
+              <label class="field"><span>Weight</span>
+                <select class="ctrl grow" id="ch-weight" aria-label="Type weight">
+                  <option value="100">100 Thin</option>
+                  <option value="200">200 Extra Light</option>
+                  <option value="300">300 Light</option>
+                  <option value="400" selected>400 Regular</option>
+                  <option value="500">500 Medium</option>
+                  <option value="600">600 Semibold</option>
+                  <option value="700">700 Bold</option>
+                  <option value="800">800 Extra Bold</option>
+                  <option value="900">900 Black</option>
+                </select>
+              </label>
+              <label class="check"><input type="checkbox" id="ch-italic" />Italic</label>
+            </div>
+            <div class="row fill">
               <label class="check"><input type="checkbox" id="ch-underline" />Underline</label>
               <label class="check"><input type="checkbox" id="ch-strike" />Strike</label>
               <label class="field"><span>Shift</span><input class="num w3" id="ch-shift" inputmode="decimal" aria-label="Baseline shift" /></label>
@@ -517,7 +550,7 @@
 
         <section class="group grow" id="g-layers">
           <div class="tabs" data-tabs="stack">
-            <button type="button" class="is-on" data-tab="layers">Layers</button>
+            <button type="button" class="is-on" data-tab="layers" id="tab-layers">Layers</button>
             <button type="button" data-tab="channels">Channels</button>
             <button type="button" data-tab="paths">Paths</button>
           </div>
@@ -872,7 +905,8 @@
         <div class="dialog-title" id="dlg-help-title">Keyboard shortcuts</div>
         <div class="dialog-body">
           <p class="hint">Tools: V move · M marquee · T type · P pen · U shapes (Shift+U cycles) · C crop · I eyedropper · H hand · Z zoom</p>
-          <p class="hint">Type: Ctrl+Shift+, / . size · Ctrl+U underline</p>
+          <p class="hint">Type: Ctrl+Shift+, / . size · Ctrl+U underline · Character panel weight + italic</p>
+          <p class="hint">Fill: Edit → Linear / Radial Gradient Fill on a selected vector (real Skia shader)</p>
           <p class="hint">Edit: Ctrl+Z/Y undo/redo · Ctrl+J duplicate · Ctrl+G group · Del delete</p>
           <p class="hint">File: Ctrl+N new · Ctrl+O projects · Ctrl+S save · Shift+Ctrl+P place</p>
           <p class="hint">View: Ctrl+R rulers · Ctrl+= / − zoom · Ctrl+0 fit · Ctrl+1 100%</p>

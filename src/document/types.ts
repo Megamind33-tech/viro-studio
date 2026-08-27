@@ -94,6 +94,21 @@ export interface GradientStop {
 }
 
 /**
+ * A gradient used as a vector's own fill (not the overlay effect). Discriminated
+ * by `type: "linear" | "radial"` so a solid `{r,g,b,a}` never collides.
+ * Added in document v7 — a widening stamp; a v≤6 `Rgba` fill stays valid.
+ */
+export interface GradientFill {
+  type: "linear" | "radial";
+  /** Degrees clockwise from +x. Ignored for radial (centre of the layer box). */
+  angle: number;
+  stops: GradientStop[];
+}
+
+/** What a vector paints inside a closed contour. */
+export type VectorFill = Rgba | GradientFill;
+
+/**
  * A gradient painted over the layer's silhouette (Photoshop "Gradient Overlay").
  * Clipped to the layer's existing alpha, so a rectangle, an image or glyph runs
  * all take the gradient in their own shape. Additive effect — no schema bump.
@@ -277,7 +292,7 @@ export interface VectorLayer extends LayerBase {
   kind: "vector";
   closed: boolean;
   nodes: PathNode[];
-  fill: Rgba | null;
+  fill: VectorFill | null;
   stroke: VectorStroke | null;
   /** Optional multi-contour (compound-path) geometry. See PRECEDENCE above. */
   contours?: Contour[];
@@ -464,8 +479,10 @@ export interface PressDocument {
    * 6 = multi-contour (compound-path) vectors for boolean ops (ADR 0005) — a
    *     widening stamp; a v≤5 vector is already a valid v6 one-contour vector,
    *     so nothing is rewritten and no pixels move.
+   * 7 = vector gradient fills (`Rgba | GradientFill`) — a widening stamp; a
+   *     v≤6 solid `{r,g,b,a}` fill is already a valid v7 fill.
    */
-  version: 1 | 2 | 3 | 4 | 5 | 6;
+  version: 1 | 2 | 3 | 4 | 5 | 6 | 7;
   name: string;
   ppi: number;
   color: {
