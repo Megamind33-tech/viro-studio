@@ -1,6 +1,6 @@
 # VIRO Studio — Master Work Registry
 
-This registry is the exhaustive unresolved-work inventory against the current `GOVERNOR.md` truth ledger and accepted ADR/RFC direction as of 2026-08-27.
+This registry is the authoritative known-work inventory against the current `GOVERNOR.md` truth ledger and accepted ADR/RFC direction.
 
 It is not permission to start everything. The Governor controls priority and the Orchestrator controls claims, dependencies, leases, and deployment. If work is not represented here or in an approved delivery manifest, an agent must not invent it.
 
@@ -11,7 +11,8 @@ It is not permission to start everything. The Governor controls priority and the
 - **PROVISIONING_BLOCKED** — architecture is approved but external account/secrets/config are missing.
 - **OWNER_BLOCKED** — explicit owner/legal/commercial decision or action is required.
 - **RFC_BLOCKED** — product is absent and requires an approved architecture/product RFC before implementation.
-- **PROVEN** — already working; only regression/hardening packets may touch it.
+- **PROVEN** — already working; do not deploy a Builder to recreate it.
+- **RECONCILED** — an older packet was discovered to describe work that had already landed before the packet was activated; it is terminal history, not executable work.
 
 ## Micro-agent rule
 
@@ -19,18 +20,18 @@ A micro-agent is deliberately narrow. It receives one role, one packet, one leas
 
 | Work ID | Work | State | Dependency / blocker | Orchestrator role | Smallest suitable micro-agent | Normal scope |
 |---|---|---|---|---|---|---|
-| VIRO-0002 | Multi-contour vector model + v5→v6 migration proof | READY | none; current approved editor progression | editor-engineer | geometry/migration agent | `src/document/**`, compositor touchpoints, tests |
-| VIRO-0003 | Boolean geometry kernel: Union/Subtract/Intersect/Exclude with deterministic fixtures | QUEUED | VIRO-0002 DONE | editor-engineer | geometry-ops agent | new/targeted document geometry module + tests |
-| VIRO-0004 | Boolean command-bus integration with reversible undo/redo | QUEUED | VIRO-0003 DONE | editor-engineer | command-bus agent | command modules + tests |
-| VIRO-0005 | Boolean rendering/export fidelity across PNG/PDF | QUEUED | VIRO-0004 DONE | editor-engineer | render/export fidelity agent | compositor/export + tests |
-| VIRO-0006 | Boolean UI wiring and shortcuts; no decorative controls | QUEUED | VIRO-0005 DONE | ui-engineer | editor-chrome wiring agent | `src/chrome/**`, `index.html`, UI tests |
-| VIRO-0007 | Boolean-path independent end-to-end acceptance | QUEUED | VIRO-0006 DONE | verifier | E2E verifier agent | `tests/**`, evidence only |
-| VIRO-0010 | Autosave large-document quota/error hardening | QUEUED | Governor activation after P1 editor packet | editor-engineer | persistence stress agent | recovery/store paths + tests |
+| VIRO-0002 | Multi-contour vector model + v5→v6 migration proof | RECONCILED | Already landed via 84936c2 before packet activation; see delivery manifest audit evidence | none | none | historical only |
+| VIRO-0003 | Boolean geometry kernel: Union/Subtract/Intersect/Exclude | PROVEN | Already on main in `src/document/boolean-ops.ts`; do not recreate | none | none | proven surface |
+| VIRO-0004 | Boolean command-bus integration with reversible undo/redo | PROVEN | `vector.boolean` is already a real derived-inverse command with regression tests | none | none | proven surface |
+| VIRO-0005 | Preserve compound boolean geometry in vector PDF export | READY | VIRO-0002 reconciled; current PDF exporter still walks legacy `layer.nodes` only | builder | PDF/export fidelity agent | `src/export/pdf.ts`, targeted tests |
+| VIRO-0006 | Boolean UI wiring and Pathfinder controls | PROVEN | Unite/Minus Front/Intersect/Exclude already ship as real controls on main | none | none | proven surface |
+| VIRO-0007 | Boolean-path independent runtime acceptance | PROVEN | Existing boolean E2E covers canvas hole/undo/save-open; PDF-specific independent verification belongs to VIRO-0005 | none | none | proven evidence |
+| VIRO-0010 | Autosave large-document quota/error hardening | QUEUED | Governor activation after current P1 export packet | editor-engineer | persistence stress agent | recovery/store paths + tests |
 | VIRO-0011 | Replace single recovery slot with document-identity recovery model | QUEUED | VIRO-0010 DONE or Governor reprioritization | editor-engineer | recovery-model agent | persistence/document identity + tests |
 | VIRO-0012 | 60-FPS interaction profiling on common canvas operations | QUEUED | Governor activation | editor-engineer | performance profiler agent | measurement harness, localized fixes only |
 | VIRO-0013 | Import parser fuzz/negative tests for PSD/VDJ/PressJSON | QUEUED | Governor activation | builder | import-hardening agent | `src/import/**`, tests/fixtures |
 | VIRO-0014 | Font/image/import sanitization regression hardening | QUEUED | Governor activation | builder | input-security agent | import/font/image validation + tests |
-| VIRO-0015 | PNG/PDF export regression corpus and fidelity report expansion | QUEUED | Governor activation | builder | export-QA agent | `src/export/**`, tests/fixtures |
+| VIRO-0015 | PNG/PDF export regression corpus and fidelity report expansion | QUEUED | Governor activation after VIRO-0005 so compound-path behavior is part of the baseline | builder | export-QA agent | `src/export/**`, tests/fixtures |
 | VIRO-0016 | Accessibility/keyboard audit of existing editor chrome; fix proven defects only | QUEUED | Governor activation | ui-engineer | accessibility agent | `src/chrome/**`, `index.html`, tests |
 | VIRO-0017 | UI visual-polish defect sweep against AAA brief without layout invention | QUEUED | Governor activation and no unresolved higher-priority packet | ui-engineer | visual-polish agent | existing UI/CSS surfaces only |
 | VIRO-0018 | Template/preset breadth expansion using truthful real templates/assets | QUEUED | approved content brief/assets; no fake thumbnails | builder | template-content agent | presets/catalog/assets + tests |
@@ -66,21 +67,26 @@ A micro-agent is deliberately narrow. It receives one role, one packet, one leas
 | VIRO-0130 | External integrations framework RFC | RFC_BLOCKED | owner target integrations | research-architect | integrations architect | docs only |
 | VIRO-0131 | First approved external integration | RFC_BLOCKED | VIRO-0130 approved | platform-engineer | integration adapter agent | one integration per packet |
 
-## PROVEN surfaces — do not create replacement work
+## Proven surfaces — do not create replacement work
 
-These are already classified as working by the Governor and are not open-ended rewrite invitations: Skia compositor, HarfBuzz shaping, LittleCMS color conversion, document migrations through v5, command bus/undo-redo, current editor tool wiring, local New/Open/Place/Save, PSD/VDJ/PressJSON import, PNG/PDF export, background removal, font registry, autosave/crash recovery, feature flags, local Projects library + real thumbnails, Anchor operation API, layer effects, vector stroke styling, and multi-select transform/smart guides.
+These are already classified as working and are not open-ended rewrite invitations: Skia compositor, HarfBuzz shaping, LittleCMS color conversion, document migrations through v6, command bus/undo-redo, current editor tool wiring, local New/Open/Place/Save, PSD/VDJ/PressJSON import, PNG/PDF export generally, background removal, font registry, autosave/crash recovery, feature flags, local Projects library + real thumbnails, Anchor operation API, layer effects, vector stroke styling, multi-select transform/smart guides, the multi-contour vector model, Boolean kernel, reversible `vector.boolean` command, Pathfinder UI, and canvas/runtime boolean acceptance.
 
 A micro-agent may touch a PROVEN surface only when an active packet names a concrete defect, regression, security problem, or measurable performance/fidelity target and leases the exact paths.
+
+### Known exception inside an otherwise proven export surface
+
+Vector PDF export is real, but compound-path fidelity is not yet proven. `src/export/pdf.ts` currently walks legacy `layer.nodes` in `emitVector()` and does not consume authoritative `VectorLayer.contours`. That concrete defect is VIRO-0005. Do not generalize it into an exporter rewrite.
 
 ## Assignment order
 
 1. Finish active P0/P1 packets before unrelated work.
-2. Follow dependency edges.
+2. Follow dependency edges; `DONE` and `RECONCILED` both satisfy historical dependency edges.
 3. Prefer the smallest packet that produces an independently testable delta.
 4. Allow parallel work only when leased scopes are disjoint.
 5. Never turn a BLOCKED/RFC_BLOCKED row into production work by inventing credentials, providers, product rules, or placeholder UI.
 6. When a new unresolved capability is discovered, report it to the Governor/Orchestrator for registry insertion before implementation.
+7. If a gap audit proves the target already exists, reconcile the stale packet; do not deploy a Builder merely to preserve the original sequence.
 
 ## Redeployment rule
 
-After every handoff, rejection, or completed assignment, the worker returns to the Orchestrator. It does not choose its own next task. A builder may be redeployed to another build-stage packet, but it may not become verifier/critic/release-manager for the packet it just built.
+After every handoff, rejection, reconciliation, or completed assignment, the worker returns to the Orchestrator. It does not choose its own next task. A builder may be redeployed to another build-stage packet, but it may not become verifier/critic/release-manager for the packet it just built.

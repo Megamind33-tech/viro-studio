@@ -1,9 +1,7 @@
 #!/usr/bin/env node
 import fs from "node:fs/promises";
 import path from "node:path";
-import { execFileSync } from "node:child_process";
 import {
-  newState,
   importManifest,
   claimPacket,
   heartbeat,
@@ -21,6 +19,7 @@ import {
   scopesOverlap,
   requiredRole,
 } from "./lib/orchestrator-core.mjs";
+import { GitControlStore } from "./lib/git-control-store.mjs";
 
 const ROOT = process.cwd();
 const CONFIG_PATH = path.join(ROOT, ".viro", "orchestrator.json");
@@ -69,124 +68,6 @@ async function loadConfig() {
   };
 }
 
-function detectRepo() {
-  if (process.env.GITHUB_REPOSITORY) return process.env.GITHUB_REPOSITORY;
-  try {
-    const remote = execFileSync("git", ["remote", "get-url", "origin"], { encoding: "utf8" }).trim();
-    const match = remote.match(/github\.com[/:]([^/]+)\/([^/.]+)(?:\.git)?$/i);
-    if (match) return `${match[1]}/${match[2]}`;
-  } catch {
-    // Explicit --repo remains available when git metadata is unavailable.
-  }
-  return null;
-}
-
-class HttpError extends Error {
-  constructor(status, message, body = null) {
-    super(`${status}: ${message}`);
-    this.status = status;
-    this.body = body;
-  }
-}
-
-class GitHubStateStore {
-  constructor({ repo, token, config }) {
-    if (!repo) throw new Error("Repository not detected; set GITHUB_REPOSITORY or pass --repo owner/name");
-    if (!token) throw new Error("GITHUB_TOKEN is required for shared orchestration state");
-    this.repo = repo;
-    this.token = token;
-    this.config = config;
-    this.apiRoot = process.env.GITHUB_API_URL || "https://api.github.com";
-  }
-
-  async request(endpoint, options = {}) {
-    const response = await fetch(`${this.apiRoot}${endpoint}`, {
-      ...options,
-      headers: {
-        Accept: "application/vnd.github+json",
-        Authorization: `Bearer ${this.token}`,
-        "X-GitHub-Api-Version": "2022-11-28",
-        "Content-Type": "application/json",
-        ...(options.headers ?? {}),
-      },
-    });
-    let body = null;
-    const text = await response.text();
-    if (text) {
-      try { body = JSON.parse(text); } catch { body = text; }
-    }
-    if (!response.ok) throw new HttpError(response.status, body?.message ?? response.statusText, body);
-    return body;
-  }
-
-  async ensureControlBranch() {
-    const branch = this.config.control_branch;
-    try {
-      await this.request(`/repos/${this.repo}/git/ref/heads/${encodeURIComponent(branch)}`);
-      return;
-    } catch (error) {
-      if (!(error instanceof HttpError) || error.status !== 404) throw error;
-    }
-    const repoInfo = await this.request(`/repos/${this.repo}`);
-    const base = await this.request(`/repos/${this.repo}/git/ref/heads/${encodeURIComponent(repoInfo.default_branch)}`);
-    try {
-      await this.request(`/repos/${this.repo}/git/refs`, {
-        method: "POST",
-        body: JSON.stringify({ ref: `refs/heads/${branch}`, sha: base.object.sha }),
-      });
-    } catch (error) {
-      if (!(error instanceof HttpError) || ![409, 422].includes(error.status)) throw error;
-    }
-  }
-
-  async read() {
-    await this.ensureControlBranch();
-    const branch = this.config.control_branch;
-    const file = this.config.state_path.split("/").map(encodeURIComponent).join("/");
-    try {
-      const body = await this.request(`/repos/${this.repo}/contents/${file}?ref=${encodeURIComponent(branch)}`);
-      const json = Buffer.from(body.content.replaceAll("\n", ""), "base64").toString("utf8");
-      return { state: JSON.parse(json), sha: body.sha };
-    } catch (error) {
-      if (error instanceof HttpError && error.status === 404) return { state: newState(), sha: null };
-      throw error;
-    }
-  }
-
-  async write(state, sha, message) {
-    const branch = this.config.control_branch;
-    const file = this.config.state_path.split("/").map(encodeURIComponent).join("/");
-    const payload = {
-      message,
-      branch,
-      content: Buffer.from(`${JSON.stringify(state, null, 2)}\n`, "utf8").toString("base64"),
-    };
-    if (sha) payload.sha = sha;
-    return this.request(`/repos/${this.repo}/contents/${file}`, {
-      method: "PUT",
-      body: JSON.stringify(payload),
-    });
-  }
-
-  async mutate(label, mutation, retries = 7) {
-    let lastError = null;
-    for (let attempt = 1; attempt <= retries; attempt += 1) {
-      const { state, sha } = await this.read();
-      const draft = structuredClone(state);
-      const result = await mutation(draft);
-      try {
-        await this.write(draft, sha, `orchestrator: ${label}`);
-        return { state: draft, result };
-      } catch (error) {
-        lastError = error;
-        if (!(error instanceof HttpError) || ![409, 422].includes(error.status)) throw error;
-        await new Promise((resolve) => setTimeout(resolve, 80 * attempt));
-      }
-    }
-    throw new Error(`Shared-state update lost the concurrency race after ${retries} attempts: ${lastError?.message}`);
-  }
-}
-
 async function manifestsFromDisk(config) {
   const dir = path.join(ROOT, config.delivery_directory);
   const entries = await fs.readdir(dir, { withFileTypes: true });
@@ -231,43 +112,34 @@ function validateState(state) {
 }
 
 function help() {
-  console.log(`VIRO resident orchestrator\n\nCommands:\n  bootstrap\n  sync\n  status\n  check\n  claim --agent ID --role ROLE [--packet VIRO-0005] [--machine NAME]\n  brief --agent ID\n  heartbeat --agent ID\n  advance --agent ID --packet VIRO-0005 --evidence "proof one||proof two"\n  reject --agent ID --packet VIRO-0005 --reason "specific failure"\n  block --packet VIRO-0005 --reason "external blocker"\n  unblock --packet VIRO-0005\n  reconcile --packet VIRO-0002 --evidence "commit proof||test proof" [--by governor]\n  reap --packet VIRO-0005 --reason "agent disappeared"\n\nShared writes require GITHUB_TOKEN with repository Contents read/write permission.\nIf direct api.github.com access is blocked but authenticated git fetch/push works, use scripts/viro-orchestrator-git.mjs instead.\nAll transports operate on the same configured control branch/state.`);
+  console.log(`VIRO resident orchestrator — git transport\n\nUse this when the environment can git fetch/push but blocks direct api.github.com access.\nIt writes the exact same shared state on the viro-agent-control branch and uses git --force-with-lease as the concurrency guard.\n\nCommands:\n  sync\n  status\n  check\n  claim --agent ID --role ROLE [--packet VIRO-0005] [--machine NAME]\n  brief --agent ID\n  heartbeat --agent ID\n  advance --agent ID --packet VIRO-0005 --evidence "proof one||proof two"\n  reject --agent ID --packet VIRO-0005 --reason "specific failure"\n  block --packet VIRO-0005 --reason "external blocker"\n  unblock --packet VIRO-0005\n  reconcile --packet VIRO-0002 --evidence "commit proof||test proof" [--by governor]\n  reap --packet VIRO-0005 --reason "agent disappeared"\n\nNo GITHUB_TOKEN or direct REST egress is required. Normal authenticated git fetch/push permission is required.`);
 }
 
 async function main() {
   const { command, flags } = parseArgs(process.argv.slice(2));
   if (["help", "-h", "--help"].includes(command)) return help();
   const config = await loadConfig();
-  const repo = flags.repo ? String(flags.repo) : detectRepo();
-  const store = new GitHubStateStore({ repo, token: process.env.GITHUB_TOKEN, config });
-
-  if (command === "bootstrap") {
-    await store.ensureControlBranch();
-    const { state, sha } = await store.read();
-    if (!sha) await store.write(state, null, "orchestrator: bootstrap shared state");
-    console.log(`Shared control plane ready: ${repo}#${config.control_branch}:${config.state_path}`);
-    return;
-  }
+  const store = new GitControlStore({ root: ROOT, config, remote: flags.remote ? String(flags.remote) : "origin" });
 
   if (command === "sync") {
     const manifests = await manifestsFromDisk(config);
-    const { state } = await store.mutate("sync delivery manifests", (draft) => {
+    const { state } = await store.mutate("sync delivery manifests via git", (draft) => {
       for (const manifest of manifests) importManifest(draft, manifest);
       return manifests.map((m) => m.id);
     });
-    console.log(`Synced ${manifests.length} delivery manifest(s).`);
+    console.log(`Synced ${manifests.length} delivery manifest(s) through git transport.`);
     printBoard(state, config.lease_ttl_minutes);
     return;
   }
 
   if (command === "status") {
-    const { state } = await store.read();
+    const { state } = store.read();
     printBoard(state, config.lease_ttl_minutes);
     return;
   }
 
   if (command === "check") {
-    const { state } = await store.read();
+    const { state } = store.read();
     const errors = validateState(state);
     const stale = staleAssignments(state, config.lease_ttl_minutes);
     if (stale.length) errors.push(`stale assignments require Governor decision: ${stale.map((p) => p.id).join(", ")}`);
@@ -292,7 +164,7 @@ async function main() {
 
   if (command === "brief") {
     const agentId = requireFlag(flags, "agent");
-    const { state } = await store.read();
+    const { state } = store.read();
     console.log(JSON.stringify(assignmentBrief(state, agentId), null, 2));
     return;
   }
@@ -351,7 +223,7 @@ async function main() {
   if (command === "reap") {
     const packetId = requireFlag(flags, "packet");
     const reason = flags.reason ? String(flags.reason) : "stale agent lease";
-    const { state } = await store.read();
+    const { state } = store.read();
     const stale = new Set(staleAssignments(state, config.lease_ttl_minutes).map((p) => p.id));
     if (!stale.has(packetId) && !flags.force) throw new Error(`${packetId} is not stale; pass --force only after Governor review`);
     await store.mutate(`reap ${packetId}`, (draft) => reapAssignment(draft, { packetId, reason }));
@@ -363,6 +235,6 @@ async function main() {
 }
 
 main().catch((error) => {
-  console.error(`orchestrator error: ${error.message}`);
+  console.error(`orchestrator git transport error: ${error.message}`);
   process.exitCode = 1;
 });

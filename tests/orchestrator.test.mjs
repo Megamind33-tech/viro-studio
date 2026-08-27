@@ -7,6 +7,7 @@ import {
   claimPacket,
   advancePacket,
   rejectPacket,
+  reconcilePacket,
   selectablePackets,
   requiredRole,
 } from "../scripts/lib/orchestrator-core.mjs";
@@ -17,13 +18,14 @@ function manifest(id, {
   allowed_paths = ["src/document/**"],
   depends_on = [],
   critic = false,
+  state = "QUEUED",
 } = {}) {
   return {
     id,
     title: `${id} concrete delivery packet`,
     priority,
     domain,
-    state: "QUEUED",
+    state,
     outcome: `${id} produces one measurable product delta with independent proof.`,
     allowed_paths,
     depends_on,
@@ -69,7 +71,7 @@ test("a packet keeps its lease across handoffs so overlapping work cannot enter"
   );
 });
 
-test("independent verifier and release manager are required before lease is released", () => {
+test("release review cannot mark DONE or release the lease before a real merge", () => {
   const state = newState();
   importManifest(state, manifest("VIRO-2000"));
   importManifest(state, manifest("VIRO-2001", { allowed_paths: ["src/document/types.ts"] }));
@@ -91,12 +93,14 @@ test("independent verifier and release manager are required before lease is rele
   assert.ok(state.leases["VIRO-2000"]);
 
   claimPacket(state, { agentId: "r1", role: "release-manager", preferredId: "VIRO-2000" });
-  advancePacket(state, { agentId: "r1", packetId: "VIRO-2000", evidence: ["delta ledger recorded"] });
-  assert.equal(state.packets["VIRO-2000"].status, "DONE");
-  assert.equal(state.leases["VIRO-2000"], undefined);
-
-  const nowClaimable = selectablePackets(state, "gap-auditor", "VIRO-2001");
-  assert.equal(nowClaimable.length, 1);
+  assert.throws(
+    () => advancePacket(state, { agentId: "r1", packetId: "VIRO-2000", evidence: ["release review passed"] }),
+    /viro-release/,
+  );
+  assert.equal(state.packets["VIRO-2000"].stage, "release");
+  assert.notEqual(state.packets["VIRO-2000"].status, "DONE");
+  assert.ok(state.leases["VIRO-2000"]);
+  assert.equal(selectablePackets(state, "gap-auditor", "VIRO-2001").length, 0);
 });
 
 test("dependency graph prevents downstream packet from starting early", () => {
@@ -111,6 +115,36 @@ test("dependency graph prevents downstream packet from starting early", () => {
   state.packets["VIRO-3000"].status = "DONE";
   state.packets["VIRO-3000"].stage = "done";
   assert.equal(selectablePackets(state, "gap-auditor", "VIRO-3001").length, 1);
+});
+
+test("historical reconciliation is terminal, satisfies dependencies, and does not fake delivery roles", () => {
+  const state = newState();
+  importManifest(state, manifest("VIRO-3500", { allowed_paths: ["src/document/**"] }));
+  importManifest(state, manifest("VIRO-3501", {
+    allowed_paths: ["src/export/**"],
+    depends_on: ["VIRO-3500"],
+  }));
+
+  reconcilePacket(state, {
+    packetId: "VIRO-3500",
+    evidence: ["commit deadbeef is already an ancestor of main", "regression suite proves target state"],
+  });
+
+  assert.equal(state.packets["VIRO-3500"].status, "RECONCILED");
+  assert.equal(state.packets["VIRO-3500"].stage, "done");
+  assert.equal(state.leases["VIRO-3500"], undefined);
+  assert.equal(selectablePackets(state, "gap-auditor", "VIRO-3500").length, 0);
+  assert.equal(selectablePackets(state, "gap-auditor", "VIRO-3501").length, 1);
+});
+
+test("a RECONCILED manifest updates an idle blocked packet during sync", () => {
+  const state = newState();
+  importManifest(state, manifest("VIRO-3600"));
+  state.packets["VIRO-3600"].status = "BLOCKED";
+  state.packets["VIRO-3600"].rejection = { reason: "stale before-state" };
+  importManifest(state, manifest("VIRO-3600", { state: "RECONCILED" }));
+  assert.equal(state.packets["VIRO-3600"].status, "RECONCILED");
+  assert.equal(state.packets["VIRO-3600"].rejection, null);
 });
 
 test("one agent cannot own two packets", () => {

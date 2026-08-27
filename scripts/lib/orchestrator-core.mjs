@@ -28,6 +28,8 @@ export const DOMAIN_ROLE = {
   "research-architecture": "research-architect",
 };
 
+const TERMINAL = new Set(["DONE", "RECONCILED"]);
+
 export function newState() {
   return {
     version: 1,
@@ -42,6 +44,7 @@ export function newState() {
 
 export function normalizePacket(manifest) {
   const criticNeeded = manifest.critic?.status !== "NOT_APPLICABLE";
+  const terminal = TERMINAL.has(manifest.state);
   return {
     id: manifest.id,
     title: manifest.title,
@@ -51,8 +54,8 @@ export function normalizePacket(manifest) {
     scope: [...new Set(manifest.allowed_paths ?? [])],
     dependencies: [...new Set(manifest.depends_on ?? [])],
     critic_needed: criticNeeded,
-    stage: manifest.state === "DONE" ? "done" : "audit",
-    status: manifest.state === "BLOCKED" ? "BLOCKED" : manifest.state === "DONE" ? "DONE" : "QUEUED",
+    stage: terminal ? "done" : "audit",
+    status: manifest.state === "BLOCKED" ? "BLOCKED" : terminal ? manifest.state : "QUEUED",
     assigned_agent: null,
     assigned_role: null,
     work_branch: null,
@@ -85,7 +88,7 @@ export function scopesOverlap(left = [], right = []) {
 }
 
 export function depsSatisfied(packet, state) {
-  return packet.dependencies.every((id) => state.packets[id]?.status === "DONE");
+  return packet.dependencies.every((id) => TERMINAL.has(state.packets[id]?.status));
 }
 
 export function requiredRole(packet) {
@@ -125,7 +128,7 @@ export function conflictingPacket(packet, state) {
 
 export function selectablePackets(state, role, preferredId = null) {
   let packets = Object.values(state.packets).filter((packet) => {
-    if (["DONE", "BLOCKED"].includes(packet.status)) return false;
+    if (["DONE", "RECONCILED", "BLOCKED"].includes(packet.status)) return false;
     if (packet.assigned_agent) return false;
     if (!depsSatisfied(packet, state)) return false;
     if (!roleCanServe(role, packet)) return false;
@@ -162,12 +165,26 @@ export function importManifest(state, manifest) {
     stamp(state, "packet.imported", { packet: incoming.id });
     return { changed: true, packet: incoming };
   }
-  const mutable = current.status === "QUEUED" && !current.assigned_agent && !state.leases[current.id];
+
   current.title = incoming.title;
   current.priority = incoming.priority;
   current.outcome = incoming.outcome;
   current.dependencies = incoming.dependencies;
   current.critic_needed = incoming.critic_needed;
+
+  if (incoming.status === "RECONCILED") {
+    if (current.assigned_agent) throw new Error(`${current.id} cannot be reconciled while assigned to ${current.assigned_agent}`);
+    current.domain = incoming.domain;
+    current.scope = incoming.scope;
+    current.stage = "done";
+    current.status = "RECONCILED";
+    current.rejection = null;
+    delete state.leases[current.id];
+    stamp(state, "packet.reconciled_from_manifest", { packet: current.id });
+    return { changed: true, packet: current };
+  }
+
+  const mutable = current.status === "QUEUED" && !current.assigned_agent && !state.leases[current.id];
   if (mutable) {
     current.domain = incoming.domain;
     current.scope = incoming.scope;
@@ -245,15 +262,13 @@ export function advancePacket(state, { agentId, packetId, evidence = [] }) {
   else if (from === "verify") packet.stage = packet.critic_needed ? "critic" : "release";
   else if (from === "critic") packet.stage = "release";
   else if (from === "release") {
-    packet.stage = "done";
-    packet.status = "DONE";
-    delete state.leases[packet.id];
+    throw new Error("release stage cannot advance directly to DONE; use viro-release approval so DONE is recorded only after a real merge to main");
   } else throw new Error(`Cannot advance stage ${from}`);
 
   packet.last_handoff = { from, to: packet.stage, by: agentId, at: new Date().toISOString(), evidence: proof };
   packet.rejection = null;
   clearAssignment(state, packet);
-  if (packet.stage !== "done") packet.status = "QUEUED";
+  packet.status = "QUEUED";
   stamp(state, "packet.advanced", { packet: packet.id, from, to: packet.stage, by: agentId });
   return packet;
 }
@@ -284,6 +299,25 @@ export function blockPacket(state, { packetId, reason, by = "governor" }) {
   packet.rejection = { by, stage: packet.stage, reason: String(reason), at: new Date().toISOString() };
   delete state.leases[packet.id];
   stamp(state, "packet.blocked", { packet: packet.id, by, reason: String(reason) });
+  return packet;
+}
+
+export function reconcilePacket(state, { packetId, evidence = [], by = "governor" }) {
+  const packet = state.packets[packetId];
+  if (!packet) throw new Error(`Unknown packet ${packetId}`);
+  if (packet.assigned_agent) throw new Error(`${packetId} cannot be reconciled while assigned to ${packet.assigned_agent}`);
+  if (TERMINAL.has(packet.status)) throw new Error(`${packetId} is already terminal (${packet.status})`);
+  const proof = Array.isArray(evidence) ? evidence.filter(Boolean) : [String(evidence)].filter(Boolean);
+  if (!proof.length) throw new Error("Historical reconciliation requires concrete commit/test evidence");
+  const at = new Date().toISOString();
+  packet.evidence ??= [];
+  packet.evidence.push(...proof.map((item) => ({ stage: "reconcile", by, item, at })));
+  packet.stage = "done";
+  packet.status = "RECONCILED";
+  packet.rejection = null;
+  packet.last_handoff = { from: "historical", to: "done", by, at, evidence: proof };
+  delete state.leases[packet.id];
+  stamp(state, "packet.reconciled", { packet: packet.id, by, evidence: proof });
   return packet;
 }
 

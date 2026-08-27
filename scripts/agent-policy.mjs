@@ -7,7 +7,7 @@ const fail = (message) => {
   process.exitCode = 1;
 };
 
-const validStates = new Set(["QUEUED", "ACTIVE", "VERIFY", "CRITIC", "REJECTED", "BLOCKED", "DONE"]);
+const validStates = new Set(["QUEUED", "ACTIVE", "VERIFY", "CRITIC", "REJECTED", "BLOCKED", "DONE", "RECONCILED"]);
 const validDomains = new Set(["editor-core", "canvas-rendering", "typography", "ui-ux", "assets-import", "export", "ai", "platform", "verification", "research-architecture"]);
 const verdictStates = new Set(["PENDING", "PASS", "PARTIAL", "BLOCKED", "REJECTED", "NOT_APPLICABLE"]);
 
@@ -57,6 +57,13 @@ for (const path of deliveryFiles) {
     if (!["PASS", "NOT_APPLICABLE"].includes(m.critic?.status)) fail(`${path} is DONE without critic PASS/NOT_APPLICABLE`);
     if (!m.delta || !m.delta.before || !m.delta.after || m.delta.before.trim() === m.delta.after.trim()) fail(`${path} is DONE without a concrete before→after delta`);
     if (!Array.isArray(m.delta.proof) || m.delta.proof.length === 0) fail(`${path} is DONE without delta proof`);
+  }
+  if (m.state === "RECONCILED") {
+    if (m.builder?.status !== "NOT_APPLICABLE" || m.verifier?.status !== "NOT_APPLICABLE") {
+      fail(`${path} is RECONCILED but retroactively assigns builder/verifier verdicts; historical reconciliation must not fake pipeline execution`);
+    }
+    if (!Array.isArray(m.delta?.proof) || m.delta.proof.length === 0) fail(`${path} is RECONCILED without repository/test evidence`);
+    if (!String(m.after ?? "").trim()) fail(`${path} is RECONCILED without a current truth statement`);
   }
 }
 

@@ -9,7 +9,7 @@
     "title": {"type": "string", "minLength": 8},
     "priority": {"enum": ["P0", "P1", "P2", "P3"]},
     "domain": {"enum": ["editor-core", "canvas-rendering", "typography", "ui-ux", "assets-import", "export", "ai", "platform", "verification", "research-architecture"]},
-    "state": {"enum": ["QUEUED", "ACTIVE", "VERIFY", "CRITIC", "REJECTED", "BLOCKED", "DONE"]},
+    "state": {"enum": ["QUEUED", "ACTIVE", "VERIFY", "CRITIC", "REJECTED", "BLOCKED", "DONE", "RECONCILED"]},
     "outcome": {"type": "string", "minLength": 20},
     "before": {"type": "string", "minLength": 10},
     "after": {"type": "string", "minLength": 10},

@@ -1,0 +1,58 @@
+{
+  "id": "VIRO-0005",
+  "title": "Preserve compound boolean geometry in vector PDF export",
+  "priority": "P1",
+  "domain": "export",
+  "state": "QUEUED",
+  "outcome": "A multi-contour vector that renders with holes or disjoint pieces on the VIRO canvas exports to vector PDF with the same compound geometry and fill semantics, without regressing legacy single-contour vectors.",
+  "before": "main @ 6d4d7b6 renders authoritative VectorLayer.contours correctly on canvas, but src/export/pdf.ts emitVector still emits only legacy layer.nodes/layer.closed. Boolean holes and disjoint pieces can therefore be lost or filled incorrectly in vector PDF output.",
+  "after": "The PDF exporter consumes the same authoritative contour topology as the compositor, emits every drawable contour, uses the correct compound fill rule for filled multi-contour paths, preserves stroke behavior, and leaves legacy single-contour PDF output unchanged.",
+  "allowed_paths": [
+    "src/export/pdf.ts",
+    "tests/**",
+    "docs/agents/deliveries/VIRO-0005.json"
+  ],
+  "depends_on": ["VIRO-0002"],
+  "acceptance": [
+    "A subtract-produced ring with two contours exports as vector path data whose centre is a real hole rather than a filled rectangle.",
+    "A compound vector containing disjoint contours exports all drawable contours rather than only legacy layer.nodes.",
+    "The PDF fill operator/semantics match the compositor's compound EvenOdd behavior when authoritative contours contain multiple closed subpaths.",
+    "Stroke-only and fill+stroke compound vectors preserve their stroke width/color and do not silently rasterize solely because contours are present.",
+    "A legacy single-contour vector produces equivalent PDF path topology and appearance before and after the change.",
+    "PdfExportReport remains truthful: compound vectors count as vector paths and do not create a rasterFallback solely for boolean geometry.",
+    "Targeted PDF/boolean regression tests, npx tsc --noEmit, npm test and npm run build pass before release approval.",
+    "Independent verifier captures reproducible PDF evidence; critic checks the exported artifact for visible canvas/PDF parity before release."
+  ],
+  "evidence": [
+    "Regression test proving current exporter ignores VectorLayer.contours before the fix",
+    "Targeted exported-PDF assertion proving every contour is emitted and compound fill semantics are used",
+    "Rendered or otherwise independently reproducible PDF proof showing the subtract hole remains open",
+    "Single-contour PDF non-regression proof",
+    "PdfExportReport vector/raster classification proof",
+    "npx tsc --noEmit",
+    "npm test",
+    "npm run build"
+  ],
+  "builder": {
+    "status": "PENDING",
+    "notes": "Awaiting Orchestrator assignment to the export builder after reconciliation lands.",
+    "proof": []
+  },
+  "verifier": {
+    "status": "PENDING",
+    "notes": "Independent verification required after implementation.",
+    "proof": []
+  },
+  "critic": {
+    "status": "PENDING",
+    "notes": "Exported PDF is user-visible output; critic must judge visual fidelity against the canvas rather than UI chrome.",
+    "proof": []
+  },
+  "delta": {
+    "before": "Compound boolean geometry is authoritative in the document/compositor but the vector PDF exporter still serializes only the legacy single contour.",
+    "after": "Pending implementation and independent export-fidelity proof.",
+    "proof": [],
+    "regression_protection": [],
+    "new_debt": "none accepted yet"
+  }
+}
