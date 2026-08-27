@@ -188,7 +188,7 @@ export class PressApp {
   /** Tip count for the star tool (3–16). */
   starPoints = 5;
   drag: {
-    mode: "move" | "marquee" | "pan" | "rect" | "ellipse" | "line" | "roundrect" | "polygon" | "star" | "crop" | "resize" | "type";
+    mode: "move" | "marquee" | "pan" | "rect" | "ellipse" | "line" | "roundrect" | "polygon" | "star" | "crop" | "resize" | "type" | "frame" | "guide";
     x: number;
     y: number;
     lx: number;
@@ -669,10 +669,36 @@ export class PressApp {
         this.setTool(e.shiftKey && at >= 0 ? group[(at + 1) % group.length]! : group[at >= 0 ? at : 0]!);
         return;
       }
-      const map: Record<string, ToolId> = { v: "move", m: "marquee", t: "type", p: "pen", c: "crop", h: "hand", z: "zoom", i: "eyedropper" };
+      const map: Record<string, ToolId> = {
+        v: "move",
+        m: "marquee",
+        t: "type",
+        p: "pen",
+        c: "crop",
+        h: "hand",
+        z: "zoom",
+        i: "eyedropper",
+        f: "frame",
+        r: "rotate",
+        g: "guide",
+      };
       const tool = map[key];
       if (tool && !e.ctrlKey && !e.metaKey) this.setTool(tool);
     });
+  }
+
+  /**
+   * Guide tool: a drag whose larger axis is horizontal drops a horizontal
+   * guide at y; a more-vertical drag drops a vertical guide at x. A click
+   * (under 4px) is a vertical at x, or horizontal at y with Shift.
+   */
+  private guideFromPointer(px: number, py: number, shift: boolean): { axis: "h" | "v"; offset: number } {
+    const ox = this.drag?.x ?? px;
+    const oy = this.drag?.y ?? py;
+    const dx = Math.abs(px - ox);
+    const dy = Math.abs(py - oy);
+    if (dx < 4 && dy < 4) return shift ? { axis: "h", offset: oy } : { axis: "v", offset: ox };
+    return dx >= dy ? { axis: "h", offset: py } : { axis: "v", offset: px };
   }
 
   /**
@@ -927,10 +953,10 @@ export class PressApp {
         this.emit();
         return;
       }
-      if (tool === "rect" || tool === "ellipse" || tool === "line" || tool === "roundrect" || tool === "polygon" || tool === "star") {
-        this.drag = { mode: tool, x: p.x, y: p.y, lx: p.x, ly: p.y };
+      if (tool === "rect" || tool === "ellipse" || tool === "line" || tool === "roundrect" || tool === "polygon" || tool === "star" || tool === "frame") {
+        this.drag = { mode: tool === "frame" ? "frame" : tool, x: p.x, y: p.y, lx: p.x, ly: p.y };
         this.compositor.view.shapePreview = {
-          kind: tool,
+          kind: tool === "frame" ? "frame" : tool,
           x: p.x,
           y: p.y,
           w: 0,
@@ -939,6 +965,37 @@ export class PressApp {
           sides: this.polygonSides,
           points: this.starPoints,
         };
+        return;
+      }
+      if (tool === "guide") {
+        this.drag = { mode: "guide", x: p.x, y: p.y, lx: p.x, ly: p.y };
+        return;
+      }
+      if (tool === "rotate") {
+        if (this.textSession) this.exitTypeEdit();
+        let picked = selectedLayers(this.doc).filter((l) => !l.locked);
+        if (!picked.length) {
+          const hit = hitTest(this.doc, p.x, p.y);
+          if (hit && !hit.locked) {
+            this.doc = setActiveLayers(this.doc, [hit.id]);
+            picked = [hit];
+          }
+        }
+        const frame = picked.length ? this.compositor.selectionFrame(this.doc) : null;
+        if (picked.length && frame) {
+          this.drag = {
+            mode: "resize",
+            session: uid("drag"),
+            x: p.x,
+            y: p.y,
+            lx: frame.x,
+            ly: frame.y,
+            handle: "rotate",
+            frame0: frame,
+            layers0: picked.map((l) => ({ id: l.id, ...l.transform })),
+          };
+        }
+        this.emit();
         return;
       }
       if (tool === "pen") {
@@ -974,10 +1031,13 @@ export class PressApp {
       if (!this.drag) {
         // Hover feedback. A handle you cannot see you can grab may as well not
         // be there, so the cursor names what the press will do.
-        if (this.compositor.view.tool === "move") {
+        const tool = this.compositor.view.tool;
+        if (tool === "move") {
           const r0 = canvas.getBoundingClientRect();
           const over = this.compositor.hitHandle(this.doc, e.clientX - r0.left, e.clientY - r0.top);
           canvas.style.cursor = over ? HANDLE_CURSOR[over] : "default";
+        } else if (tool === "frame" || tool === "guide" || tool === "rotate") {
+          canvas.style.cursor = "crosshair";
         }
         return;
       }
@@ -1048,6 +1108,16 @@ export class PressApp {
         this.emitSoon();
         return;
       }
+      if (this.drag.mode === "guide") {
+        const g = this.guideFromPointer(p.x, p.y, e.shiftKey);
+        const page = activePage(this.doc);
+        this.compositor.view.shapePreview =
+          g.axis === "v"
+            ? { kind: "line", x: g.offset, y: 0, w: 0, h: page.heightPx }
+            : { kind: "line", x: 0, y: g.offset, w: page.widthPx, h: 0 };
+        this.compositor.requestOverlayRepaint();
+        return;
+      }
       if (
         this.drag.mode === "rect" ||
         this.drag.mode === "ellipse" ||
@@ -1055,6 +1125,7 @@ export class PressApp {
         this.drag.mode === "roundrect" ||
         this.drag.mode === "polygon" ||
         this.drag.mode === "star" ||
+        this.drag.mode === "frame" ||
         this.drag.mode === "type"
       ) {
         // A line keeps its true endpoints (w/h may be negative); a box shape is
@@ -1122,6 +1193,16 @@ export class PressApp {
             });
           }
         }
+      }
+      if (this.drag.mode === "frame") {
+        const b = this.shapeBox(p.x, p.y, e.shiftKey);
+        if (b.w >= 4 && b.h >= 4) {
+          this.run({ type: "image.addFrame", params: { x: b.x, y: b.y, w: b.w, h: b.h } });
+        }
+      }
+      if (this.drag.mode === "guide") {
+        const g = this.guideFromPointer(p.x, p.y, e.shiftKey);
+        this.run({ type: "page.guide", params: { axis: g.axis, offset: g.offset } });
       }
       if (this.drag.mode === "line") {
         const end = this.lineEnd(p.x, p.y, e.shiftKey);
@@ -1256,14 +1337,16 @@ export class PressApp {
       const blob = file.type === mime ? file : new Blob([await file.arrayBuffer()], { type: mime });
       const dataUrl = await blobToDataUrl(blob);
       const dims = await imageSize(dataUrl);
-      this.run({
-        type: "image.place",
-        params: {
-          asset: { name: file.name, mime, dataUrl, width: dims.w, height: dims.h },
-          x: at?.x ?? 48,
-          y: at?.y ?? 48,
-        },
-      });
+      const asset = { name: file.name, mime, dataUrl, width: dims.w, height: dims.h };
+      const empty = selectedLayers(this.doc).find((l) => l.kind === "image-frame" && !l.locked && !l.assetId);
+      if (empty) {
+        this.run({ type: "image.fillFrame", params: { layerId: empty.id, asset } });
+      } else {
+        this.run({
+          type: "image.place",
+          params: { asset, x: at?.x ?? 48, y: at?.y ?? 48 },
+        });
+      }
       try {
         await putUserAsset({
           id: uid("lib"),

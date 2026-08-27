@@ -27,7 +27,10 @@ import {
   type BooleanOp,
 } from "./boolean-ops";
 import {
+  addEmptyImageFrame,
+  addGuide,
   addImageFrame,
+  fillImageFrame,
   addTypeFrame,
   addVectorEllipse,
   addVectorLine,
@@ -558,6 +561,55 @@ const DEFS: CommandDef<never>[] = [
       };
     },
     apply: (p, doc) => addImageFrame(doc, p.asset, p.x, p.y),
+  }),
+  define({
+    type: "image.addFrame",
+    label: "Frame",
+    validate: (raw) => {
+      const o = v.obj(raw, "image.addFrame");
+      return {
+        x: reqNum(o, "x", "image.addFrame"),
+        y: reqNum(o, "y", "image.addFrame"),
+        w: reqNum(o, "w", "image.addFrame", SIZE),
+        h: reqNum(o, "h", "image.addFrame", SIZE),
+      };
+    },
+    apply: (p, doc) => addEmptyImageFrame(doc, p.x, p.y, p.w, p.h),
+  }),
+  define({
+    type: "image.fillFrame",
+    label: "Place into frame",
+    validate: (raw, doc) => {
+      const o = v.obj(raw, "image.fillFrame");
+      const layerId = v.str(o, "layerId", "image.fillFrame");
+      v.requireLayer(doc, layerId, "image.fillFrame", { kind: "image-frame", unlocked: true });
+      const a = v.obj(o.asset, "image.fillFrame");
+      const dataUrl = v.str(a, "dataUrl", "image.fillFrame");
+      if (!dataUrl.startsWith("data:")) throw new CommandError(`image.fillFrame: "asset.dataUrl" must be a data: URL`);
+      return {
+        layerId,
+        asset: {
+          name: v.str(a, "name", "image.fillFrame"),
+          mime: v.str(a, "mime", "image.fillFrame"),
+          dataUrl,
+          width: reqNum(a, "width", "image.fillFrame", SIZE),
+          height: reqNum(a, "height", "image.fillFrame", SIZE),
+        },
+      };
+    },
+    apply: (p, doc) => fillImageFrame(doc, p.layerId, p.asset),
+  }),
+  define({
+    type: "page.guide",
+    label: "Guide",
+    validate: (raw) => {
+      const o = v.obj(raw, "page.guide");
+      if (o.axis !== "h" && o.axis !== "v") {
+        throw new CommandError(`page.guide: "axis" must be h or v, got ${JSON.stringify(o.axis)}`);
+      }
+      return { axis: o.axis as "h" | "v", offset: reqNum(o, "offset", "page.guide") };
+    },
+    apply: (p, doc) => addGuide(doc, p.axis, p.offset),
   }),
 
   // ── type ──

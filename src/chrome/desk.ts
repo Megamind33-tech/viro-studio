@@ -79,6 +79,9 @@ const TOOLS: ToolId[] = [
   "roundrect",
   "polygon",
   "star",
+  "frame",
+  "rotate",
+  "guide",
   "hand",
   "zoom",
 ];

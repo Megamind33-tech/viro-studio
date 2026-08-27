@@ -122,6 +122,13 @@ const CASES = {
     invalid: { asset: { name: "a.png", mime: "image/png", dataUrl: "http://x/a.png", width: 10, height: 10 }, x: 5, y: 5 },
     match: /must be a data: URL/,
   },
+  "image.addFrame": { valid: { x: 40, y: 60, w: 200, h: 120 }, invalid: { x: 40, y: 60, w: 0, h: 120 }, match: /greater than 0/ },
+  "image.fillFrame": {
+    valid: { layerId: "ly_img", asset: { name: "b.png", mime: "image/png", dataUrl: PNG, width: 12, height: 8 } },
+    invalid: { layerId: "ly_type", asset: { name: "b.png", mime: "image/png", dataUrl: PNG, width: 12, height: 8 } },
+    match: /needs image-frame/,
+  },
+  "page.guide": { valid: { axis: "v", offset: 240 }, invalid: { axis: "z", offset: 240 }, match: /must be h or v/ },
 
   "story.setText": { valid: { layerId: "ly_type", text: "Changed" }, invalid: { layerId: "ly_type", text: 5 }, match: /must be a string/ },
   "story.replaceRange": { valid: { layerId: "ly_type", start: 0, end: 5, text: "Range" }, invalid: { layerId: "ly_type", start: 1.5, end: 5, text: "x" }, match: /integer UTF-16 offset/ },

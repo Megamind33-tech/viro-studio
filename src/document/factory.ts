@@ -1000,6 +1000,60 @@ export function addGuide(doc: PressDocument, axis: "h" | "v", offset: number): P
   return next;
 }
 
+/** An empty picture box. Place an image into it later — it is a real frame, not a placeholder graphic. */
+export function addEmptyImageFrame(
+  doc: PressDocument,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+): PressDocument {
+  const next = cloneDoc(doc);
+  const page = activePage(next);
+  const fw = Math.max(4, w);
+  const fh = Math.max(4, h);
+  const layer: Layer = {
+    id: uid("ly"),
+    name: "Frame",
+    kind: "image-frame",
+    visible: true,
+    locked: false,
+    opacity: 1,
+    blend: "srcOver",
+    transform: { x, y, w: fw, h: fh, rotation: 0 },
+    parentId: null,
+    assetId: null,
+    fit: "cover",
+    focal: { x: 0.5, y: 0.5 },
+    crop: null,
+  };
+  page.layers.push(layer);
+  next.activeLayerIds = [layer.id];
+  return next;
+}
+
+/**
+ * Put a picture into an existing image-frame. The box keeps its size; the
+ * picture is a new document asset. Used by Place when an empty frame is selected.
+ */
+export function fillImageFrame(
+  doc: PressDocument,
+  layerId: string,
+  asset: { name: string; mime: string; dataUrl: string; width: number; height: number },
+): PressDocument {
+  const next = cloneDoc(doc);
+  const page = activePage(next);
+  const layer = findLayer(page, layerId);
+  if (!layer || layer.kind !== "image-frame" || layer.locked) return next;
+  const id = uid("as");
+  next.assets[id] = { id, ...asset };
+  layer.assetId = id;
+  layer.crop = null;
+  if (layer.name === "Frame") layer.name = asset.name;
+  next.activeLayerIds = [layer.id];
+  return next;
+}
+
 export function addImageFrame(
   doc: PressDocument,
   asset: { name: string; mime: string; dataUrl: string; width: number; height: number },

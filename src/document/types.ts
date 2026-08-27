@@ -535,7 +535,7 @@ export interface ViewState {
   marquee: { x: number; y: number; w: number; h: number } | null;
   /** Live shape-tool feedback mid-drag, in page px. Null when not dragging. */
   shapePreview: {
-    kind: "rect" | "ellipse" | "line" | "roundrect" | "polygon" | "star";
+    kind: "rect" | "ellipse" | "line" | "roundrect" | "polygon" | "star" | "frame";
     x: number;
     y: number;
     w: number;

@@ -429,7 +429,7 @@ class PressView implements ViewState {
    * without this a shape drag gives no feedback at all until pointerup.
    */
   shapePreview: {
-    kind: "rect" | "ellipse" | "line" | "roundrect" | "polygon" | "star";
+    kind: "rect" | "ellipse" | "line" | "roundrect" | "polygon" | "star" | "frame";
     x: number;
     y: number;
     w: number;
@@ -1278,6 +1278,10 @@ export class Compositor {
         sk.drawPath(drawn, ink);
         drawn.delete();
         path.delete();
+      } else if (s.kind === "frame") {
+        sk.drawRect(ck.LTRBRect(l + h / 2, t + h / 2, r + h / 2, b + h / 2), ink);
+        sk.drawLine(l, t, r, b, ink);
+        sk.drawLine(r, t, l, b, ink);
       } else sk.drawRect(ck.LTRBRect(l + h / 2, t + h / 2, r + h / 2, b + h / 2), ink);
       ink.delete();
     }
@@ -2005,7 +2009,20 @@ export class Compositor {
   private drawImageLayer(ck: CanvasKit, sk: Canvas, doc: PressDocument, layer: Layer, paint: Paint): void {
     if (layer.kind !== "image-frame" && layer.kind !== "raster") return;
     const id = layer.assetId;
-    if (!id || !doc.assets[id]) return;
+    if (!id || !doc.assets[id]) {
+      if (layer.kind !== "image-frame") return;
+      // Empty picture box: a copper frame and an X so the box is visible and
+      // honest — it is a frame with no picture, not a missing thumbnail.
+      const t = layer.transform;
+      paint.setStyle(ck.PaintStyle.Stroke);
+      paint.setStrokeWidth(2);
+      paint.setColor(ck.Color4f(0.878, 0.478, 0.184, 0.95));
+      paint.setAntiAlias(true);
+      sk.drawRect(ck.LTRBRect(1, 1, Math.max(2, t.w - 1), Math.max(2, t.h - 1)), paint);
+      sk.drawLine(0, 0, t.w, t.h, paint);
+      sk.drawLine(t.w, 0, 0, t.h, paint);
+      return;
+    }
     const img = this.imageFor(ck, id, doc.assets[id].dataUrl);
     if (!img) return;
     const t = layer.transform;

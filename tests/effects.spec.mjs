@@ -264,6 +264,45 @@ check("linear gradient fill actually renders (not a solid alias)", fillG.changed
 check("undo restores the solid fill", fillG.undoCleared === true);
 check("document is v7 after a gradient fill", fillG.version === 7, `version=${fillG.version}`);
 
+const frameG = await page.evaluate(async () => {
+  const P = window.__press;
+  const before = P.compositor.thumbnailDataUrl(P.doc, 256);
+  P.run({ type: "image.addFrame", params: { x: 200, y: 300, w: 900, h: 600 } });
+  const layer = P.doc.pages[0].layers.find((l) => l.name === "Frame" && l.kind === "image-frame");
+  const after = P.compositor.thumbnailDataUrl(P.doc, 256);
+  const tab = document.getElementById("tab-layers")?.textContent ?? "";
+  P.run({ type: "page.guide", params: { axis: "v", offset: 480 } });
+  const guides = P.doc.pages[0].guides;
+  P.undo();
+  const guidesAfterUndo = P.doc.pages[0].guides.length;
+  P.undo();
+  const frameGone = !P.doc.pages[0].layers.some((l) => l.id === layer?.id);
+  return {
+    stored: !!layer && layer.assetId === null,
+    changed: typeof before === "string" && typeof after === "string" && before !== after,
+    tab,
+    guideCount: guides.length,
+    guideAxis: guides[guides.length - 1]?.axis,
+    guideOffset: guides[guides.length - 1]?.offset,
+    guidesAfterUndo,
+    frameGone,
+    beforeLen: (before || "").length,
+    afterLen: (after || "").length,
+    tools: {
+      frame: Boolean(document.querySelector('#toolbox [data-tool="frame"]')),
+      rotate: Boolean(document.querySelector('#toolbox [data-tool="rotate"]')),
+      guide: Boolean(document.querySelector('#toolbox [data-tool="guide"]')),
+    },
+  };
+});
+
+check("empty picture box is stored as an image-frame with no asset", frameG.stored === true);
+check("empty picture box actually draws (copper X, not a missing thumbnail)", frameG.changed === true, `before=${frameG.beforeLen}B after=${frameG.afterLen}B`);
+check("Layers tab lists the new frame", /Layers\s*\(\d+\)/.test(frameG.tab), `tab=${JSON.stringify(frameG.tab)}`);
+check("vertical guide is stored on the page", frameG.guideAxis === "v" && frameG.guideOffset === 480, `guides=${frameG.guideCount}`);
+check("undo removes the guide then the frame", frameG.guidesAfterUndo === frameG.guideCount - 1 && frameG.frameGone === true);
+check("toolbox has Frame, Rotate, and Guide tools", frameG.tools.frame && frameG.tools.rotate && frameG.tools.guide);
+
 check("no page errors", pageErrors.length === 0, pageErrors.join(" | "));
 
 console.log(`\n${results.length - failed}/${results.length} checks passed`);

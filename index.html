@@ -241,6 +241,21 @@
           <label class="field"><span>Points</span><input class="num w3" id="opt-star-points" inputmode="numeric" /></label>
           <span class="lbl">3–16 · Fill from foreground</span>
         </div>
+        <div class="opt-strip" data-for="frame" hidden>
+          <span class="lbl">Frame</span>
+          <span class="div"></span>
+          <span class="lbl">Drag an empty picture box · Place fills a selected empty frame · Shift constrains square</span>
+        </div>
+        <div class="opt-strip" data-for="rotate" hidden>
+          <span class="lbl">Rotate</span>
+          <span class="div"></span>
+          <span class="lbl">Drag about the selection centre · Shift snaps 15°</span>
+        </div>
+        <div class="opt-strip" data-for="guide" hidden>
+          <span class="lbl">Guide</span>
+          <span class="div"></span>
+          <span class="lbl">Drag: longer axis sets direction · Click: vertical at x · Shift-click: horizontal at y</span>
+        </div>
         <div class="opt-strip" data-for="hand" hidden>
           <span class="lbl">Drag pasteboard · Space also pans</span>
         </div>
@@ -287,6 +302,16 @@
         </button>
         <button type="button" class="tool" data-tool="star" title="Star (Shift+U)" aria-label="Star" aria-pressed="false">
           <svg viewBox="0 0 16 16"><path d="M8 1.4 9.7 6.2h5L10.7 9.1l1.6 4.9L8 11.2 3.7 14l1.6-4.9L1.3 6.2h5z"/></svg>
+        </button>
+        <div class="tool-sep" role="separator"></div>
+        <button type="button" class="tool" data-tool="frame" title="Frame (F)" aria-label="Frame" aria-pressed="false">
+          <svg viewBox="0 0 16 16"><rect x="2.5" y="3.5" width="11" height="9"/><path d="M2.5 3.5 13.5 12.5M13.5 3.5 2.5 12.5"/></svg>
+        </button>
+        <button type="button" class="tool" data-tool="rotate" title="Rotate (R)" aria-label="Rotate" aria-pressed="false">
+          <svg viewBox="0 0 16 16"><path d="M12.5 8A4.5 4.5 0 1 1 8 3.5"/><path d="M8 1.5 8 5.5 11.2 3.7"/></svg>
+        </button>
+        <button type="button" class="tool" data-tool="guide" title="Guide (G)" aria-label="Guide" aria-pressed="false">
+          <svg viewBox="0 0 16 16"><path d="M8 1.5v13M1.5 8h13" stroke-dasharray="2 1.5"/></svg>
         </button>
         <div class="tool-sep" role="separator"></div>
         <button type="button" class="tool" data-tool="hand" title="Hand (H)" aria-label="Hand" aria-pressed="false">
@@ -904,7 +929,7 @@
       <div class="dialog" role="dialog" aria-labelledby="dlg-help-title">
         <div class="dialog-title" id="dlg-help-title">Keyboard shortcuts</div>
         <div class="dialog-body">
-          <p class="hint">Tools: V move · M marquee · T type · P pen · U shapes (Shift+U cycles) · C crop · I eyedropper · H hand · Z zoom</p>
+          <p class="hint">Tools: V move · M marquee · T type · P pen · U shapes (Shift+U cycles) · F frame · R rotate · G guide · C crop · I eyedropper · H hand · Z zoom</p>
           <p class="hint">Type: Ctrl+Shift+, / . size · Ctrl+U underline · Character panel weight + italic</p>
           <p class="hint">Fill: Edit → Linear / Radial Gradient Fill on a selected vector (real Skia shader)</p>
           <p class="hint">Edit: Ctrl+Z/Y undo/redo · Ctrl+J duplicate · Ctrl+G group · Del delete</p>

@@ -328,6 +328,7 @@ select.ctrl {
   background: var(--panel);
   border-right: 1px solid var(--hair);
   z-index: 5;
+  overflow-y: auto;
 }
 
 .tool {
