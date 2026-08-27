@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 22,
-  "updated_at": "2026-08-27T22:20:11.848Z",
+  "revision": 23,
+  "updated_at": "2026-08-27T22:22:19.455Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -340,6 +340,11 @@
       "from": "build",
       "to": "verify",
       "by": "claude-export-pc1"
+    },
+    {
+      "at": "2026-08-27T22:22:19.455Z",
+      "type": "packet.reconciled_from_manifest",
+      "packet": "VIRO-0002"
     }
   ]
 }
