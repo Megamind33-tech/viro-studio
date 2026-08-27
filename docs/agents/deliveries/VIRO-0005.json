@@ -3,9 +3,9 @@
   "title": "Preserve compound boolean geometry in vector PDF export",
   "priority": "P1",
   "domain": "export",
-  "state": "QUEUED",
+  "state": "ACTIVE",
   "outcome": "A multi-contour vector that renders with holes or disjoint pieces on the VIRO canvas exports to vector PDF with the same compound geometry and fill semantics, without regressing legacy single-contour vectors.",
-  "before": "main @ 6d4d7b6 renders authoritative VectorLayer.contours correctly on canvas, but src/export/pdf.ts emitVector still emits only legacy layer.nodes/layer.closed. Boolean holes and disjoint pieces can therefore be lost or filled incorrectly in vector PDF output.",
+  "before": "GAP AUDIT 2026-08-27 (gap-auditor claude-audit-cloud1, main @ 134c294): the stated before-state is CONFIRMED and the real defect is MORE SEVERE than 'lost or filled incorrectly'. src/export/pdf.ts contains zero references to `contours` (grep over src/export/). emitVector walks only layer.nodes/layer.closed. Because booleanCombineVectors (src/document/boolean-ops.ts:325) returns results with `nodes: []` and all geometry in `contours`, the guard at src/export/pdf.ts:541-543 (`if (layer.nodes.length < 2) { const n = layer.nodes[0]; if (!n) return; }`) returns early for EVERY boolean result: the layer emits no path operators at all and is SILENTLY ABSENT from the PDF. `report.vectorPaths += 1` (pdf.ts:590) is never reached and no rasterFallbacks entry is pushed, so PdfExportReport under-reports the loss instead of declaring it. Measured in the real app (Vite-served exporter, same arguments app.exportPdf passes): a subtract ring (contours=2, nodes=0) gives report.vectorPaths=0 and rasterFallbacks=[]; a disjoint union (contours=2, nodes=0) gives the same. Inflating the PDF content streams shows the control single-contour rect emits m=1 c=4 h=1, while the ring and the union each emit m=0 c=0 h=0 — only the page background `re`/`f` remains. Baseline before any change is green: npx tsc --noEmit exit 0; npm run test:unit 316/316; npm run build exit 0.",
   "after": "The PDF exporter consumes the same authoritative contour topology as the compositor, emits every drawable contour, uses the correct compound fill rule for filled multi-contour paths, preserves stroke behavior, and leaves legacy single-contour PDF output unchanged.",
   "allowed_paths": [
     "src/export/pdf.ts",
@@ -35,12 +35,12 @@
   ],
   "builder": {
     "status": "PENDING",
-    "notes": "Awaiting Orchestrator assignment to the export builder after reconciliation lands.",
+    "notes": "Audit handoff constraints, all inside the leased scope. (1) ROOT CAUSE: emitVector must read the authoritative contour list exactly as the compositor does — src/engine/compositor.ts:1864-1867 uses `Array.isArray(layer.contours) && layer.contours.length > 0` and otherwise falls back to the single contour {nodes, closed}. The early-return guard at pdf.ts:541-543 must stop swallowing nodes-empty compound layers. (2) FILL RULE: pdf-lib exports no fillEvenOdd helper, but PDFOperatorNames.FillEvenOdd ('f*') and FillEvenOddAndStroke ('B*') exist and PDFOperator.of is available, so no new dependency is needed. Match the compositor's exact condition — it sets EvenOdd only when `multi && drawable > 1` (compositor.ts:1909) — so single-contour output stays on nonzero 'f' and cannot regress. (3) FILL GATING PARITY: the compositor fills on `layer.fill && anyClosed` across contours, while the exporter uses `!!layer.fill && layer.closed`; reconcile deliberately. (4) REPORT TRUTHFULNESS: report.vectorPaths must count compound paths, and boolean geometry must not manufacture a rasterFallback. (5) TEST-HARNESS BLOCKER: src/export/pdf.ts CANNOT currently be imported by `npm run test:unit` — node --experimental-strip-types rejects the constructor parameter property at pdf.ts:144 (`private readonly emb: SubsetEmbedder`) with ERR_UNSUPPORTED_TYPESCRIPT_SYNTAX, and no existing test imports src/export/pdf.ts at all (PDF export is only exercised through the browser). Either refactor that constructor to a plain field assignment or drive the exporter from a browser spec; both paths are inside this packet's lease.",
     "proof": []
   },
   "verifier": {
     "status": "PENDING",
-    "notes": "Independent verification required after implementation.",
+    "notes": "Independent verification required after implementation. Reproduction recipe for the before-state: boot the app, `window.viroAnchor.applyDetailed` two overlapping rects, `P.doc.activeLayerIds = [innerId, outerId]`, `P.subtractSelected()`, then `await import('/src/export/pdf.ts')` and call exportPagePdf with the same arguments app.exportPdf uses. Assert report.vectorPaths and inflate the FlateDecode content streams — path operators m/c/h are absent for compound layers and present for a single-contour control.",
     "proof": []
   },
   "critic": {
@@ -49,7 +49,7 @@
     "proof": []
   },
   "delta": {
-    "before": "Compound boolean geometry is authoritative in the document/compositor but the vector PDF exporter still serializes only the legacy single contour.",
+    "before": "Compound boolean geometry is authoritative in the document/compositor, but src/export/pdf.ts emitVector reads only layer.nodes/layer.closed. Since boolean results carry nodes: [], every compound vector is silently dropped from the vector PDF and PdfExportReport reports vectorPaths 0 with no raster fallback.",
     "after": "Pending implementation and independent export-fidelity proof.",
     "proof": [],
     "regression_protection": [],
