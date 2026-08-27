@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "revision": 1,
+  "updated_at": "2026-08-27T16:16:00.000Z",
+  "packets": {
+    "VIRO-0002": {
+      "id": "VIRO-0002",
+      "title": "Prove multi-contour vector model before boolean tools ship",
+      "priority": "P1",
+      "domain": "editor-core",
+      "outcome": "Existing vectors migrate to document v6 without visual change, while a multi-contour vector can render a subtract-created hole and survive save/reopen before production boolean commands are exposed.",
+      "scope": [
+        "src/document/types.ts",
+        "src/document/migrate.ts",
+        "src/document/factory.ts",
+        "src/app.ts",
+        "src/engine/compositor.ts",
+        "tests/**",
+        "docs/agents/deliveries/VIRO-0002.json"
+      ],
+      "dependencies": [],
+      "critic_needed": false,
+      "stage": "audit",
+      "status": "QUEUED",
+      "assigned_agent": null,
+      "assigned_role": null,
+      "work_branch": null,
+      "heartbeat_at": null,
+      "attempts": 0,
+      "evidence": [],
+      "last_handoff": null,
+      "rejection": null
+    }
+  },
+  "agents": {},
+  "leases": {},
+  "events": [
+    {
+      "at": "2026-08-27T16:16:00.000Z",
+      "type": "control.bootstrap",
+      "packet": "VIRO-0002",
+      "detail": "Shared queue provisioned; no agent has claimed work."
+    }
+  ]
+}
