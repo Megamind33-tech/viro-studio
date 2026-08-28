@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 215,
-  "updated_at": "2026-08-28T11:52:31.712Z",
+  "revision": 216,
+  "updated_at": "2026-08-28T16:18:41.338Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -247,8 +247,8 @@
       "rejection": {
         "by": "governor",
         "stage": "release",
-        "reason": "RELEASE/APPROVED on PR #19 (head 4d2576c frozen, verify PASS zcode-verify-pc2, critic PASS zcode-critic-pc1). Merge blocked EXTERNALLY: GitHub Actions account locked (billing issue) - required checks Delivery policy / Product regression gates cannot run, so the release sweep cannot merge. Blocking solely to release the tests/** lease so the parallel wave can proceed. When Actions billing is fixed: sweep auto-merges (sweep selects stage=release + approval=APPROVED regardless of BLOCKED status); if needed run: unblock VIRO-0005 then trigger any workflow. Governor recovery decision 2026-08-28.",
-        "at": "2026-08-28T10:18:18.023Z"
+        "reason": "OWNER ORDER 2026-08-28: content merged to LOCAL main (merge commit e8d1e2e, candidate 4d2576c) while Actions billing-locked. PR #19 is superseded once owner pushes local main - close it, do not sweep-merge. Verify+critic PASS evidence preserved in manifest.",
+        "at": "2026-08-28T16:18:41.336Z"
       },
       "release_approval": {
         "status": "APPROVED",
@@ -2638,6 +2638,13 @@
       "type": "agent.heartbeat",
       "agent": "zcode-verify-pc6",
       "packet": "VIRO-0140"
+    },
+    {
+      "at": "2026-08-28T16:18:41.338Z",
+      "type": "packet.blocked",
+      "packet": "VIRO-0005",
+      "by": "governor",
+      "reason": "OWNER ORDER 2026-08-28: content merged to LOCAL main (merge commit e8d1e2e, candidate 4d2576c) while Actions billing-locked. PR #19 is superseded once owner pushes local main - close it, do not sweep-merge. Verify+critic PASS evidence preserved in manifest."
     }
   ]
 }
