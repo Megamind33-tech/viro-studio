@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 200,
-  "updated_at": "2026-08-28T11:32:50.720Z",
+  "revision": 201,
+  "updated_at": "2026-08-28T11:33:40.228Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -282,10 +282,10 @@
       "critic_needed": false,
       "stage": "release",
       "status": "RELEASE",
-      "assigned_agent": "zcode-release-pc1",
-      "assigned_role": "release-manager",
+      "assigned_agent": null,
+      "assigned_role": null,
       "work_branch": "agent/viro-0010/zcode-gov-audit-pc1",
-      "heartbeat_at": "2026-08-28T11:32:50.720Z",
+      "heartbeat_at": null,
       "attempts": 0,
       "evidence": [
         {
@@ -347,22 +347,60 @@
           "by": "zcode-verify-pc5",
           "item": "clone-count: structural + measured — autosaveTick serializes once when dirty and passes the shared plain snapshot to both sinks (preSerialized ?? fallback), failing browser tick measured clones=1, idle tick 0",
           "at": "2026-08-28T11:27:54.033Z"
+        },
+        {
+          "stage": "release",
+          "by": "zcode-release-pc1",
+          "item": "PR binds approval to head SHA 00f63412cec4aa6da92ddbcbd60e193cfd65ff6e",
+          "at": "2026-08-28T11:33:39.875Z"
+        },
+        {
+          "stage": "release",
+          "by": "zcode-release-pc1",
+          "item": "independent verifier zcode-verify-pc5: scope clean, tsc 0, unit 316/316, hardening 7/7, quota-failure browser spec 13/13 with real IndexedDB last-good-snapshot survival, recovery.spec.mjs unmodified 13/13, chrome 5/5, build 0",
+          "at": "2026-08-28T11:33:39.875Z"
+        },
+        {
+          "stage": "release",
+          "by": "zcode-release-pc1",
+          "item": "clone-count structural confirmation: one serialization per tick, shared snapshot, idle 0; failed write cannot re-arm timer",
+          "at": "2026-08-28T11:33:39.875Z"
+        },
+        {
+          "stage": "release",
+          "by": "zcode-release-pc1",
+          "item": "critic NOT_APPLICABLE per manifest: engine-only persistence, no aesthetic surface",
+          "at": "2026-08-28T11:33:39.875Z"
         }
       ],
       "last_handoff": {
-        "from": "verify",
-        "to": "release",
-        "by": "zcode-verify-pc5",
-        "at": "2026-08-28T11:27:54.033Z",
+        "from": "release",
+        "to": "merge-gate",
+        "by": "zcode-release-pc1",
+        "at": "2026-08-28T11:33:39.875Z",
         "evidence": [
-          "commit 00f6341 verified in clean detached worktree (pc-cloud1, not builder's)",
-          "scope audit vs 14e2812: only src/app.ts + tests/autosave-hardening.test.mjs + tests/autosave-failure.spec.mjs + docs/agents/deliveries/VIRO-0010.json; tests/recovery.spec.mjs diff is 0 bytes",
-          "gates: tsc --noEmit exit 0; npm run test:unit 316/316; autosave-hardening 7/7 (node --experimental-transform-types per in-file header, strip-only cannot load pre-existing compositor.ts parameter properties); autosave-failure.spec 13/13 against own vite 127.0.0.1:5195 (real IndexedDB quota injection via recoverySink seam); recovery.spec 13/13 unmodified; chrome 5/5 against own web-mode vite 127.0.0.1:5196 (stale foreign 5173 server never used); npm run build ok",
-          "quota reproduction: good snapshot persisted (2 layers, savedAt T), sink then rejects -> stored record still layers=2 savedAt=T, status = 'Autosave failed (simulated quota exceeded)...' with no fake success wording, dirty stays set, autosaveTimer not re-armed (announce bypasses trackRevision), reload detects LAST GOOD snapshot and Restore returns exactly the pre-failure document, zero page errors",
-          "clone-count: structural + measured — autosaveTick serializes once when dirty and passes the shared plain snapshot to both sinks (preSerialized ?? fallback), failing browser tick measured clones=1, idle tick 0"
+          "PR binds approval to head SHA 00f63412cec4aa6da92ddbcbd60e193cfd65ff6e",
+          "independent verifier zcode-verify-pc5: scope clean, tsc 0, unit 316/316, hardening 7/7, quota-failure browser spec 13/13 with real IndexedDB last-good-snapshot survival, recovery.spec.mjs unmodified 13/13, chrome 5/5, build 0",
+          "clone-count structural confirmation: one serialization per tick, shared snapshot, idle 0; failed write cannot re-arm timer",
+          "critic NOT_APPLICABLE per manifest: engine-only persistence, no aesthetic surface"
         ]
       },
-      "rejection": null
+      "rejection": null,
+      "release_approval": {
+        "status": "APPROVED",
+        "by": "zcode-release-pc1",
+        "at": "2026-08-28T11:33:39.875Z",
+        "pr_number": 21,
+        "pr_url": "https://github.com/Megamind33-tech/viro-studio/pull/21",
+        "head_sha": "00f63412cec4aa6da92ddbcbd60e193cfd65ff6e",
+        "base": "main",
+        "evidence": [
+          "PR binds approval to head SHA 00f63412cec4aa6da92ddbcbd60e193cfd65ff6e",
+          "independent verifier zcode-verify-pc5: scope clean, tsc 0, unit 316/316, hardening 7/7, quota-failure browser spec 13/13 with real IndexedDB last-good-snapshot survival, recovery.spec.mjs unmodified 13/13, chrome 5/5, build 0",
+          "clone-count structural confirmation: one serialization per tick, shared snapshot, idle 0; failed write cannot re-arm timer",
+          "critic NOT_APPLICABLE per manifest: engine-only persistence, no aesthetic surface"
+        ]
+      }
     },
     "VIRO-0011": {
       "id": "VIRO-0011",
@@ -1059,12 +1097,6 @@
       "machine": "pc-cloud1",
       "packet": "VIRO-0140",
       "heartbeat_at": "2026-08-28T11:03:31.148Z"
-    },
-    "zcode-release-pc1": {
-      "role": "release-manager",
-      "machine": "pc-cloud1",
-      "packet": "VIRO-0010",
-      "heartbeat_at": "2026-08-28T11:32:50.720Z"
     }
   },
   "leases": {
@@ -1155,7 +1187,7 @@
         "tests/autosave-*"
       ],
       "acquired_at": "2026-08-28T10:25:01.213Z",
-      "current_agent": "zcode-release-pc1",
+      "current_agent": null,
       "current_stage": "release"
     },
     "VIRO-0019": {
@@ -2434,6 +2466,14 @@
       "agent": "zcode-release-pc1",
       "role": "release-manager",
       "machine": "pc-cloud1"
+    },
+    {
+      "at": "2026-08-28T11:33:40.228Z",
+      "type": "release.approved",
+      "packet": "VIRO-0010",
+      "by": "zcode-release-pc1",
+      "pr": 21,
+      "head_sha": "00f63412cec4aa6da92ddbcbd60e193cfd65ff6e"
     }
   ]
 }
