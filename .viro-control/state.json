@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 115,
-  "updated_at": "2026-08-28T09:20:31.806Z",
+  "revision": 116,
+  "updated_at": "2026-08-28T09:20:49.029Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -72,7 +72,7 @@
       "assigned_agent": "zcode-critic-pc1",
       "assigned_role": "critic",
       "work_branch": "agent/viro-0005/claude-audit-cloud1",
-      "heartbeat_at": "2026-08-28T09:20:25.767Z",
+      "heartbeat_at": "2026-08-28T09:20:49.029Z",
       "attempts": 0,
       "evidence": [
         {
@@ -631,7 +631,7 @@
       "role": "critic",
       "machine": "pc-cloud1",
       "packet": "VIRO-0005",
-      "heartbeat_at": "2026-08-28T09:20:25.767Z"
+      "heartbeat_at": "2026-08-28T09:20:49.029Z"
     },
     "zcode-verify-pc3": {
       "role": "verifier",
@@ -650,7 +650,8 @@
       ],
       "acquired_at": "2026-08-28T06:42:55.349Z",
       "current_agent": "zcode-critic-pc1",
-      "current_stage": "critic"
+      "current_stage": "critic",
+      "heartbeat_at": "2026-08-28T09:20:49.029Z"
     },
     "VIRO-0012": {
       "packet": "VIRO-0012",
@@ -1352,6 +1353,12 @@
       "agent": "zcode-verify-pc3",
       "role": "verifier",
       "machine": "pc-cloud1"
+    },
+    {
+      "at": "2026-08-28T09:20:49.029Z",
+      "type": "agent.heartbeat",
+      "agent": "zcode-critic-pc1",
+      "packet": "VIRO-0005"
     }
   ]
 }
