@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 406,
-  "updated_at": "2026-08-28T22:55:06.036Z",
+  "revision": 407,
+  "updated_at": "2026-08-28T22:56:16.410Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -1662,12 +1662,12 @@
         "VIRO-0142"
       ],
       "critic_needed": true,
-      "stage": "critic",
-      "status": "CRITIC",
-      "assigned_agent": "zcode-critic-pc4",
-      "assigned_role": "critic",
+      "stage": "release",
+      "status": "QUEUED",
+      "assigned_agent": null,
+      "assigned_role": null,
       "work_branch": "agent/viro-0143/zcode-gov-audit-pc1",
-      "heartbeat_at": "2026-08-28T22:26:43.029Z",
+      "heartbeat_at": null,
       "attempts": 1,
       "evidence": [
         {
@@ -1747,19 +1747,21 @@
           "by": "zcode-verify-pc12",
           "item": "zero-inset golden: baseline JSON byte-unchanged ebf9da4..94fd70a and 6/6 SHA-256 raw-RGBA bit-identical re-reproduced independently from base 5014465",
           "at": "2026-08-28T21:55:15.129Z"
+        },
+        {
+          "stage": "critic",
+          "by": "zcode-critic-pc4",
+          "item": "CRITIC PASS-WITH-NOTES (product drive, black-box, real app): drove 94fd70a via Playwright Chromium on http://localhost:5204 with 3 real v6 .press.json docs opened through the real File>Open input; layers selected via real Layers panel. (1) Insets {30,10,20,15}: ink edges measured from real canvas screenshots in page px - left 90.13 (contract 90), right maxX 1009.44 (contract 1010 minus RSB), justify 1080.04/1339.41 (contracts 1080/1340), center ink mid 549.0 vs content-box center 550 (advance-width centering, correct); tops uniform; inset bands ink-free beyond <=1 device-col AA fringe; descender frame bottom 491.2 <= foot 507; no clipped glyphs; extreme-inset stress frame degrades gracefully (overlong word breaks at measure, remainder dropped, overflow indicator shown). (2) verticalAlign: center ink mid 219.6 vs frame mid 220 (optically perfect), bottom seats at foot (375.5 vs 380 = last-line descent), center-overflow and bottom-overflow ink boxes pixel-identical (overflow stays top-aligned per spec) with red overflow indicators. (3) Zero-inset parity IN THE REAL APP: same doc on 94fd70a vs 5014465 (port 5205) - 5,123,872 px compared, 0 differing, max channel delta 0, identical page origin; confirms committed SHA-256 golden claim on the live canvas. (4) autoSize honesty: measureAutoFit has zero UI/bus/anchor callers (tests only); no inset/valign/auto-size controls anywhere in chrome (grep + full-desk screenshot); delivery record returns auto-fit bus command to Governor with spec - no phantom claims. Console errors on all candidate drives: none. Notes non-blocking: overlong-word hard-break + remainder drop is pre-existing engine semantics (InDesign-like); valign 'justify' falls back to top (documented); red overflow + at frame top-right is pre-existing overlay convention. Evidence: /c/viro-worktrees/critic-docs/evidence/ (cand-insets100-*, cand-valign100-*, cand-zero100-*, base-zero100-*, crop-extreme-frame.png, *-meta.json), analyzer+driver /c/viro-worktrees/critic-docs/{drive,analyze,gen-docs}.mjs, notes /c/viro-worktrees/critic-pc4-progress-notes.md",
+          "at": "2026-08-28T22:56:16.408Z"
         }
       ],
       "last_handoff": {
-        "from": "verify",
-        "to": "critic",
-        "by": "zcode-verify-pc12",
-        "at": "2026-08-28T21:55:15.129Z",
+        "from": "critic",
+        "to": "release",
+        "by": "zcode-critic-pc4",
+        "at": "2026-08-28T22:56:16.410Z",
         "evidence": [
-          "attempt2 PASS: original verifier probe 6/6 on 94fd70a (had 1 fail on rejected ebf9da4)",
-          "discrimination re-run independently by verifier: new text-frame-inset-geometry tests on rejected ebf9da4 fail exactly the 2 align-crossings (right-edge 358 vs 390, center 195 vs 210) and pass 8/8 fixed (right delta -10 exact, center 210.0 exact)",
-          "fix reviewed: alignPen(lineW,origin,x0,measure,align) splits pen origin from indent at both call sites, zero-inset arithmetic reduces to pre-change",
-          "gates re-run by verifier on 94fd70a: tsc 0, unit 316/316, text-frame 27/27, chrome 16/16, build 0",
-          "zero-inset golden: baseline JSON byte-unchanged ebf9da4..94fd70a and 6/6 SHA-256 raw-RGBA bit-identical re-reproduced independently from base 5014465"
+          "CRITIC PASS-WITH-NOTES (product drive, black-box, real app): drove 94fd70a via Playwright Chromium on http://localhost:5204 with 3 real v6 .press.json docs opened through the real File>Open input; layers selected via real Layers panel. (1) Insets {30,10,20,15}: ink edges measured from real canvas screenshots in page px - left 90.13 (contract 90), right maxX 1009.44 (contract 1010 minus RSB), justify 1080.04/1339.41 (contracts 1080/1340), center ink mid 549.0 vs content-box center 550 (advance-width centering, correct); tops uniform; inset bands ink-free beyond <=1 device-col AA fringe; descender frame bottom 491.2 <= foot 507; no clipped glyphs; extreme-inset stress frame degrades gracefully (overlong word breaks at measure, remainder dropped, overflow indicator shown). (2) verticalAlign: center ink mid 219.6 vs frame mid 220 (optically perfect), bottom seats at foot (375.5 vs 380 = last-line descent), center-overflow and bottom-overflow ink boxes pixel-identical (overflow stays top-aligned per spec) with red overflow indicators. (3) Zero-inset parity IN THE REAL APP: same doc on 94fd70a vs 5014465 (port 5205) - 5,123,872 px compared, 0 differing, max channel delta 0, identical page origin; confirms committed SHA-256 golden claim on the live canvas. (4) autoSize honesty: measureAutoFit has zero UI/bus/anchor callers (tests only); no inset/valign/auto-size controls anywhere in chrome (grep + full-desk screenshot); delivery record returns auto-fit bus command to Governor with spec - no phantom claims. Console errors on all candidate drives: none. Notes non-blocking: overlong-word hard-break + remainder drop is pre-existing engine semantics (InDesign-like); valign 'justify' falls back to top (documented); red overflow + at frame top-right is pre-existing overlay convention. Evidence: /c/viro-worktrees/critic-docs/evidence/ (cand-insets100-*, cand-valign100-*, cand-zero100-*, base-zero100-*, crop-extreme-frame.png, *-meta.json), analyzer+driver /c/viro-worktrees/critic-docs/{drive,analyze,gen-docs}.mjs, notes /c/viro-worktrees/critic-pc4-progress-notes.md"
         ]
       },
       "rejection": null,
@@ -1978,13 +1980,6 @@
       "packet": "VIRO-0146",
       "heartbeat_at": "2026-08-28T22:55:06.036Z"
     },
-    "zcode-critic-pc4": {
-      "role": "critic",
-      "machine": "pc-cloud1",
-      "session": "af3421e0-3367-47c9-aed5-b0c200f48b94",
-      "packet": "VIRO-0143",
-      "heartbeat_at": "2026-08-28T22:26:43.029Z"
-    },
     "zcode-critic-pc3": {
       "role": "critic",
       "machine": "pc-cloud1",
@@ -2003,8 +1998,8 @@
         "docs/agents/deliveries/VIRO-0143.json"
       ],
       "acquired_at": "2026-08-28T19:25:06.822Z",
-      "current_agent": "zcode-critic-pc4",
-      "current_stage": "critic",
+      "current_agent": null,
+      "current_stage": "release",
       "current_session": "af3421e0-3367-47c9-aed5-b0c200f48b94",
       "heartbeat_at": "2026-08-28T22:26:43.029Z"
     },
@@ -2039,12 +2034,6 @@
     }
   },
   "events": [
-    {
-      "at": "2026-08-28T09:11:58.139Z",
-      "type": "agent.heartbeat",
-      "agent": "zcode-verify-pc2",
-      "packet": "VIRO-0005"
-    },
     {
       "at": "2026-08-28T09:12:43.396Z",
       "type": "agent.heartbeat",
@@ -4180,6 +4169,16 @@
       "packet": "VIRO-0146",
       "session": "82916b79-821b-41dc-9a84-e0f1a5f90af7",
       "machine": "pc-cloud1"
+    },
+    {
+      "at": "2026-08-28T22:56:16.410Z",
+      "type": "packet.advanced",
+      "packet": "VIRO-0143",
+      "from": "critic",
+      "to": "release",
+      "by": "zcode-critic-pc4",
+      "machine": "pc-cloud1",
+      "session": "af3421e0-3367-47c9-aed5-b0c200f48b94"
     }
   ]
 }
