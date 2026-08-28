@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 293,
-  "updated_at": "2026-08-28T17:53:22.443Z",
+  "revision": 294,
+  "updated_at": "2026-08-28T17:53:28.195Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -1061,12 +1061,12 @@
         "VIRO-0140"
       ],
       "critic_needed": false,
-      "stage": "build",
-      "status": "ACTIVE",
-      "assigned_agent": "zcode-vector-pc1",
-      "assigned_role": "builder",
+      "stage": "verify",
+      "status": "QUEUED",
+      "assigned_agent": null,
+      "assigned_role": null,
       "work_branch": "agent/viro-0141/zcode-gov-audit-pc1",
-      "heartbeat_at": "2026-08-28T17:53:03.583Z",
+      "heartbeat_at": null,
       "attempts": 0,
       "evidence": [
         {
@@ -1074,15 +1074,35 @@
           "by": "zcode-gov-audit-pc1",
           "item": "before-state confirmed on local main post-wave-merge 2026-08-28; manifest basis valid; builder drafts banked where applicable; unlocked by reconciliation of merged dependency",
           "at": "2026-08-28T16:59:10.017Z"
+        },
+        {
+          "stage": "build",
+          "by": "zcode-vector-pc1",
+          "item": "commits 3dccd28/a39c4b4/5b74002 on agent/viro-0141/zcode-gov-audit-pc1 (pushed; base 72b05f0): contour ops (move/insert/delete/setClosed) + appendPathNode contours-authoritative no-op guard in ops.ts, layerContours exported from boolean-ops.ts, path.moveNode/insertNode/deleteNode/closeContour registered with pre-apply CommandError validation + appendNode routing-guard in ui-commands.ts",
+          "at": "2026-08-28T17:53:28.193Z"
+        },
+        {
+          "stage": "build",
+          "by": "zcode-vector-pc1",
+          "item": "tests/vector-node-commands.test.mjs 16/16 + tests/vector-node-pixels.test.mjs 3/3 (real CanvasKit rasterization: node-delta locality, sibling contour byte-identical, restore-stable) + tests/ui-commands.test.mjs 179/179 CASES parity (4 new commands x5)",
+          "at": "2026-08-28T17:53:28.194Z"
+        },
+        {
+          "stage": "build",
+          "by": "zcode-vector-pc1",
+          "item": "npx tsc --noEmit exit 0; npm run test:unit 336/336 (baseline 316 + 20); vite build succeeds (264 modules; npm spawn of vite.cmd blocked by local Git-Bash launcher quirk, gate run as node node_modules/vite/bin/vite.js build); delivery record docs/agents/deliveries/VIRO-0141.json",
+          "at": "2026-08-28T17:53:28.194Z"
         }
       ],
       "last_handoff": {
-        "from": "audit",
-        "to": "build",
-        "by": "zcode-gov-audit-pc1",
-        "at": "2026-08-28T16:59:10.018Z",
+        "from": "build",
+        "to": "verify",
+        "by": "zcode-vector-pc1",
+        "at": "2026-08-28T17:53:28.194Z",
         "evidence": [
-          "before-state confirmed on local main post-wave-merge 2026-08-28; manifest basis valid; builder drafts banked where applicable; unlocked by reconciliation of merged dependency"
+          "commits 3dccd28/a39c4b4/5b74002 on agent/viro-0141/zcode-gov-audit-pc1 (pushed; base 72b05f0): contour ops (move/insert/delete/setClosed) + appendPathNode contours-authoritative no-op guard in ops.ts, layerContours exported from boolean-ops.ts, path.moveNode/insertNode/deleteNode/closeContour registered with pre-apply CommandError validation + appendNode routing-guard in ui-commands.ts",
+          "tests/vector-node-commands.test.mjs 16/16 + tests/vector-node-pixels.test.mjs 3/3 (real CanvasKit rasterization: node-delta locality, sibling contour byte-identical, restore-stable) + tests/ui-commands.test.mjs 179/179 CASES parity (4 new commands x5)",
+          "npx tsc --noEmit exit 0; npm run test:unit 336/336 (baseline 316 + 20); vite build succeeds (264 modules; npm spawn of vite.cmd blocked by local Git-Bash launcher quirk, gate run as node node_modules/vite/bin/vite.js build); delivery record docs/agents/deliveries/VIRO-0141.json"
         ]
       },
       "rejection": null
@@ -1297,12 +1317,6 @@
       "packet": "VIRO-0015",
       "heartbeat_at": "2026-08-28T17:52:31.571Z"
     },
-    "zcode-vector-pc1": {
-      "role": "builder",
-      "machine": "pc-cloud1",
-      "packet": "VIRO-0141",
-      "heartbeat_at": "2026-08-28T17:53:03.583Z"
-    },
     "zcode-polish-pc1": {
       "role": "builder",
       "machine": "pc-cloud1",
@@ -1379,8 +1393,8 @@
         "tests/vector-node-*"
       ],
       "acquired_at": "2026-08-28T16:59:04.770Z",
-      "current_agent": "zcode-vector-pc1",
-      "current_stage": "build",
+      "current_agent": null,
+      "current_stage": "verify",
       "heartbeat_at": "2026-08-28T17:53:03.583Z"
     },
     "VIRO-0143": {
@@ -3351,6 +3365,14 @@
       "type": "agent.heartbeat",
       "agent": "zcode-polish-pc1",
       "packet": "VIRO-0017"
+    },
+    {
+      "at": "2026-08-28T17:53:28.195Z",
+      "type": "packet.advanced",
+      "packet": "VIRO-0141",
+      "from": "build",
+      "to": "verify",
+      "by": "zcode-vector-pc1"
     }
   ]
 }
