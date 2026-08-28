@@ -1,0 +1,55 @@
+{
+  "id": "VIRO-0142",
+  "title": "Render the v4 rich-text contract: per-range character and paragraph styling becomes visible",
+  "priority": "P1",
+  "domain": "canvas-rendering",
+  "state": "ACTIVE",
+  "outcome": "A v6 text story carrying CharacterRun/ParagraphRun ranges (authored via the existing type.characterRange / type.paragraphRange bus commands) renders with visibly distinct, correctly shaped per-run font/size/fill/tracking and per-paragraph alignment/indent on canvas and thumbnails, with stable undo/redo and save/reopen, while stories with empty runs render byte-identically to today.",
+  "before": "Gap audit 2026-08-27 (main 14e2812): document v4 ships CharacterRun/ParagraphRun/TextStyleRegistry (types.ts:325-358, 373-382), migration initializes them (migrate.ts:134-163), validation checks them (factory.ts:1138-1142), and real bus commands mutate them (ui-commands.ts:509-568) - but composeFrame (src/engine/type.ts:351-445) and metricsFor (type.ts:247-261) consume only story-level styles; story.runs/paragraphRuns appear nowhere in type.ts; the compositor resolves exactly one face per story (compositor.ts:1764-1768) so per-run fontId cannot render even in principle; nothing authors ranges (zero references in chrome/app/anchor). Applying a character override changes the document, burns an undo step, and changes nothing on screen - the stored-but-renders-nothing class previously ruled a P1 violation for Drop Shadow.",
+  "after": "The engine segments lines by runs, merges base+override styles, resolves per-run faces via FontRegistry, and applies paragraph overrides; rendering is pixel-stable and truthfully visible.",
+  "allowed_paths": [
+    "src/engine/type.ts",
+    "src/engine/font-registry.ts",
+    "src/document/text-model.ts",
+    "docs/agents/deliveries/VIRO-0142.json",
+    "tests/rich-text-*"
+  ],
+  "depends_on": [],
+  "acceptance": [
+    "One story with two ranges (different fontId/size/fill) renders visibly distinct, correctly kerned runs on canvas and in compositor.thumbnailDataUrl (screenshot evidence).",
+    "Paragraph-range align/spaceBefore/startIndent change only their own paragraph.",
+    "Undo/redo of type.characterRange restores pixels exactly; save/reopen is pixel-stable.",
+    "Stories with empty runs render byte-identically to pre-change output (regression, pixel-diff).",
+    "npx tsc --noEmit, targeted tests, npm run test:unit baseline, npm run test:chrome and npm run build pass."
+  ],
+  "evidence": [
+    "Canvas + thumbnail screenshots showing distinct styled runs",
+    "Pixel-diff regression proof for empty-runs stories",
+    "Undo/redo and save/reopen pixel stability proof",
+    "npx tsc --noEmit",
+    "npm run test:chrome",
+    "npm run build"
+  ],
+  "builder": {
+    "status": "PENDING",
+    "notes": "Claims after VIRO-0005 releases tests/**; authoring UI stays out of scope (chrome leased); bus/Anchor drive authoring in tests."
+  },
+  "verifier": {
+    "status": "PENDING",
+    "notes": "Independent verification required."
+  },
+  "critic": {
+    "status": "PENDING",
+    "notes": "User-visible rendering change; critic must judge run-boundary quality (kerning across style boundaries, baseline alignment)."
+  },
+  "delta": {
+    "before": "Per-range styling is stored, commanded, validated - and invisible.",
+    "after": "Per-range styling renders truthfully with stable undo/reopen and byte-identical legacy path.",
+    "proof": [],
+    "regression_protection": [
+      "Empty-runs pixel-identical regression",
+      "Existing text-model and engine suites green"
+    ],
+    "new_debt": "Authoring UI for ranges remains unbuilt (chrome lease); Anchor/bus is the authoring path."
+  }
+}

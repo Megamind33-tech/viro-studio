@@ -1,0 +1,56 @@
+{
+  "id": "VIRO-0141",
+  "title": "Post-boolean contour node editing commands + appendNode corruption guard",
+  "priority": "P2",
+  "domain": "editor-core",
+  "state": "QUEUED",
+  "outcome": "Boolean-result vectors (contours-authoritative) become editable at the node level through contour-addressed bus commands (move/insert/delete node, close contour), and the legacy appendNode path refuses to corrupt contours-authoritative layers, with derived inverses so every operation undoes exactly.",
+  "before": "Gap audit 2026-08-27 (main 14e2812): since v6, contours[] is authoritative when present (types.ts:227-247) and boolean results are born nodes:[] (boolean-ops.ts:325); the only vector mutation commands are path.appendNode and path.close (ui-commands.ts:418-434), both legacy-nodes-only; appendPathNode (ops.ts:505-535) recomputes transform from layer.nodes alone, so appending to a boolean layer rewrites x/y and crushes w/h while the renderer keeps drawing untouched contours at the new origin (teleport corruption); validation does not catch it (single-contour branch only, factory.ts:1127); the pen tool appends only to open legacy paths (src/app.ts:933-935).",
+  "after": "Contour-addressed commands (layerId, contourIndex, nodeIndex) mutate the authoritative topology with pixel-diff-provable effects and exact undo; appending legacy nodes to a contours-authoritative layer raises a clear CommandError instead of corrupting placement.",
+  "allowed_paths": [
+    "src/document/ops.ts",
+    "src/document/ui-commands.ts",
+    "src/document/boolean-ops.ts",
+    "docs/agents/deliveries/VIRO-0141.json",
+    "tests/vector-node-*"
+  ],
+  "depends_on": [
+    "VIRO-0140"
+  ],
+  "acceptance": [
+    "path.moveNode on a boolean-result contour changes canvas output by exactly the node delta (pixel-diff evidence); undo/redo restore exactly.",
+    "path.insertNode and path.deleteNode preserve the remaining geometry byte-identically apart from the edited contour.",
+    "appendPathNode on a contours-authoritative layer is rejected with a clear CommandError (or correctly routed to the authoritative contour) - never a transform rewrite.",
+    "validateDocument stays green across all operations; save/reopen round-trips the edited contours.",
+    "npx tsc --noEmit, targeted tests, npm run test:unit baseline, npm run build pass."
+  ],
+  "evidence": [
+    "Pixel-diff proof for moveNode on a boolean ring contour",
+    "Corruption-guard rejection test for appendNode on contours layer",
+    "Round-trip save/reopen test",
+    "npx tsc --noEmit",
+    "npm run build"
+  ],
+  "builder": {
+    "status": "PENDING",
+    "notes": "Serialized behind VIRO-0140 (shared ops.ts)."
+  },
+  "verifier": {
+    "status": "PENDING",
+    "notes": "Independent verification required."
+  },
+  "critic": {
+    "status": "NOT_APPLICABLE",
+    "notes": "Command/engine layer; Anchor-addressable; no chrome."
+  },
+  "delta": {
+    "before": "Boolean output geometry is immutable via commands; appendNode actively corrupts placement.",
+    "after": "Contour-addressed node editing with exact inverses and a corruption guard.",
+    "proof": [],
+    "regression_protection": [
+      "Existing boolean-ops and ui-commands suites green",
+      "Legacy single-contour appendNode behavior unchanged"
+    ],
+    "new_debt": "Overlay handle-picking (compositor) deferred to a coordinated phase 2 packet."
+  }
+}

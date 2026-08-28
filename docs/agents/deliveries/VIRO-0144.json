@@ -1,0 +1,56 @@
+{
+  "id": "VIRO-0144",
+  "title": "Caret/selection fidelity from HarfBuzz clusters + inert script/direction fields",
+  "priority": "P2",
+  "domain": "canvas-rendering",
+  "state": "QUEUED",
+  "outcome": "Caret stops derive from HarfBuzz cluster boundaries so carets and selection highlights land correctly under kerning and ligatures; story script/direction/language feed HarfBuzz instead of guessSegmentProperties; per-line compose stops re-shaping every prefix.",
+  "before": "Gap audit 2026-08-27 (main 14e2812): ShapedRun.glyphs stores only {gid,dx,dy,adv} - the cluster value HarfBuzz returns is dropped (type.ts:60-64, 167-177); caret stops are reconstructed by re-shaping each text prefix and summing advances (emitStops type.ts:398-410) while glyph positions come from shaping the whole line (setLine type.ts:371-387), so any kerning pair or ligature (e.g. 'fi') makes caret x land mid-glyph and selection rectangles (compositor.ts:1229-1243) highlight the wrong span; prefix re-shaping is O(line length) per line; buffer.guessSegmentProperties is the only script input (type.ts:162-164) while story language/script/direction (types.ts:281-285) are inert. Related app-side edge (leased src/app.ts, flagged separately): Backspace deletes one UTF-16 code unit (app.ts:1782-1787) splitting surrogate pairs.",
+  "after": "caretStops derive from glyph clusters (prefix re-shaping removed), setSegmentProperties feeds story script/direction/language, and mixed-kerning fixtures place carets within 0.5px of glyph origins with correct selection spans.",
+  "allowed_paths": [
+    "src/engine/type.ts",
+    "docs/agents/deliveries/VIRO-0144.json",
+    "tests/caret-fidelity-*"
+  ],
+  "depends_on": [
+    "VIRO-0143"
+  ],
+  "acceptance": [
+    "For a kerning+ligature fixture, caret x from caretStops matches shaped glyph origins at every boundary (unit assert, <= 0.5px).",
+    "Selection highlight covers exactly the selected glyphs (canvas screenshot).",
+    "Pixel output identical to before for runs without kerning-dependent boundaries (regression).",
+    "Prefix re-shaping eliminated (cache-miss count assert).",
+    "RTL/Arabic fixture shapes and measures with correct direction instead of guessed properties.",
+    "npx tsc --noEmit, targeted tests, npm run build pass."
+  ],
+  "evidence": [
+    "Caret-boundary unit assertions on kerning/ligature fixture",
+    "Selection span screenshot",
+    "Pixel-identical regression for simple runs",
+    "RTL shaping proof",
+    "npx tsc --noEmit",
+    "npm run build"
+  ],
+  "builder": {
+    "status": "PENDING",
+    "notes": "Serialized behind VIRO-0143 (shared type.ts). app.ts Backspace edge is out of scope here (leased); flagged to Governor for the persistence/app packet."
+  },
+  "verifier": {
+    "status": "PENDING",
+    "notes": "Independent verification required."
+  },
+  "critic": {
+    "status": "PENDING",
+    "notes": "User-visible caret/selection correctness; light critic pass on screenshots."
+  },
+  "delta": {
+    "before": "Carets drift under kerning/ligatures; script fields inert; O(n) re-shapes per line.",
+    "after": "Cluster-derived carets, honored direction/script, single shape per line.",
+    "proof": [],
+    "regression_protection": [
+      "Pixel-identical simple-run regression",
+      "Existing type/engine suites green"
+    ],
+    "new_debt": "app.ts surrogate-pair Backspace fix belongs to an app-leased packet."
+  }
+}
