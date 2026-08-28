@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 166,
-  "updated_at": "2026-08-28T10:35:12.907Z",
+  "revision": 167,
+  "updated_at": "2026-08-28T10:35:54.754Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -315,8 +315,8 @@
       "scope": [
         "src/app.ts",
         "src/library/store.ts",
-        "docs/agents/deliveries/VIRO-0011.json",
-        "tests/recovery-identity-*"
+        "tests/**",
+        "docs/agents/deliveries/VIRO-0011.json"
       ],
       "dependencies": [
         "VIRO-0010"
@@ -581,8 +581,8 @@
         "src/import/**",
         "src/engine/font-registry.ts",
         "src/engine/sniff.ts",
-        "docs/agents/deliveries/VIRO-0014.json",
-        "tests/import-sanitize-*"
+        "tests/**",
+        "docs/agents/deliveries/VIRO-0014.json"
       ],
       "dependencies": [
         "VIRO-0013"
@@ -607,8 +607,8 @@
       "outcome": "A versioned export regression corpus (documents plus expected PDF operator topology and PNG pixel checksums) is checked in and runnable, so compound-path behavior proven by VIRO-0005 becomes part of the standing baseline and future exporter changes are measured against real artifacts, with the export report expanded to cover every claimed classification.",
       "scope": [
         "src/export/**",
-        "docs/agents/deliveries/VIRO-0015.json",
-        "tests/export-corpus-*"
+        "tests/**",
+        "docs/agents/deliveries/VIRO-0015.json"
       ],
       "dependencies": [
         "VIRO-0005"
@@ -675,9 +675,9 @@
       "scope": [
         "index.html",
         "src/chrome/**",
+        "tests/**",
         "docs/reviews/0017-visual-polish-sweep.md",
-        "docs/agents/deliveries/VIRO-0017.json",
-        "tests/visual-polish-*"
+        "docs/agents/deliveries/VIRO-0017.json"
       ],
       "dependencies": [
         "VIRO-0016"
@@ -2086,6 +2086,11 @@
       "from": "build",
       "to": "verify",
       "by": "zcode-import-pc1"
+    },
+    {
+      "at": "2026-08-28T10:35:54.754Z",
+      "type": "packet.reconciled_from_manifest",
+      "packet": "VIRO-0002"
     }
   ]
 }
