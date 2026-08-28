@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 386,
-  "updated_at": "2026-08-28T21:52:09.946Z",
+  "revision": 387,
+  "updated_at": "2026-08-28T21:52:55.211Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -420,11 +420,11 @@
       ],
       "critic_needed": false,
       "stage": "release",
-      "status": "QUEUED",
-      "assigned_agent": null,
-      "assigned_role": null,
+      "status": "RELEASE",
+      "assigned_agent": "zcode-release-pc1",
+      "assigned_role": "release-manager",
       "work_branch": "agent/viro-0011/zcode-gov-audit-pc1",
-      "heartbeat_at": null,
+      "heartbeat_at": "2026-08-28T21:52:55.211Z",
       "attempts": 0,
       "evidence": [
         {
@@ -502,7 +502,7 @@
       },
       "rejection": null,
       "assigned_machine": "pc-cloud1",
-      "assigned_session": "b8bf70cd-e98b-4765-8116-fb04d0f6a0ab"
+      "assigned_session": "46fe8aa5-14ed-46b9-908f-9b66cdcb36f0"
     },
     "VIRO-0012": {
       "id": "VIRO-0012",
@@ -1890,6 +1890,13 @@
       "session": "7d582a52-7fbe-4354-a69e-cf7f1d44abc3",
       "packet": "VIRO-0143",
       "heartbeat_at": "2026-08-28T21:52:09.946Z"
+    },
+    "zcode-release-pc1": {
+      "role": "release-manager",
+      "machine": "pc-cloud1",
+      "session": "46fe8aa5-14ed-46b9-908f-9b66cdcb36f0",
+      "packet": "VIRO-0011",
+      "heartbeat_at": "2026-08-28T21:52:55.211Z"
     }
   },
   "leases": {
@@ -1916,10 +1923,9 @@
         "tests/recovery-identity-*"
       ],
       "acquired_at": "2026-08-28T19:32:14.640Z",
-      "current_agent": null,
+      "current_agent": "zcode-release-pc1",
       "current_stage": "release",
-      "current_session": "b8bf70cd-e98b-4765-8116-fb04d0f6a0ab",
-      "heartbeat_at": "2026-08-28T21:44:53.702Z"
+      "current_session": "46fe8aa5-14ed-46b9-908f-9b66cdcb36f0"
     },
     "VIRO-0017": {
       "packet": "VIRO-0017",
@@ -1951,12 +1957,6 @@
     }
   },
   "events": [
-    {
-      "at": "2026-08-28T07:46:56.610Z",
-      "type": "agent.heartbeat",
-      "agent": "zcode-verify-pc2",
-      "packet": "VIRO-0005"
-    },
     {
       "at": "2026-08-28T07:51:36.431Z",
       "type": "agent.heartbeat",
@@ -4046,6 +4046,15 @@
       "packet": "VIRO-0143",
       "session": "7d582a52-7fbe-4354-a69e-cf7f1d44abc3",
       "machine": "pc-cloud1"
+    },
+    {
+      "at": "2026-08-28T21:52:55.211Z",
+      "type": "packet.claimed",
+      "packet": "VIRO-0011",
+      "agent": "zcode-release-pc1",
+      "role": "release-manager",
+      "machine": "pc-cloud1",
+      "session": "46fe8aa5-14ed-46b9-908f-9b66cdcb36f0"
     }
   ]
 }
