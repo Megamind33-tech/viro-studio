@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 277,
-  "updated_at": "2026-08-28T17:30:34.751Z",
+  "revision": 278,
+  "updated_at": "2026-08-28T17:31:27.516Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -919,12 +919,12 @@
       ],
       "dependencies": [],
       "critic_needed": false,
-      "stage": "build",
-      "status": "ACTIVE",
-      "assigned_agent": "zcode-govtool-pc2",
-      "assigned_role": "builder",
+      "stage": "verify",
+      "status": "QUEUED",
+      "assigned_agent": null,
+      "assigned_role": null,
       "work_branch": "agent/viro-0019/zcode-gov-audit-pc1",
-      "heartbeat_at": "2026-08-28T17:29:16.120Z",
+      "heartbeat_at": null,
       "attempts": 0,
       "evidence": [
         {
@@ -932,15 +932,42 @@
           "by": "zcode-gov-audit-pc1",
           "item": "before-state confirmed 2026-08-28: claim supports --machine but no session binding or duplicate-identity refusal exists in orchestrator-core; no lease-logic unit tests exist; wave-2 hold released - build-time churn cannot affect running workers since each executes its own worktree copy",
           "at": "2026-08-28T10:39:23.547Z"
+        },
+        {
+          "stage": "build",
+          "by": "zcode-govtool-pc2",
+          "item": "compat fixture proof: constructed pre-change state fixture operated by new code (legacyState tests in scripts/lib/orchestrator-core.test.mjs) PLUS live proof — pre-merge old-code worker (primary repo at main 72b05f0) heartbeated the new session-bound VIRO-0019 assignment without --session and all identity fields survived the old-code write",
+          "at": "2026-08-28T17:31:27.512Z"
+        },
+        {
+          "stage": "build",
+          "by": "zcode-govtool-pc2",
+          "item": "duplicate-refusal: unit IdentityConflictError coverage + live dry-run on real viro-agent-control — re-claim of zcode-govtool-pc2/VIRO-0019 with a different session token while heartbeat unexpired exited 1 'duplicate live identity refused' with zero state mutation; wrong-session heartbeat and throwaway claims (zcode-0019-dryrun-a, zcode-0019-dryrun-b) refused live too",
+          "at": "2026-08-28T17:31:27.515Z"
+        },
+        {
+          "stage": "build",
+          "by": "zcode-govtool-pc2",
+          "item": "core unit tests 23/23 via node --test scripts/lib/ covering claim/lease/conflict/stale(30-min TTL)/reap, scopesOverlap disjoint prefixes (tests/autosave-* vs tests/import-*), roleCanServe per stage, depsSatisfied",
+          "at": "2026-08-28T17:31:27.515Z"
+        },
+        {
+          "stage": "build",
+          "by": "zcode-govtool-pc2",
+          "item": "transports identical: both share all identity logic via orchestrator-core; REST parses (node --check) but was not live-tested without GITHUB_TOKEN — stated honestly; git transport proven live end-to-end; candidate SHA e4cf09752e10bf59729a95bf41a3386c1fef5f31 pushed to agent/viro-0019/zcode-gov-audit-pc1",
+          "at": "2026-08-28T17:31:27.515Z"
         }
       ],
       "last_handoff": {
-        "from": "audit",
-        "to": "build",
-        "by": "zcode-gov-audit-pc1",
-        "at": "2026-08-28T10:39:23.566Z",
+        "from": "build",
+        "to": "verify",
+        "by": "zcode-govtool-pc2",
+        "at": "2026-08-28T17:31:27.515Z",
         "evidence": [
-          "before-state confirmed 2026-08-28: claim supports --machine but no session binding or duplicate-identity refusal exists in orchestrator-core; no lease-logic unit tests exist; wave-2 hold released - build-time churn cannot affect running workers since each executes its own worktree copy"
+          "compat fixture proof: constructed pre-change state fixture operated by new code (legacyState tests in scripts/lib/orchestrator-core.test.mjs) PLUS live proof — pre-merge old-code worker (primary repo at main 72b05f0) heartbeated the new session-bound VIRO-0019 assignment without --session and all identity fields survived the old-code write",
+          "duplicate-refusal: unit IdentityConflictError coverage + live dry-run on real viro-agent-control — re-claim of zcode-govtool-pc2/VIRO-0019 with a different session token while heartbeat unexpired exited 1 'duplicate live identity refused' with zero state mutation; wrong-session heartbeat and throwaway claims (zcode-0019-dryrun-a, zcode-0019-dryrun-b) refused live too",
+          "core unit tests 23/23 via node --test scripts/lib/ covering claim/lease/conflict/stale(30-min TTL)/reap, scopesOverlap disjoint prefixes (tests/autosave-* vs tests/import-*), roleCanServe per stage, depsSatisfied",
+          "transports identical: both share all identity logic via orchestrator-core; REST parses (node --check) but was not live-tested without GITHUB_TOKEN — stated honestly; git transport proven live end-to-end; candidate SHA e4cf09752e10bf59729a95bf41a3386c1fef5f31 pushed to agent/viro-0019/zcode-gov-audit-pc1"
         ]
       },
       "rejection": null,
@@ -1288,13 +1315,6 @@
       "packet": "VIRO-0143",
       "heartbeat_at": "2026-08-28T17:25:05.702Z"
     },
-    "zcode-govtool-pc2": {
-      "role": "builder",
-      "machine": "pc-cloud1",
-      "session": "sess-viro0019-zcode2-live",
-      "packet": "VIRO-0019",
-      "heartbeat_at": "2026-08-28T17:29:16.120Z"
-    },
     "zcode-verify-pc8": {
       "role": "verifier",
       "machine": "pc-cloud1",
@@ -1394,8 +1414,8 @@
         "docs/agents/orchestrator-identity.md"
       ],
       "acquired_at": "2026-08-28T17:19:58.347Z",
-      "current_agent": "zcode-govtool-pc2",
-      "current_stage": "build",
+      "current_agent": null,
+      "current_stage": "verify",
       "current_session": "sess-viro0019-zcode2-live",
       "heartbeat_at": "2026-08-28T17:29:16.120Z"
     }
@@ -3220,6 +3240,16 @@
       "type": "agent.heartbeat",
       "agent": "zcode-verify-pc8",
       "packet": "VIRO-0014"
+    },
+    {
+      "at": "2026-08-28T17:31:27.516Z",
+      "type": "packet.advanced",
+      "packet": "VIRO-0019",
+      "from": "build",
+      "to": "verify",
+      "by": "zcode-govtool-pc2",
+      "machine": "pc-cloud1",
+      "session": "sess-viro0019-zcode2-live"
     }
   ]
 }
