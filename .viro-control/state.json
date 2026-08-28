@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 307,
-  "updated_at": "2026-08-28T19:13:34.463Z",
+  "revision": 308,
+  "updated_at": "2026-08-28T19:13:59.172Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -1176,11 +1176,11 @@
       ],
       "critic_needed": false,
       "stage": "verify",
-      "status": "VERIFY",
-      "assigned_agent": "zcode-verify-pc10",
-      "assigned_role": "verifier",
+      "status": "BLOCKED",
+      "assigned_agent": null,
+      "assigned_role": null,
       "work_branch": "agent/viro-0141/zcode-gov-audit-pc1",
-      "heartbeat_at": "2026-08-28T17:58:14.800Z",
+      "heartbeat_at": null,
       "attempts": 0,
       "evidence": [
         {
@@ -1219,7 +1219,12 @@
           "npx tsc --noEmit exit 0; npm run test:unit 336/336 (baseline 316 + 20); vite build succeeds (264 modules; npm spawn of vite.cmd blocked by local Git-Bash launcher quirk, gate run as node node_modules/vite/bin/vite.js build); delivery record docs/agents/deliveries/VIRO-0141.json"
         ]
       },
-      "rejection": null
+      "rejection": {
+        "by": "governor",
+        "stage": "verify",
+        "reason": "session zcode-verify-pc10 garbage-collected after repeated network flaps (74m stale); work preserved in worktree per checkpoint protocol; fresh session reassigned",
+        "at": "2026-08-28T19:13:59.172Z"
+      }
     },
     "VIRO-0142": {
       "id": "VIRO-0142",
@@ -1436,12 +1441,6 @@
       "machine": "pc-cloud1",
       "packet": "VIRO-0143",
       "heartbeat_at": "2026-08-28T18:19:45.701Z"
-    },
-    "zcode-verify-pc10": {
-      "role": "verifier",
-      "machine": "pc-cloud1",
-      "packet": "VIRO-0141",
-      "heartbeat_at": "2026-08-28T17:58:14.800Z"
     }
   },
   "leases": {
@@ -1469,19 +1468,6 @@
       "current_agent": null,
       "current_stage": "verify",
       "heartbeat_at": "2026-08-28T17:58:33.390Z"
-    },
-    "VIRO-0141": {
-      "packet": "VIRO-0141",
-      "scope": [
-        "src/document/ops.ts",
-        "src/document/ui-commands.ts",
-        "src/document/boolean-ops.ts",
-        "docs/agents/deliveries/VIRO-0141.json",
-        "tests/vector-node-*"
-      ],
-      "acquired_at": "2026-08-28T16:59:04.770Z",
-      "current_agent": "zcode-verify-pc10",
-      "current_stage": "verify"
     },
     "VIRO-0143": {
       "packet": "VIRO-0143",
@@ -1512,14 +1498,6 @@
     }
   },
   "events": [
-    {
-      "at": "2026-08-27T17:19:55.733Z",
-      "type": "packet.claimed",
-      "packet": "VIRO-0005",
-      "agent": "claude-audit-cloud1",
-      "role": "gap-auditor",
-      "machine": "claude-code-cloud-vm"
-    },
     {
       "at": "2026-08-27T17:24:17.130Z",
       "type": "agent.heartbeat",
@@ -3489,6 +3467,14 @@
       "at": "2026-08-28T19:13:34.463Z",
       "type": "packet.reconciled_from_manifest",
       "packet": "VIRO-0002"
+    },
+    {
+      "at": "2026-08-28T19:13:59.172Z",
+      "type": "assignment.reaped",
+      "packet": "VIRO-0141",
+      "agent": "zcode-verify-pc10",
+      "by": "governor",
+      "reason": "session zcode-verify-pc10 garbage-collected after repeated network flaps (74m stale); work preserved in worktree per checkpoint protocol; fresh session reassigned"
     }
   ]
 }
