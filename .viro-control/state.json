@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 72,
-  "updated_at": "2026-08-28T06:41:22.856Z",
+  "revision": 73,
+  "updated_at": "2026-08-28T06:41:35.297Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -255,7 +255,7 @@
       "dependencies": [],
       "critic_needed": false,
       "stage": "build",
-      "status": "BLOCKED",
+      "status": "QUEUED",
       "assigned_agent": null,
       "assigned_role": null,
       "work_branch": "agent/viro-0012/zcode-gov-audit-pc1",
@@ -292,12 +292,7 @@
           "no baseline frame-time numbers exist anywhere in repo"
         ]
       },
-      "rejection": {
-        "by": "governor",
-        "stage": "build",
-        "reason": "builder session zcode-perf-pc1 confirmed DEAD same provider DNS failure mid-build; harness draft preserved uncommitted in worktree viro-0012-perf-zcode1/scripts/perf (capture.mjs run.mjs lib); reassignment follows immediately",
-        "at": "2026-08-28T06:41:22.836Z"
-      }
+      "rejection": null
     },
     "VIRO-0013": {
       "id": "VIRO-0013",
@@ -1012,6 +1007,12 @@
       "agent": "zcode-perf-pc1",
       "by": "governor",
       "reason": "builder session zcode-perf-pc1 confirmed DEAD same provider DNS failure mid-build; harness draft preserved uncommitted in worktree viro-0012-perf-zcode1/scripts/perf (capture.mjs run.mjs lib); reassignment follows immediately"
+    },
+    {
+      "at": "2026-08-28T06:41:35.297Z",
+      "type": "packet.unblocked",
+      "packet": "VIRO-0012",
+      "by": "governor"
     }
   ]
 }
