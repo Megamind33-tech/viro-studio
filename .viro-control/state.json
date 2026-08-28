@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 125,
-  "updated_at": "2026-08-28T10:01:57.307Z",
+  "revision": 126,
+  "updated_at": "2026-08-28T10:02:12.086Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -271,10 +271,10 @@
       "critic_needed": false,
       "stage": "release",
       "status": "RELEASE",
-      "assigned_agent": "zcode-release-pc1",
-      "assigned_role": "release-manager",
+      "assigned_agent": null,
+      "assigned_role": null,
       "work_branch": "agent/viro-0012/zcode-gov-audit-pc1",
-      "heartbeat_at": "2026-08-28T10:01:57.307Z",
+      "heartbeat_at": null,
       "attempts": 0,
       "evidence": [
         {
@@ -342,21 +342,68 @@
           "by": "zcode-verify-pc3",
           "item": "measurement reproduction (same machine pc-cloud1): idle/shadow30 85556.8ms median @14e2812 -> 771.1ms @f5baa1a = 111x; g/shadow30/zoom drawMs 88362.3ms -> 846.6ms = 104x; g/shadow30/move 791.4ms after; committed results/after-fix.json + baseline-run.log + baseline-zoom.json match docs/research/0012-frame-profiling.md tables line-for-line",
           "at": "2026-08-28T09:56:30.446Z"
+        },
+        {
+          "stage": "release",
+          "by": "zcode-release-pc1",
+          "item": "PR #20 binds approval to head SHA f5baa1a6c85b9957aef17742674b3ffd31b9b564",
+          "at": "2026-08-28T10:02:12.068Z"
+        },
+        {
+          "stage": "release",
+          "by": "zcode-release-pc1",
+          "item": "independent verifier zcode-verify-pc3: scope audit clean (15 files all in lease), tsc 0, unit 316/316, chrome 5/5, build 0, effects 15/15",
+          "at": "2026-08-28T10:02:12.068Z"
+        },
+        {
+          "stage": "release",
+          "by": "zcode-release-pc1",
+          "item": "pixel-identity independently reproofed from scratch: base vs candidate page composites identical sha256 0fa979a3fc68810c0e8b8801690bf2281220d171023d9aa54546ba0622b4b44c",
+          "at": "2026-08-28T10:02:12.068Z"
+        },
+        {
+          "stage": "release",
+          "by": "zcode-release-pc1",
+          "item": "measurement reproduced: shadow30 idle ~111x, zoom ~104x vs base 14e2812",
+          "at": "2026-08-28T10:02:12.068Z"
+        },
+        {
+          "stage": "release",
+          "by": "zcode-release-pc1",
+          "item": "critic NOT_APPLICABLE per manifest: engine-only, pixel-identical",
+          "at": "2026-08-28T10:02:12.068Z"
         }
       ],
       "last_handoff": {
-        "from": "verify",
-        "to": "release",
-        "by": "zcode-verify-pc3",
-        "at": "2026-08-28T09:56:30.446Z",
+        "from": "release",
+        "to": "merge-gate",
+        "by": "zcode-release-pc1",
+        "at": "2026-08-28T10:02:12.068Z",
         "evidence": [
-          "scope audit: diff 14e2812..f5baa1a = 15 files all inside lease (src/engine/compositor.ts, scripts/perf/**, docs/research/0012-frame-profiling.md, docs/agents/deliveries/VIRO-0012.json); baseline commit f973318 touches zero prod code, compositor change only in f5baa1a",
-          "gates: npx tsc --noEmit exit 0; npm run test:unit 316/316; npm run test:chrome 5/5 green (isolated verifier worktree server port 5192, no foreign-server reuse); npm run build exit 0; tests/effects.spec.mjs 15/15 vs worktree server",
-          "pixel-identity reproof: own from-scratch captures in clean detached worktrees — 14e2812 sha 0fa979a3fc68810c0e8b8801690bf2281220d171023d9aa54546ba0622b4b44c and f5baa1a same sha, 2480x3508 RGBA, capture compare = PIXEL-IDENTICAL exit 0",
-          "measurement reproduction (same machine pc-cloud1): idle/shadow30 85556.8ms median @14e2812 -> 771.1ms @f5baa1a = 111x; g/shadow30/zoom drawMs 88362.3ms -> 846.6ms = 104x; g/shadow30/move 791.4ms after; committed results/after-fix.json + baseline-run.log + baseline-zoom.json match docs/research/0012-frame-profiling.md tables line-for-line"
+          "PR #20 binds approval to head SHA f5baa1a6c85b9957aef17742674b3ffd31b9b564",
+          "independent verifier zcode-verify-pc3: scope audit clean (15 files all in lease), tsc 0, unit 316/316, chrome 5/5, build 0, effects 15/15",
+          "pixel-identity independently reproofed from scratch: base vs candidate page composites identical sha256 0fa979a3fc68810c0e8b8801690bf2281220d171023d9aa54546ba0622b4b44c",
+          "measurement reproduced: shadow30 idle ~111x, zoom ~104x vs base 14e2812",
+          "critic NOT_APPLICABLE per manifest: engine-only, pixel-identical"
         ]
       },
-      "rejection": null
+      "rejection": null,
+      "release_approval": {
+        "status": "APPROVED",
+        "by": "zcode-release-pc1",
+        "at": "2026-08-28T10:02:12.068Z",
+        "pr_number": 20,
+        "pr_url": "https://github.com/Megamind33-tech/viro-studio/pull/20",
+        "head_sha": "f5baa1a6c85b9957aef17742674b3ffd31b9b564",
+        "base": "main",
+        "evidence": [
+          "PR #20 binds approval to head SHA f5baa1a6c85b9957aef17742674b3ffd31b9b564",
+          "independent verifier zcode-verify-pc3: scope audit clean (15 files all in lease), tsc 0, unit 316/316, chrome 5/5, build 0, effects 15/15",
+          "pixel-identity independently reproofed from scratch: base vs candidate page composites identical sha256 0fa979a3fc68810c0e8b8801690bf2281220d171023d9aa54546ba0622b4b44c",
+          "measurement reproduced: shadow30 idle ~111x, zoom ~104x vs base 14e2812",
+          "critic NOT_APPLICABLE per manifest: engine-only, pixel-identical"
+        ]
+      }
     },
     "VIRO-0013": {
       "id": "VIRO-0013",
@@ -656,12 +703,6 @@
       "machine": "pc-cloud1",
       "packet": "VIRO-0005",
       "heartbeat_at": "2026-08-28T09:39:47.560Z"
-    },
-    "zcode-release-pc1": {
-      "role": "release-manager",
-      "machine": "pc-cloud1",
-      "packet": "VIRO-0012",
-      "heartbeat_at": "2026-08-28T10:01:57.307Z"
     }
   },
   "leases": {
@@ -686,7 +727,7 @@
         "docs/agents/deliveries/VIRO-0012.json"
       ],
       "acquired_at": "2026-08-28T06:43:47.797Z",
-      "current_agent": "zcode-release-pc1",
+      "current_agent": null,
       "current_stage": "release"
     }
   },
@@ -1441,6 +1482,14 @@
       "agent": "zcode-release-pc1",
       "role": "release-manager",
       "machine": "pc-cloud1"
+    },
+    {
+      "at": "2026-08-28T10:02:12.086Z",
+      "type": "release.approved",
+      "packet": "VIRO-0012",
+      "by": "zcode-release-pc1",
+      "pr": 20,
+      "head_sha": "f5baa1a6c85b9957aef17742674b3ffd31b9b564"
     }
   ]
 }
