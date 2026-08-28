@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 430,
-  "updated_at": "2026-08-28T23:38:15.231Z",
+  "revision": 431,
+  "updated_at": "2026-08-28T23:38:25.632Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -1180,10 +1180,10 @@
       "critic_needed": true,
       "stage": "release",
       "status": "RELEASE",
-      "assigned_agent": "zcode-release-pc1",
-      "assigned_role": "release-manager",
+      "assigned_agent": null,
+      "assigned_role": null,
       "work_branch": "agent/viro-0017/zcode-gov-audit-pc1",
-      "heartbeat_at": "2026-08-28T23:38:15.231Z",
+      "heartbeat_at": null,
       "attempts": 0,
       "evidence": [
         {
@@ -1233,21 +1233,56 @@
           "by": "zcode-critic-pc3",
           "item": "Critic evidence shots: Temp/viro-critic-pc3/shots/polish/ (base-02 vs cand-02 recover bars, c2-align-4x hover, base9/cand9 anchor panels, computed-style JSON in probes/polish-full.json)",
           "at": "2026-08-28T23:35:36.569Z"
+        },
+        {
+          "stage": "release",
+          "by": "zcode-release-pc1",
+          "item": "PR binds approval to head SHA 3ad0bb3",
+          "at": "2026-08-28T23:38:25.626Z"
+        },
+        {
+          "stage": "release",
+          "by": "zcode-release-pc1",
+          "item": "independent verifier zcode-verify-pc14: scope clean 8 files, own census zero-added, 29/29 chrome incl a11y, gates green",
+          "at": "2026-08-28T23:38:25.626Z"
+        },
+        {
+          "stage": "release",
+          "by": "zcode-release-pc1",
+          "item": "critic zcode-critic-pc3 PASS: side-by-side base/candidate drive, hierarchy reads at a glance, D5/D6 returned unedited",
+          "at": "2026-08-28T23:38:25.626Z"
         }
       ],
       "last_handoff": {
-        "from": "critic",
-        "to": "release",
-        "by": "zcode-critic-pc3",
-        "at": "2026-08-28T23:35:36.569Z",
+        "from": "release",
+        "to": "merge-gate",
+        "by": "zcode-release-pc1",
+        "at": "2026-08-28T23:38:25.626Z",
         "evidence": [
-          "Drove candidate 3ad0bb3 and base 5014465 side by side (headless Chromium, real key/mouse journeys, ports 5217/5218). Recovery bar via real autosave+reload: base Restore was a solid copper pill; candidate Restore is a raised neutral #3d3d3d fill with ghost Discard - hierarchy reads at a glance, urgency carried by the copy, nothing ambiguous (polish/base-bar-crop.png vs cand-bar-crop.png). Align hover with 2 layers selected: computed border rgb(61,61,61) neutral step, visible-but-quiet at 4x (c2-align-4x.png). Projects card hover #3d3d3d. Anchor studio: Send/.anc-mini-default computed border rgb(26,26,26) neutral, raised-fill emphasis kept, no replacement ornament; empty-queue panels identical geometry both builds (base9/cand9-anchor-crop.png). D4 prose proven dead markup (mountAnchorPanel strips static H2/P at init, anchor-panel.ts:334) so zero painted delta. #3d3d3d is an existing ramp tone (styles/desk.css, anchor-panel.css), nothing invented. Remaining copper only on allowed states (checked Constrain box, canvas selection handles, focus). Workspace density unchanged (CSS declarations + one dead block only). Aesthetic verdict: de-coppered controls look RIGHT per the AAA brief. Verifier gates (tsc, unit 316/316, playwright 29/29 incl. a11y 6/6) accepted; critic drove the visual confirmation.",
-          "Critic evidence shots: Temp/viro-critic-pc3/shots/polish/ (base-02 vs cand-02 recover bars, c2-align-4x hover, base9/cand9 anchor panels, computed-style JSON in probes/polish-full.json)"
+          "PR binds approval to head SHA 3ad0bb3",
+          "independent verifier zcode-verify-pc14: scope clean 8 files, own census zero-added, 29/29 chrome incl a11y, gates green",
+          "critic zcode-critic-pc3 PASS: side-by-side base/candidate drive, hierarchy reads at a glance, D5/D6 returned unedited"
         ]
       },
       "rejection": null,
       "assigned_machine": "pc-cloud1",
-      "assigned_session": "d01cc960-a421-4b8b-a9cc-d2b7ac42a713"
+      "assigned_session": "d01cc960-a421-4b8b-a9cc-d2b7ac42a713",
+      "release_approval": {
+        "status": "APPROVED",
+        "by": "zcode-release-pc1",
+        "machine": "pc-cloud1",
+        "session": "d01cc960-a421-4b8b-a9cc-d2b7ac42a713",
+        "at": "2026-08-28T23:38:25.626Z",
+        "pr_number": 28,
+        "pr_url": "https://github.com/Megamind33-tech/viro-studio/pull/28",
+        "head_sha": "3ad0bb35a8f9e838f86d84987b96d66c139c3e20",
+        "base": "main",
+        "evidence": [
+          "PR binds approval to head SHA 3ad0bb3",
+          "independent verifier zcode-verify-pc14: scope clean 8 files, own census zero-added, 29/29 chrome incl a11y, gates green",
+          "critic zcode-critic-pc3 PASS: side-by-side base/candidate drive, hierarchy reads at a glance, D5/D6 returned unedited"
+        ]
+      }
     },
     "VIRO-0019": {
       "id": "VIRO-0019",
@@ -2107,13 +2142,6 @@
       "session": "51efe904-f1a0-4f6d-9378-10f113c068fc",
       "packet": "VIRO-0144",
       "heartbeat_at": "2026-08-28T23:24:55.219Z"
-    },
-    "zcode-release-pc1": {
-      "role": "release-manager",
-      "machine": "pc-cloud1",
-      "session": "d01cc960-a421-4b8b-a9cc-d2b7ac42a713",
-      "packet": "VIRO-0017",
-      "heartbeat_at": "2026-08-28T23:38:15.231Z"
     }
   },
   "leases": {
@@ -2127,7 +2155,7 @@
         "tests/visual-polish-*"
       ],
       "acquired_at": "2026-08-28T19:33:41.736Z",
-      "current_agent": "zcode-release-pc1",
+      "current_agent": null,
       "current_stage": "release",
       "current_session": "d01cc960-a421-4b8b-a9cc-d2b7ac42a713"
     },
@@ -2160,11 +2188,6 @@
     }
   },
   "events": [
-    {
-      "at": "2026-08-28T10:16:53.187Z",
-      "type": "packet.imported",
-      "packet": "VIRO-0145"
-    },
     {
       "at": "2026-08-28T10:17:18.637Z",
       "type": "packet.claimed",
@@ -4344,6 +4367,16 @@
       "role": "release-manager",
       "machine": "pc-cloud1",
       "session": "d01cc960-a421-4b8b-a9cc-d2b7ac42a713"
+    },
+    {
+      "at": "2026-08-28T23:38:25.632Z",
+      "type": "release.approved",
+      "packet": "VIRO-0017",
+      "by": "zcode-release-pc1",
+      "machine": "pc-cloud1",
+      "session": "d01cc960-a421-4b8b-a9cc-d2b7ac42a713",
+      "pr": 28,
+      "head_sha": "3ad0bb35a8f9e838f86d84987b96d66c139c3e20"
     }
   ]
 }
