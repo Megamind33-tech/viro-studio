@@ -894,8 +894,8 @@
         "scripts/viro-orchestrator.mjs",
         "scripts/viro-orchestrator-git.mjs",
         "scripts/viro-release.mjs",
-        "docs/agents/**",
-        "docs/agents/deliveries/VIRO-0019.json"
+        "docs/agents/deliveries/VIRO-0019.json",
+        "docs/agents/orchestrator-identity.md"
       ],
       "dependencies": [],
       "critic_needed": false,
