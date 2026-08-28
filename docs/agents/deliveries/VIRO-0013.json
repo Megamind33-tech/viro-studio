@@ -1,0 +1,43 @@
+{
+  "id": "VIRO-0013",
+  "title": "Import parser fuzz and negative-input test corpus for PSD/VDJ/PressJSON",
+  "priority": "P2",
+  "domain": "assets-import",
+  "state": "ACTIVE",
+  "outcome": "The PSD, VDJ and Press JSON import paths survive arbitrary malformed input without uncaught crashes outside their documented error handling: a checked-in fuzz/negative corpus plus a deterministic runner proves typed, user-safe failure for truncated, oversized, deeply-nested, wrong-mime and hostile-declaration inputs, and any proven parser defect found is fixed with the smallest safe change.",
+  "before": "GOVERNOR.md Security Rules require defensive sanitization of imported/parsed files, and the truth ledger lists PSD/VDJ/PressJSON import as working on valid inputs with 'hardening remains backlog'. No fuzz or negative-input corpus exists in tests/. Builder must re-confirm parser entry points on current main (src/import/psd.ts, src/import/vdj.ts, Press JSON open path).",
+  "after": "Deterministic fuzz/negative suite under tests/ runs the real parsers against a versioned corpus of malformed inputs; every failure is a caught, typed error; corpus, runner and any minimal fixes are merged together.",
+  "allowed_paths": [
+    "src/import/**",
+    "tests/**",
+    "docs/agents/deliveries/VIRO-0013.json"
+  ],
+  "depends_on": [],
+  "acceptance": [
+    "Corpus covers at minimum: truncated files, wrong magic bytes, zero-length, oversized dimensions/counts, deep nesting, and JSON with hostile key/prototype pollution patterns for the Press JSON path.",
+    "Runner is deterministic (seeded) and completes in the normal unit-test time budget.",
+    "Every malformed input produces a caught, typed error or a safe rejection; zero uncaught exceptions escaping the parser boundary.",
+    "Valid-file import behavior unchanged: existing import-related tests and a real PSD round-trip stay green.",
+    "Any production fix is minimal and inside src/import/**; if a correct fix requires files outside src/import/** the builder stops and reports BLOCKED with the exact cross-domain dependency.",
+    "npx tsc --noEmit, targeted tests and npm run build pass."
+  ],
+  "evidence": [
+    "Fuzz/negative suite output on the full corpus",
+    "Seeded determinism proof (two runs, identical results)",
+    "Valid-import non-regression proof",
+    "npx tsc --noEmit",
+    "npm run build"
+  ],
+  "builder": { "status": "PENDING", "notes": "Claimable after VIRO-0005 releases the tests/** lease." },
+  "verifier": { "status": "PENDING", "notes": "Independent verification required." },
+  "critic": { "status": "NOT_APPLICABLE", "notes": "Engine/import hardening; no UI change." },
+  "delta": {
+    "before": "No malformed-input corpus; parser robustness unproven beyond valid files.",
+    "after": "Versioned corpus + deterministic runner + typed-failure guarantee, with minimal fixes for proven defects.",
+    "proof": [],
+    "regression_protection": [
+      "Existing import/PSD tests and valid-file round-trip green"
+    ],
+    "new_debt": "none yet"
+  }
+}

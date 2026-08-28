@@ -1,0 +1,43 @@
+{
+  "id": "VIRO-0011",
+  "title": "Document-identity recovery model replacing the single recovery slot",
+  "priority": "P2",
+  "domain": "editor-core",
+  "state": "QUEUED",
+  "outcome": "Crash recovery is keyed by document identity: working in document B never destroys the recovery snapshot of document A, recovery restore preserves project identity, and the recovery picker (if any) only ever offers snapshots that still exist in the store.",
+  "before": "GOVERNOR.md Active Risks (2026-08-27): single recovery slot with no per-document identity, acceptable for current local use but tracked; docs/reviews/sprint-critic-01.md P3: recovery-restore loses project identity, and deleting the open project re-creates it on next edit.",
+  "after": "Per-document recovery records with identity-preserving restore, proven by tests that open two documents, dirty both, crash-simulate, and recover each independently.",
+  "allowed_paths": [
+    "src/app.ts",
+    "src/library/store.ts",
+    "tests/**",
+    "docs/agents/deliveries/VIRO-0011.json"
+  ],
+  "depends_on": ["VIRO-0010"],
+  "acceptance": [
+    "Two documents edited in sequence each retain an independent recoverable snapshot.",
+    "Recovery restore preserves project identity (name/id) rather than losing it.",
+    "Deleting a project does not resurrect it as a side effect of autosave.",
+    "Existing recovery and projects tests remain green.",
+    "npx tsc --noEmit, targeted tests, npm run test:chrome and npm run build pass."
+  ],
+  "evidence": [
+    "Two-document recovery independence test",
+    "Project identity preservation test",
+    "Full recovery/projects suites green",
+    "npx tsc --noEmit",
+    "npm run build"
+  ],
+  "builder": { "status": "PENDING", "notes": "Gated on VIRO-0010 DONE." },
+  "verifier": { "status": "PENDING", "notes": "Independent verification required." },
+  "critic": { "status": "NOT_APPLICABLE", "notes": "Persistence behavior only; no visual redesign." },
+  "delta": {
+    "before": "One recovery slot keyed to the last session regardless of document identity.",
+    "after": "Per-document recovery records with identity-preserving restore.",
+    "proof": [],
+    "regression_protection": [
+      "tests/recovery.spec.mjs and tests/projects.spec.mjs green"
+    ],
+    "new_debt": "none yet"
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "id": "VIRO-0016",
+  "title": "Accessibility and keyboard audit of editor chrome with proven-defect fixes",
+  "priority": "P2",
+  "domain": "ui-ux",
+  "state": "ACTIVE",
+  "outcome": "Core editor journeys (new/open/save, undo/redo, tool switching, zoom, panel navigation) are fully operable by keyboard and by screen-reader-meaningful labels: an audited findings report is committed, every proven accessibility defect found in existing chrome is fixed in place, and no layout or visual redesign is introduced.",
+  "before": "GOVERNOR.md Release Gates require an accessibility pass on core editor journeys, and no accessibility audit evidence exists in docs/reviews/ or docs/research/. Existing chrome (index.html + src/chrome/**) has real handlers but no systematic audit of focus order, ARIA roles/labels, or keyboard reachability. Builder must audit first and fix only proven defects.",
+  "after": "Committed audit report listing each journey, finding, severity and disposition; all proven defects fixed; keyboard-only walkthrough of the core journeys recorded; existing UI behavior for pointer users unchanged.",
+  "allowed_paths": [
+    "index.html",
+    "src/chrome/**",
+    "tests/**",
+    "docs/reviews/0016-accessibility-audit.md",
+    "docs/agents/deliveries/VIRO-0016.json"
+  ],
+  "depends_on": [],
+  "acceptance": [
+    "Audit report committed with per-journey findings and dispositions (fixed / not-a-defect with reason).",
+    "Keyboard-only walkthrough of new/open/save, undo/redo, tool switch, zoom passes with visible focus.",
+    "All interactive controls expose accessible names/roles consistent with their real handlers; no decorative ARIA.",
+    "No pixel-level redesign; existing chrome/visual tests and a before/after screenshot pair show no unintended visual drift.",
+    "npx tsc --noEmit, targeted tests, npm run test:chrome and npm run build pass."
+  ],
+  "evidence": [
+    "docs/reviews/0016-accessibility-audit.md findings report",
+    "Keyboard-only walkthrough evidence (Playwright keyboard-driven test or recorded run)",
+    "Before/after visual captures showing no unintended drift",
+    "npx tsc --noEmit",
+    "npm run test:chrome",
+    "npm run build"
+  ],
+  "builder": { "status": "PENDING", "notes": "Claimable after VIRO-0005 releases the tests/** lease." },
+  "verifier": { "status": "PENDING", "notes": "Independent verification required." },
+  "critic": { "status": "PENDING", "notes": "User-visible chrome changes require critic review against the AAA brief with no layout invention." },
+  "delta": {
+    "before": "No accessibility audit evidence; unproven keyboard reachability.",
+    "after": "Committed audit, proven defects fixed, keyboard-only core journeys pass.",
+    "proof": [],
+    "regression_protection": [
+      "Existing chrome E2E and visual tests green",
+      "Pointer-user flows unchanged"
+    ],
+    "new_debt": "none yet"
+  }
+}
