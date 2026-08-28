@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 347,
-  "updated_at": "2026-08-28T20:02:56.410Z",
+  "revision": 348,
+  "updated_at": "2026-08-28T20:03:14.603Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -836,12 +836,12 @@
         "VIRO-0005"
       ],
       "critic_needed": false,
-      "stage": "verify",
-      "status": "VERIFY",
-      "assigned_agent": "zcode-verify-pc11",
-      "assigned_role": "verifier",
+      "stage": "release",
+      "status": "QUEUED",
+      "assigned_agent": null,
+      "assigned_role": null,
       "work_branch": "agent/viro-0015/zcode-gov-audit-pc1",
-      "heartbeat_at": "2026-08-28T20:02:56.410Z",
+      "heartbeat_at": null,
       "attempts": 0,
       "evidence": [
         {
@@ -885,20 +885,77 @@
           "by": "zcode-exportqa-pc1",
           "item": "gates: tsc exit 0, test:unit 316/316, pdf-compound 5/5 + pdf-font 5/5 re-run untouched, npm run build exit 0",
           "at": "2026-08-28T17:58:41.786Z"
+        },
+        {
+          "stage": "verify",
+          "by": "zcode-verify-pc11",
+          "item": "scope: diff 72b05f0..3cba4ab = 6 files/878 insertions, all tests/export-corpus-* + deliveries/VIRO-0015.json, ZERO src/export changes",
+          "at": "2026-08-28T20:03:14.600Z"
+        },
+        {
+          "stage": "verify",
+          "by": "zcode-verify-pc11",
+          "item": "vacuity re-proof (verifier's own mutations): PNG pin digit flip -> exactly png-arm FAIL 12/1; ring topology m:2->3 -> exactly pdf-arm ring FAIL 12/1; both restored, worktree clean",
+          "at": "2026-08-28T20:03:14.603Z"
+        },
+        {
+          "stage": "verify",
+          "by": "zcode-verify-pc11",
+          "item": "independent decode spot-checks (pdf-lib decodePDFRawStream + own census): ring m=2 h=2 f*=1 fill=0; text BT=1 Tm=1 TJ=1, stream glyphs=11 == report.glyphs=11, textRuns=1, whole-font note present; all 7 report fields asserted per row",
+          "at": "2026-08-28T20:03:14.603Z"
+        },
+        {
+          "stage": "verify",
+          "by": "zcode-verify-pc11",
+          "item": "corpus 13/13 twice (pins reproduced)",
+          "at": "2026-08-28T20:03:14.603Z"
+        },
+        {
+          "stage": "verify",
+          "by": "zcode-verify-pc11",
+          "item": "tsc exit 0",
+          "at": "2026-08-28T20:03:14.603Z"
+        },
+        {
+          "stage": "verify",
+          "by": "zcode-verify-pc11",
+          "item": "test:unit 316/316",
+          "at": "2026-08-28T20:03:14.603Z"
+        },
+        {
+          "stage": "verify",
+          "by": "zcode-verify-pc11",
+          "item": "pdf-compound 5/5 + pdf-font-embed 5/5 untouched",
+          "at": "2026-08-28T20:03:14.603Z"
+        },
+        {
+          "stage": "verify",
+          "by": "zcode-verify-pc11",
+          "item": "test:chrome 16/16 passed (exit 1 only from worker teardown hang under load, no test failure)",
+          "at": "2026-08-28T20:03:14.603Z"
+        },
+        {
+          "stage": "verify",
+          "by": "zcode-verify-pc11",
+          "item": "build exit 0, dist 47M",
+          "at": "2026-08-28T20:03:14.603Z"
         }
       ],
       "last_handoff": {
-        "from": "build",
-        "to": "verify",
-        "by": "zcode-exportqa-pc1",
-        "at": "2026-08-28T17:58:41.786Z",
+        "from": "verify",
+        "to": "release",
+        "by": "zcode-verify-pc11",
+        "at": "2026-08-28T20:03:14.603Z",
         "evidence": [
-          "candidate 3cba4ab on agent/viro-0015/zcode-gov-audit-pc1 (base 72b05f0)",
-          "corpus suite tests/export-corpus.test.mjs 13/13: 9 docs (single-contour, compound ring, disjoint union, stroke-only S+w, fill+stroke B*, text, raster, effects+control), per-doc PDF operator topology + all 7 PdfExportReport fields, PNG decoded-IDAT sha256 pins via playwright/Skia compositor harness",
-          "compound DEFERRED cases ACTIVATED post-0005-rebase: ring+union emit m:2 h:2 f*:1 fill:0 as expected, no exporter defect",
-          "vacuity: mutationSelfChecks rejects content-hash/topology/pixel mutations AND one corrupted committed PNG pin made the suite fail end-to-end (restored); pins reproduced across 2 independent runs",
-          "effects finding pinned CURRENT behaviour: PDF census+report identical to control while canvas fingerprint differs — shadow dropped silently in PDF, no report note; reported not fixed",
-          "gates: tsc exit 0, test:unit 316/316, pdf-compound 5/5 + pdf-font 5/5 re-run untouched, npm run build exit 0"
+          "scope: diff 72b05f0..3cba4ab = 6 files/878 insertions, all tests/export-corpus-* + deliveries/VIRO-0015.json, ZERO src/export changes",
+          "vacuity re-proof (verifier's own mutations): PNG pin digit flip -> exactly png-arm FAIL 12/1; ring topology m:2->3 -> exactly pdf-arm ring FAIL 12/1; both restored, worktree clean",
+          "independent decode spot-checks (pdf-lib decodePDFRawStream + own census): ring m=2 h=2 f*=1 fill=0; text BT=1 Tm=1 TJ=1, stream glyphs=11 == report.glyphs=11, textRuns=1, whole-font note present; all 7 report fields asserted per row",
+          "corpus 13/13 twice (pins reproduced)",
+          "tsc exit 0",
+          "test:unit 316/316",
+          "pdf-compound 5/5 + pdf-font-embed 5/5 untouched",
+          "test:chrome 16/16 passed (exit 1 only from worker teardown hang under load, no test failure)",
+          "build exit 0, dist 47M"
         ]
       },
       "rejection": null
@@ -1510,12 +1567,6 @@
     }
   },
   "agents": {
-    "zcode-verify-pc11": {
-      "role": "verifier",
-      "machine": "pc-cloud1",
-      "packet": "VIRO-0015",
-      "heartbeat_at": "2026-08-28T20:02:56.410Z"
-    },
     "zcode-verify-pc10b": {
       "role": "verifier",
       "machine": "pc-cloud1",
@@ -1544,8 +1595,8 @@
         "tests/export-corpus-*"
       ],
       "acquired_at": "2026-08-28T16:58:52.208Z",
-      "current_agent": "zcode-verify-pc11",
-      "current_stage": "verify",
+      "current_agent": null,
+      "current_stage": "release",
       "heartbeat_at": "2026-08-28T20:02:56.410Z"
     },
     "VIRO-0141": {
@@ -1604,12 +1655,6 @@
     }
   },
   "events": [
-    {
-      "at": "2026-08-28T04:48:43.172Z",
-      "type": "agent.heartbeat",
-      "agent": "zcode-verify-pc1",
-      "packet": "VIRO-0005"
-    },
     {
       "at": "2026-08-28T04:49:16.077Z",
       "type": "agent.heartbeat",
@@ -3627,6 +3672,16 @@
       "packet": "VIRO-0015",
       "session": null,
       "machine": "pc-cloud1"
+    },
+    {
+      "at": "2026-08-28T20:03:14.603Z",
+      "type": "packet.advanced",
+      "packet": "VIRO-0015",
+      "from": "verify",
+      "to": "release",
+      "by": "zcode-verify-pc11",
+      "machine": "pc-cloud1",
+      "session": null
     }
   ]
 }
