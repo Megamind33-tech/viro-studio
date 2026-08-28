@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 231,
-  "updated_at": "2026-08-28T16:58:02.522Z",
+  "revision": 232,
+  "updated_at": "2026-08-28T16:58:08.897Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -980,8 +980,8 @@
       ],
       "dependencies": [],
       "critic_needed": true,
-      "stage": "build",
-      "status": "BLOCKED",
+      "stage": "done",
+      "status": "RECONCILED",
       "assigned_agent": null,
       "assigned_role": null,
       "work_branch": "agent/viro-0142/zcode-gov-audit-pc1",
@@ -993,23 +993,24 @@
           "by": "zcode-gov-audit-pc1",
           "item": "gap-audit before-state confirmed on main by Governor audit pass 2026-08-28; manifest before/after validated; no duplicate implementation; evidence basis in docs/agents/deliveries/VIRO-0142.json",
           "at": "2026-08-28T10:22:50.234Z"
+        },
+        {
+          "stage": "reconcile",
+          "by": "governor",
+          "item": "landed via LOCAL merge c8d6f2e (candidate 684b34e; rich-text 12/12); sweep green; critic deferred",
+          "at": "2026-08-28T16:58:08.896Z"
         }
       ],
       "last_handoff": {
-        "from": "audit",
-        "to": "build",
-        "by": "zcode-gov-audit-pc1",
-        "at": "2026-08-28T10:22:50.246Z",
+        "from": "historical",
+        "to": "done",
+        "by": "governor",
+        "at": "2026-08-28T16:58:08.896Z",
         "evidence": [
-          "gap-audit before-state confirmed on main by Governor audit pass 2026-08-28; manifest before/after validated; no duplicate implementation; evidence basis in docs/agents/deliveries/VIRO-0142.json"
+          "landed via LOCAL merge c8d6f2e (candidate 684b34e; rich-text 12/12); sweep green; critic deferred"
         ]
       },
-      "rejection": {
-        "by": "governor",
-        "stage": "build",
-        "reason": "builder died twice (network + quota wall) after committing 684b34e unpushed; coordinator gate-ran candidate green (rich-text 12/12, tsc, unit); OWNER ORDER: merged to local main commit c8d6f2e; independent critic still PENDING",
-        "at": "2026-08-28T16:19:27.673Z"
-      }
+      "rejection": null
     },
     "VIRO-0143": {
       "id": "VIRO-0143",
@@ -2645,6 +2646,15 @@
       "by": "governor",
       "evidence": [
         "landed via LOCAL merge abc2fa8 (candidate b92f1b2; 8 a11y fixes + walkthrough tests; chrome 16/16 on merged main); critic deferred to post-quota reset"
+      ]
+    },
+    {
+      "at": "2026-08-28T16:58:08.897Z",
+      "type": "packet.reconciled",
+      "packet": "VIRO-0142",
+      "by": "governor",
+      "evidence": [
+        "landed via LOCAL merge c8d6f2e (candidate 684b34e; rich-text 12/12); sweep green; critic deferred"
       ]
     }
   ]
