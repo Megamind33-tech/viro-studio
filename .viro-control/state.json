@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 230,
-  "updated_at": "2026-08-28T16:57:56.279Z",
+  "revision": 231,
+  "updated_at": "2026-08-28T16:58:02.522Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -739,8 +739,8 @@
       ],
       "dependencies": [],
       "critic_needed": true,
-      "stage": "verify",
-      "status": "BLOCKED",
+      "stage": "done",
+      "status": "RECONCILED",
       "assigned_agent": null,
       "assigned_role": null,
       "work_branch": "agent/viro-0016/zcode-gov-audit-pc1",
@@ -776,26 +776,24 @@
           "by": "zcode-a11y-pc1",
           "item": "gates: npx tsc --noEmit clean, npm run test:unit 316/316, npm run build exit 0; visual drift: desk-at-rest and menu-open PNGs byte-identical pre/post, dialog-open differs only by the new visible focus indicator (542px, rows 52-240)",
           "at": "2026-08-28T11:45:31.848Z"
+        },
+        {
+          "stage": "reconcile",
+          "by": "governor",
+          "item": "landed via LOCAL merge abc2fa8 (candidate b92f1b2; 8 a11y fixes + walkthrough tests; chrome 16/16 on merged main); critic deferred to post-quota reset",
+          "at": "2026-08-28T16:58:02.520Z"
         }
       ],
       "last_handoff": {
-        "from": "build",
-        "to": "verify",
-        "by": "zcode-a11y-pc1",
-        "at": "2026-08-28T11:45:31.848Z",
+        "from": "historical",
+        "to": "done",
+        "by": "governor",
+        "at": "2026-08-28T16:58:02.520Z",
         "evidence": [
-          "commit b92f1b2 on agent/viro-0016/zcode-gov-audit-pc1: 8/8 audited a11y defects fixed in place (menus Escape+aria-expanded, dialog focus trap/restore/Escape incl. Projects, 9 unnamed controls labeled, toggle state via aria-pressed on tabs/channels/align/orientation/view-window/layer rows, keyboard-selectable layer name button, swatch names, aria-modal, stat-engine live region)",
-          "audit committed at docs/reviews/0016-accessibility-audit.md: per-journey findings F1-F8 with disposition + dismissed-with-reason list",
-          "keyboard walkthrough tests/a11y-keyboard.spec.ts exit 0 (5 passed, 1 SwiftShader cold-boot flake recovered by retry): new dialog focus+Enter-create+Escape+trap, Ctrl+S/Ctrl+O projects persistence, Ctrl+Z/Y/Shift+Z layer toggling, letter tools + Ctrl+1/=/-/0 zoom, menu state/Escape/focusout, layer row keyboard select (row height 38px kept)",
-          "gates: npx tsc --noEmit clean, npm run test:unit 316/316, npm run build exit 0; visual drift: desk-at-rest and menu-open PNGs byte-identical pre/post, dialog-open differs only by the new visible focus indicator (542px, rows 52-240)"
+          "landed via LOCAL merge abc2fa8 (candidate b92f1b2; 8 a11y fixes + walkthrough tests; chrome 16/16 on merged main); critic deferred to post-quota reset"
         ]
       },
-      "rejection": {
-        "by": "governor",
-        "stage": "verify",
-        "reason": "OWNER ORDER 2026-08-28: builder-complete candidate b92f1b2 (8 a11y fixes + 6 walkthrough tests) merged to LOCAL main commit abc2fa8; verification had not started (quota wall); chrome/build green on merged main; independent critic still PENDING - schedule after quota reset",
-        "at": "2026-08-28T16:20:05.037Z"
-      }
+      "rejection": null
     },
     "VIRO-0017": {
       "id": "VIRO-0017",
@@ -2638,6 +2636,15 @@
       "by": "governor",
       "evidence": [
         "landed via LOCAL merge 0e6cd19 (repaired candidate 3507167; 16/16 + 159/159; coordinator repair disclosed); sweep green"
+      ]
+    },
+    {
+      "at": "2026-08-28T16:58:02.522Z",
+      "type": "packet.reconciled",
+      "packet": "VIRO-0016",
+      "by": "governor",
+      "evidence": [
+        "landed via LOCAL merge abc2fa8 (candidate b92f1b2; 8 a11y fixes + walkthrough tests; chrome 16/16 on merged main); critic deferred to post-quota reset"
       ]
     }
   ]
