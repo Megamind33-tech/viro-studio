@@ -342,7 +342,11 @@ test("duplicating [group + grandchild] does not duplicate the grandchild twice",
 
   assert.equal(next.activeLayerIds.length, 1, "selection is exactly the group copy");
   const names = next.pages[0].layers.map((l) => l.name);
-  for (const n of ["g_outer", "g_inner", "v_a", "v_b", "v_c"]) {
+  // The duplicated ROOT is renamed "<name> copy" (ops.ts contract); descendants
+  // keep their exact names. Count accordingly. (Test repaired by coordinator:
+  // the original verifier assertion counted the renamed root as an exact match.)
+  assert.ok(names.includes("g_outer") && names.includes("g_outer copy"), "group original plus one renamed copy");
+  for (const n of ["g_inner", "v_a", "v_b", "v_c"]) {
     const count = names.filter((x) => x === n).length;
     assert.ok(count === 2, `${n} must appear exactly twice (original + one copy), got ${count}`);
   }

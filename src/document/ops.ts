@@ -462,8 +462,12 @@ export function duplicateSelected(doc: PressDocument): PressDocument {
   if (!selected.length) return next;
   const selectedIds = new Set(selected.map((l) => l.id));
   // A selected layer that sits inside another selected layer travels with that
-  // subtree; it is not duplicated a second time as its own root.
-  const roots = selected.filter((l) => !l.parentId || !selectedIds.has(l.parentId));
+  // subtree; it is not duplicated a second time as its own root. The check is
+  // transitive: a co-selected grandchild whose direct parent is unselected is
+  // still inside a selected subtree and must not become its own root.
+  const inSelectedSubtree = new Set();
+  for (const l of selected) for (const d of descendantIds(page, [l.id])) inSelectedSubtree.add(d);
+  const roots = selected.filter((l) => !inSelectedSubtree.has(l.id));
   const copies: string[] = [];
   for (const root of roots) {
     // Clone the WHOLE subtree with parentIds remapped to the new ids, so a
