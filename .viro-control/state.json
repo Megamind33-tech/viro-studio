@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 283,
-  "updated_at": "2026-08-28T17:36:24.384Z",
+  "revision": 284,
+  "updated_at": "2026-08-28T17:37:42.076Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -920,11 +920,11 @@
       "dependencies": [],
       "critic_needed": false,
       "stage": "verify",
-      "status": "QUEUED",
-      "assigned_agent": null,
-      "assigned_role": null,
+      "status": "VERIFY",
+      "assigned_agent": "zcode-verify-pc9",
+      "assigned_role": "verifier",
       "work_branch": "agent/viro-0019/zcode-gov-audit-pc1",
-      "heartbeat_at": null,
+      "heartbeat_at": "2026-08-28T17:37:42.076Z",
       "attempts": 0,
       "evidence": [
         {
@@ -971,7 +971,7 @@
         ]
       },
       "rejection": null,
-      "assigned_session": "sess-viro0019-zcode2-live",
+      "assigned_session": "sess-verify-pc9",
       "assigned_machine": "pc-cloud1"
     },
     "VIRO-0140": {
@@ -1320,6 +1320,13 @@
       "machine": "pc-cloud1",
       "packet": "VIRO-0014",
       "heartbeat_at": "2026-08-28T17:34:13.972Z"
+    },
+    "zcode-verify-pc9": {
+      "role": "verifier",
+      "machine": "pc-cloud1",
+      "session": "sess-verify-pc9",
+      "packet": "VIRO-0019",
+      "heartbeat_at": "2026-08-28T17:37:42.076Z"
     }
   },
   "leases": {
@@ -1414,10 +1421,9 @@
         "docs/agents/orchestrator-identity.md"
       ],
       "acquired_at": "2026-08-28T17:19:58.347Z",
-      "current_agent": null,
+      "current_agent": "zcode-verify-pc9",
       "current_stage": "verify",
-      "current_session": "sess-viro0019-zcode2-live",
-      "heartbeat_at": "2026-08-28T17:29:16.120Z"
+      "current_session": "sess-verify-pc9"
     }
   },
   "events": [
@@ -3279,6 +3285,15 @@
       "at": "2026-08-28T17:36:24.384Z",
       "type": "packet.reconciled_from_manifest",
       "packet": "VIRO-0002"
+    },
+    {
+      "at": "2026-08-28T17:37:42.076Z",
+      "type": "packet.claimed",
+      "packet": "VIRO-0019",
+      "agent": "zcode-verify-pc9",
+      "role": "verifier",
+      "machine": "pc-cloud1",
+      "session": "sess-verify-pc9"
     }
   ]
 }
