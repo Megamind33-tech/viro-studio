@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 343,
-  "updated_at": "2026-08-28T19:58:23.898Z",
+  "revision": 344,
+  "updated_at": "2026-08-28T19:58:31.320Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -1247,7 +1247,7 @@
       "assigned_agent": "zcode-verify-pc10b",
       "assigned_role": "verifier",
       "work_branch": "agent/viro-0141/zcode-gov-audit-pc1",
-      "heartbeat_at": "2026-08-28T19:42:15.722Z",
+      "heartbeat_at": "2026-08-28T19:58:31.320Z",
       "attempts": 0,
       "evidence": [
         {
@@ -1516,7 +1516,7 @@
       "role": "verifier",
       "machine": "pc-cloud1",
       "packet": "VIRO-0141",
-      "heartbeat_at": "2026-08-28T19:42:15.722Z"
+      "heartbeat_at": "2026-08-28T19:58:31.320Z"
     },
     "zcode-identity-pc2": {
       "role": "builder",
@@ -1556,7 +1556,7 @@
       "acquired_at": "2026-08-28T19:23:54.933Z",
       "current_agent": "zcode-verify-pc10b",
       "current_stage": "verify",
-      "heartbeat_at": "2026-08-28T19:42:15.722Z"
+      "heartbeat_at": "2026-08-28T19:58:31.320Z"
     },
     "VIRO-0143": {
       "packet": "VIRO-0143",
@@ -1614,11 +1614,6 @@
     }
   },
   "events": [
-    {
-      "at": "2026-08-28T04:41:32.086Z",
-      "type": "packet.reconciled_from_manifest",
-      "packet": "VIRO-0002"
-    },
     {
       "at": "2026-08-28T04:46:24.408Z",
       "type": "packet.claimed",
@@ -3637,6 +3632,12 @@
       "by": "zcode-release-pc1",
       "pr": 23,
       "head_sha": "e4cf09752e10bf59729a95bf41a3386c1fef5f31"
+    },
+    {
+      "at": "2026-08-28T19:58:31.320Z",
+      "type": "agent.heartbeat",
+      "agent": "zcode-verify-pc10b",
+      "packet": "VIRO-0141"
     }
   ]
 }
