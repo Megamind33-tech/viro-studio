@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 341,
-  "updated_at": "2026-08-28T19:52:01.367Z",
+  "revision": 342,
+  "updated_at": "2026-08-28T19:56:51.129Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -1034,11 +1034,11 @@
       "dependencies": [],
       "critic_needed": false,
       "stage": "release",
-      "status": "QUEUED",
-      "assigned_agent": null,
-      "assigned_role": null,
+      "status": "RELEASE",
+      "assigned_agent": "zcode-release-pc1",
+      "assigned_role": "release-manager",
       "work_branch": "agent/viro-0019/zcode-gov-audit-pc1",
-      "heartbeat_at": null,
+      "heartbeat_at": "2026-08-28T19:56:51.129Z",
       "attempts": 0,
       "evidence": [
         {
@@ -1500,6 +1500,12 @@
       "machine": "pc-cloud1",
       "packet": "VIRO-0017",
       "heartbeat_at": "2026-08-28T19:38:57.536Z"
+    },
+    "zcode-release-pc1": {
+      "role": "release-manager",
+      "machine": "pc-cloud1",
+      "packet": "VIRO-0019",
+      "heartbeat_at": "2026-08-28T19:56:51.129Z"
     }
   },
   "leases": {
@@ -1553,10 +1559,8 @@
         "docs/agents/orchestrator-identity.md"
       ],
       "acquired_at": "2026-08-28T19:28:17.592Z",
-      "current_agent": null,
-      "current_stage": "release",
-      "current_session": "c9d6a0ff-4064-4611-9ffd-afefc55ddcc2",
-      "heartbeat_at": "2026-08-28T19:43:25.238Z"
+      "current_agent": "zcode-release-pc1",
+      "current_stage": "release"
     },
     "VIRO-0011": {
       "packet": "VIRO-0011",
@@ -1587,11 +1591,6 @@
     }
   },
   "events": [
-    {
-      "at": "2026-08-28T04:39:43.996Z",
-      "type": "packet.reconciled_from_manifest",
-      "packet": "VIRO-0002"
-    },
     {
       "at": "2026-08-28T04:39:54.628Z",
       "type": "agent.heartbeat",
@@ -3605,6 +3604,14 @@
       "at": "2026-08-28T19:52:01.367Z",
       "type": "packet.reconciled_from_manifest",
       "packet": "VIRO-0002"
+    },
+    {
+      "at": "2026-08-28T19:56:51.129Z",
+      "type": "packet.claimed",
+      "packet": "VIRO-0019",
+      "agent": "zcode-release-pc1",
+      "role": "release-manager",
+      "machine": "pc-cloud1"
     }
   ]
 }
