@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 294,
-  "updated_at": "2026-08-28T17:53:28.195Z",
+  "revision": 295,
+  "updated_at": "2026-08-28T17:54:18.099Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -702,12 +702,12 @@
         "VIRO-0013"
       ],
       "critic_needed": false,
-      "stage": "verify",
-      "status": "VERIFY",
-      "assigned_agent": "zcode-verify-pc8",
-      "assigned_role": "verifier",
+      "stage": "release",
+      "status": "QUEUED",
+      "assigned_agent": null,
+      "assigned_role": null,
       "work_branch": "agent/viro-0014/zcode-gov-audit-pc1",
-      "heartbeat_at": "2026-08-28T17:52:56.528Z",
+      "heartbeat_at": null,
       "attempts": 0,
       "evidence": [
         {
@@ -733,17 +733,49 @@
           "by": "zcode-sanitize-pc1",
           "item": "npx tsc --noEmit clean; npm run test:unit 316/316; npm run build success; corpus v2 digests fonts 9bde3d2fe3abbdccff1cc34d8fb1a02a63d2cb047a59f7d38ba283345ab3e54f images 5790b9f31d6f8223a580972e38a7e140948af64f6899c98f587e1808b79a2b63 (version-bump reasons recorded in corpus header); delivery record docs/agents/deliveries/VIRO-0014.json updated with builder delta; known debt: app.ts wiring of validateImageBytes is cross-domain and deferred",
           "at": "2026-08-28T17:27:52.137Z"
+        },
+        {
+          "stage": "verify",
+          "by": "zcode-verify-pc8",
+          "item": "head ac2df9f verified from clean worktree viro-0014-verify-zcode1",
+          "at": "2026-08-28T17:54:18.097Z"
+        },
+        {
+          "stage": "verify",
+          "by": "zcode-verify-pc8",
+          "item": "scope: diff 72b05f0..ac2df9f touches only font-registry.ts, sniff.ts, tests/import-sanitize-{test,corpus}.mjs, deliveries/VIRO-0014.json — app.ts/store.ts zero-diff, all inside lease",
+          "at": "2026-08-28T17:54:18.099Z"
+        },
+        {
+          "stage": "verify",
+          "by": "zcode-verify-pc8",
+          "item": "gates: tsc clean, test:unit 316/316, import-sanitize 5/5 twice deterministic, playwright chrome vs vite:5198 exit 0 (13 passed 3 env-flaky on retry), build success",
+          "at": "2026-08-28T17:54:18.099Z"
+        },
+        {
+          "stage": "verify",
+          "by": "zcode-verify-pc8",
+          "item": "independent hostile probes 20/20 via instrumented putUserFont loader hook: text-as-.ttf FontImportError/bad-magic, traversal-named valid TTF imports family NotoSans separator-free, 50%-cut real TTF undecodable, text-as-.png sniff unknown + wrong-magic, GIF dims-bomb typed bad-dimensions, oversized too-large",
+          "at": "2026-08-28T17:54:18.099Z"
+        },
+        {
+          "stage": "verify",
+          "by": "zcode-verify-pc8",
+          "item": "persistence ordering proven: putUserFont called only after successful decode (2 valid imports = 2 calls, 0 hostile); corpus digests independently recomputed match manifest (9bde3d2f..., 5790b9f3...)",
+          "at": "2026-08-28T17:54:18.099Z"
         }
       ],
       "last_handoff": {
-        "from": "build",
-        "to": "verify",
-        "by": "zcode-sanitize-pc1",
-        "at": "2026-08-28T17:27:52.137Z",
+        "from": "verify",
+        "to": "release",
+        "by": "zcode-verify-pc8",
+        "at": "2026-08-28T17:54:18.099Z",
         "evidence": [
-          "commit ac2df9f844955a5519b29c85505a704c47e8f83c on agent/viro-0014/zcode-gov-audit-pc1 (pushed; base 72b05f0 post-wave-merge)",
-          "tests/import-sanitize.test.mjs 5/5 green twice in hardened MODE (typed FontImportError per-case codes too-small/bad-magic/too-large/undecodable; sniff extension-lie refusal; validateImageBytes 8 typed image rejections incl. IHDR/BMP dims bombs; real NotoSans positive control unchanged)",
-          "npx tsc --noEmit clean; npm run test:unit 316/316; npm run build success; corpus v2 digests fonts 9bde3d2fe3abbdccff1cc34d8fb1a02a63d2cb047a59f7d38ba283345ab3e54f images 5790b9f31d6f8223a580972e38a7e140948af64f6899c98f587e1808b79a2b63 (version-bump reasons recorded in corpus header); delivery record docs/agents/deliveries/VIRO-0014.json updated with builder delta; known debt: app.ts wiring of validateImageBytes is cross-domain and deferred"
+          "head ac2df9f verified from clean worktree viro-0014-verify-zcode1",
+          "scope: diff 72b05f0..ac2df9f touches only font-registry.ts, sniff.ts, tests/import-sanitize-{test,corpus}.mjs, deliveries/VIRO-0014.json — app.ts/store.ts zero-diff, all inside lease",
+          "gates: tsc clean, test:unit 316/316, import-sanitize 5/5 twice deterministic, playwright chrome vs vite:5198 exit 0 (13 passed 3 env-flaky on retry), build success",
+          "independent hostile probes 20/20 via instrumented putUserFont loader hook: text-as-.ttf FontImportError/bad-magic, traversal-named valid TTF imports family NotoSans separator-free, 50%-cut real TTF undecodable, text-as-.png sniff unknown + wrong-magic, GIF dims-bomb typed bad-dimensions, oversized too-large",
+          "persistence ordering proven: putUserFont called only after successful decode (2 valid imports = 2 calls, 0 hostile); corpus digests independently recomputed match manifest (9bde3d2f..., 5790b9f3...)"
         ]
       },
       "rejection": null
@@ -1329,12 +1361,6 @@
       "packet": "VIRO-0143",
       "heartbeat_at": "2026-08-28T17:53:10.483Z"
     },
-    "zcode-verify-pc8": {
-      "role": "verifier",
-      "machine": "pc-cloud1",
-      "packet": "VIRO-0014",
-      "heartbeat_at": "2026-08-28T17:52:56.528Z"
-    },
     "zcode-verify-pc9": {
       "role": "verifier",
       "machine": "pc-cloud1",
@@ -1367,8 +1393,8 @@
         "tests/import-sanitize-*"
       ],
       "acquired_at": "2026-08-28T16:58:36.785Z",
-      "current_agent": "zcode-verify-pc8",
-      "current_stage": "verify",
+      "current_agent": null,
+      "current_stage": "release",
       "heartbeat_at": "2026-08-28T17:52:56.528Z"
     },
     "VIRO-0015": {
@@ -3373,6 +3399,14 @@
       "from": "build",
       "to": "verify",
       "by": "zcode-vector-pc1"
+    },
+    {
+      "at": "2026-08-28T17:54:18.099Z",
+      "type": "packet.advanced",
+      "packet": "VIRO-0014",
+      "from": "verify",
+      "to": "release",
+      "by": "zcode-verify-pc8"
     }
   ]
 }
