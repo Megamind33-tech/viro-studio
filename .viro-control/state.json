@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 137,
-  "updated_at": "2026-08-28T10:21:11.504Z",
+  "revision": 138,
+  "updated_at": "2026-08-28T10:21:19.421Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -281,7 +281,7 @@
       "dependencies": [],
       "critic_needed": false,
       "stage": "build",
-      "status": "BLOCKED",
+      "status": "QUEUED",
       "assigned_agent": null,
       "assigned_role": null,
       "work_branch": "agent/viro-0010/zcode-gov-audit-pc1",
@@ -304,12 +304,7 @@
           "gap-audit before-state on main confirmed by Governor audit pass 2026-08-28; manifest before/after validated against repository; no duplicate implementation on main; see docs/agents/deliveries/VIRO-0010.json evidence basis"
         ]
       },
-      "rejection": {
-        "by": "governor",
-        "stage": "build",
-        "reason": "Governor lease-scope refresh: manifest tests/** narrowed to tests/autosave-*; block-unblock to let sync update the active lease scope",
-        "at": "2026-08-28T10:21:11.492Z"
-      }
+      "rejection": null
     },
     "VIRO-0011": {
       "id": "VIRO-0011",
@@ -1654,6 +1649,12 @@
       "packet": "VIRO-0010",
       "by": "governor",
       "reason": "Governor lease-scope refresh: manifest tests/** narrowed to tests/autosave-*; block-unblock to let sync update the active lease scope"
+    },
+    {
+      "at": "2026-08-28T10:21:19.421Z",
+      "type": "packet.unblocked",
+      "packet": "VIRO-0010",
+      "by": "governor"
     }
   ]
 }
