@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 409,
-  "updated_at": "2026-08-28T22:57:51.342Z",
+  "revision": 410,
+  "updated_at": "2026-08-28T22:58:04.708Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -1662,8 +1662,8 @@
         "VIRO-0142"
       ],
       "critic_needed": true,
-      "stage": "release",
-      "status": "RELEASE",
+      "stage": "done",
+      "status": "RECONCILED",
       "assigned_agent": null,
       "assigned_role": null,
       "work_branch": "agent/viro-0143/zcode-gov-audit-pc1",
@@ -1771,17 +1771,21 @@
           "by": "zcode-release-pc1",
           "item": "critic zcode-critic-pc4 PASS-WITH-NOTES: 5.1M-px comparison zero inset-zone ink, zero-inset parity 0 differing, autoSize honesty confirmed",
           "at": "2026-08-28T22:57:51.340Z"
+        },
+        {
+          "stage": "reconcile",
+          "by": "governor",
+          "item": "landed via LOCAL merge under owner order 2026-08-28 (candidate 94fd70a; attempt-2 verifier PASS + critic PASS-WITH-NOTES); inset-geometry suite green on merged main",
+          "at": "2026-08-28T22:58:04.702Z"
         }
       ],
       "last_handoff": {
-        "from": "release",
-        "to": "merge-gate",
-        "by": "zcode-release-pc1",
-        "at": "2026-08-28T22:57:51.340Z",
+        "from": "historical",
+        "to": "done",
+        "by": "governor",
+        "at": "2026-08-28T22:58:04.702Z",
         "evidence": [
-          "PR binds approval to head SHA 94fd70a",
-          "verifier zcode-verify-pc12 attempt-2 PASS: exact probe numbers, discrimination independently re-proven, gates green",
-          "critic zcode-critic-pc4 PASS-WITH-NOTES: 5.1M-px comparison zero inset-zone ink, zero-inset parity 0 differing, autoSize honesty confirmed"
+          "landed via LOCAL merge under owner order 2026-08-28 (candidate 94fd70a; attempt-2 verifier PASS + critic PASS-WITH-NOTES); inset-geometry suite green on merged main"
         ]
       },
       "rejection": null,
@@ -2025,19 +2029,6 @@
     }
   },
   "leases": {
-    "VIRO-0143": {
-      "packet": "VIRO-0143",
-      "scope": [
-        "src/engine/type.ts",
-        "src/document/text-model.ts",
-        "tests/text-frame-*",
-        "docs/agents/deliveries/VIRO-0143.json"
-      ],
-      "acquired_at": "2026-08-28T19:25:06.822Z",
-      "current_agent": null,
-      "current_stage": "release",
-      "current_session": "e04a19ba-9e84-4319-873a-0015ad287823"
-    },
     "VIRO-0017": {
       "packet": "VIRO-0017",
       "scope": [
@@ -2069,14 +2060,6 @@
     }
   },
   "events": [
-    {
-      "at": "2026-08-28T09:15:31.872Z",
-      "type": "packet.advanced",
-      "packet": "VIRO-0012",
-      "from": "build",
-      "to": "verify",
-      "by": "zcode-perf-pc2"
-    },
     {
       "at": "2026-08-28T09:17:52.096Z",
       "type": "agent.heartbeat",
@@ -4221,6 +4204,15 @@
       "session": "e04a19ba-9e84-4319-873a-0015ad287823",
       "pr": 27,
       "head_sha": "94fd70ad63cca641202c7de0ed4466a337ad0219"
+    },
+    {
+      "at": "2026-08-28T22:58:04.708Z",
+      "type": "packet.reconciled",
+      "packet": "VIRO-0143",
+      "by": "governor",
+      "evidence": [
+        "landed via LOCAL merge under owner order 2026-08-28 (candidate 94fd70a; attempt-2 verifier PASS + critic PASS-WITH-NOTES); inset-geometry suite green on merged main"
+      ]
     }
   ]
 }
