@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 73,
-  "updated_at": "2026-08-28T06:41:35.297Z",
+  "revision": 74,
+  "updated_at": "2026-08-28T06:42:55.349Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -68,11 +68,11 @@
       ],
       "critic_needed": true,
       "stage": "verify",
-      "status": "QUEUED",
-      "assigned_agent": null,
-      "assigned_role": null,
+      "status": "VERIFY",
+      "assigned_agent": "zcode-verify-pc2",
+      "assigned_role": "verifier",
       "work_branch": "agent/viro-0005/claude-audit-cloud1",
-      "heartbeat_at": null,
+      "heartbeat_at": "2026-08-28T06:42:55.349Z",
       "attempts": 0,
       "evidence": [
         {
@@ -586,8 +586,27 @@
       "rejection": null
     }
   },
-  "agents": {},
-  "leases": {},
+  "agents": {
+    "zcode-verify-pc2": {
+      "role": "verifier",
+      "machine": "pc-cloud1",
+      "packet": "VIRO-0005",
+      "heartbeat_at": "2026-08-28T06:42:55.349Z"
+    }
+  },
+  "leases": {
+    "VIRO-0005": {
+      "packet": "VIRO-0005",
+      "scope": [
+        "src/export/pdf.ts",
+        "tests/**",
+        "docs/agents/deliveries/VIRO-0005.json"
+      ],
+      "acquired_at": "2026-08-28T06:42:55.349Z",
+      "current_agent": "zcode-verify-pc2",
+      "current_stage": "verify"
+    }
+  },
   "events": [
     {
       "at": "2026-08-27T16:16:00.000Z",
@@ -1013,6 +1032,14 @@
       "type": "packet.unblocked",
       "packet": "VIRO-0012",
       "by": "governor"
+    },
+    {
+      "at": "2026-08-28T06:42:55.349Z",
+      "type": "packet.claimed",
+      "packet": "VIRO-0005",
+      "agent": "zcode-verify-pc2",
+      "role": "verifier",
+      "machine": "pc-cloud1"
     }
   ]
 }
