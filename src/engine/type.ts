@@ -505,15 +505,19 @@ function breakParagraph(spans: CharSpan[], text: string, firstW: number, restW: 
 /** Where the pen starts on a line: the indent, or the indent plus the alignment slack. */
 function alignPen(
   lineW: number,
+  origin: number,
   x0: number,
   measure: number,
   align: Story["paragraph"]["align"],
 ): { pen: number; slack: number } {
+  // `origin` is the absolute pen origin (inset left + indent); `x0` is the
+  // paragraph indent alone. Room and slack live inside the measure, so the
+  // indent — never the inset origin — reduces them.
   const room = Math.max(0, measure - x0);
   const slack = room - lineW;
-  let pen = x0;
-  if (align === "right") pen = x0 + Math.max(0, slack);
-  else if (align === "center") pen = x0 + Math.max(0, slack / 2);
+  let pen = origin;
+  if (align === "right") pen = origin + Math.max(0, slack);
+  else if (align === "center") pen = origin + Math.max(0, slack / 2);
   return { pen, slack };
 }
 
@@ -596,7 +600,7 @@ export function composeFrame(
       for (const g of run.glyphs) if (g.gid === sp.style.face.spaceGid) spaces += 1;
       pieces.push({ style: sp.style, run });
     }
-    const { pen: startPen, slack } = alignPen(lineW, originX + x0, measure, align);
+    const { pen: startPen, slack } = alignPen(lineW, originX + x0, x0, measure, align);
     let gap = 0;
     if (align === "justify" && !last && slack > 0 && spaces > 0) gap = slack / spaces;
     let pen = startPen;
@@ -655,6 +659,7 @@ export function composeFrame(
     const { pen: startPen } = alignPen(
       spanWidth(spans, para, start, start + line.length),
       originX + x0,
+      x0,
       measure,
       align,
     );
