@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 391,
-  "updated_at": "2026-08-28T22:00:54.173Z",
+  "revision": 392,
+  "updated_at": "2026-08-28T22:03:08.541Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -1178,12 +1178,12 @@
         "VIRO-0016"
       ],
       "critic_needed": true,
-      "stage": "build",
-      "status": "ACTIVE",
-      "assigned_agent": "zcode-polish-pc2",
-      "assigned_role": "builder",
+      "stage": "verify",
+      "status": "QUEUED",
+      "assigned_agent": null,
+      "assigned_role": null,
       "work_branch": "agent/viro-0017/zcode-gov-audit-pc1",
-      "heartbeat_at": "2026-08-28T22:00:54.173Z",
+      "heartbeat_at": null,
       "attempts": 0,
       "evidence": [
         {
@@ -1191,15 +1191,42 @@
           "by": "zcode-gov-audit-pc1",
           "item": "before-state confirmed on local main post-wave-merge 2026-08-28; manifest basis valid; builder drafts banked where applicable; unlocked by reconciliation of merged dependency",
           "at": "2026-08-28T16:59:34.057Z"
+        },
+        {
+          "stage": "build",
+          "by": "zcode-polish-pc2",
+          "item": "Computed-style audit + fixes delivered on candidate 3ad0bb3 (branch agent/viro-0017/zcode-gov-audit-pc1 pushed; base local main 5014465): enumerated sweep in docs/reviews/0017-visual-polish-sweep.md - 4 in-lease deviations D1-D4 fixed in place (recovery copper CTA -> .btn token set, accent hover borders -> #3d3d3d neutral step, Anchor default-action copper rings removed, dead governance prose removed), 10 allowed-state groups A1-A10 dismissed with per-state live evidence, 2 out-of-lease findings D5/D6 returned to Governor unedited",
+          "at": "2026-08-28T22:03:08.536Z"
+        },
+        {
+          "stage": "build",
+          "by": "zcode-polish-pc2",
+          "item": "Before/after live computed evidence: node_modules/.polish-probe.mjs (uncommitted tool) ran with fix diff stashed/applied; captures node_modules/.polish-shots-{before,after}/; probe diff removes exactly the D1/D2 accent hits and adds 0 accent hits across rest/selection-hover/recovery/anchor/projects states; radius violations 0 in all states; tokens resolve #2b2b2b/#323232/#1f1f1f/#e07a2f radius 1px",
+          "at": "2026-08-28T22:03:08.541Z"
+        },
+        {
+          "stage": "build",
+          "by": "zcode-polish-pc2",
+          "item": "Gates on candidate 3ad0bb3: npx tsc --noEmit clean; npm run test:unit 316/316; full Playwright chrome suite on seat port 5184 via tests/visual-polish.playwright.config.ts 29/29 including tests/a11y-keyboard.spec.ts (VIRO-0016 a11y suite green, not regressed); node node_modules/vite/bin/vite.js build complete (web dist + electron preload)",
+          "at": "2026-08-28T22:03:08.541Z"
+        },
+        {
+          "stage": "build",
+          "by": "zcode-polish-pc2",
+          "item": "New committed enforcement: tests/visual-polish-tokens.spec.ts (5) + tests/visual-polish-chrome.spec.ts (8) freeze tokens/radius/fonts/accent-state rules/icon distinctness; accent only on active tool/selection/focus (focus is the VIRO-0016-mandated keyboard-selection indicator)",
+          "at": "2026-08-28T22:03:08.541Z"
         }
       ],
       "last_handoff": {
-        "from": "audit",
-        "to": "build",
-        "by": "zcode-gov-audit-pc1",
-        "at": "2026-08-28T16:59:34.059Z",
+        "from": "build",
+        "to": "verify",
+        "by": "zcode-polish-pc2",
+        "at": "2026-08-28T22:03:08.541Z",
         "evidence": [
-          "before-state confirmed on local main post-wave-merge 2026-08-28; manifest basis valid; builder drafts banked where applicable; unlocked by reconciliation of merged dependency"
+          "Computed-style audit + fixes delivered on candidate 3ad0bb3 (branch agent/viro-0017/zcode-gov-audit-pc1 pushed; base local main 5014465): enumerated sweep in docs/reviews/0017-visual-polish-sweep.md - 4 in-lease deviations D1-D4 fixed in place (recovery copper CTA -> .btn token set, accent hover borders -> #3d3d3d neutral step, Anchor default-action copper rings removed, dead governance prose removed), 10 allowed-state groups A1-A10 dismissed with per-state live evidence, 2 out-of-lease findings D5/D6 returned to Governor unedited",
+          "Before/after live computed evidence: node_modules/.polish-probe.mjs (uncommitted tool) ran with fix diff stashed/applied; captures node_modules/.polish-shots-{before,after}/; probe diff removes exactly the D1/D2 accent hits and adds 0 accent hits across rest/selection-hover/recovery/anchor/projects states; radius violations 0 in all states; tokens resolve #2b2b2b/#323232/#1f1f1f/#e07a2f radius 1px",
+          "Gates on candidate 3ad0bb3: npx tsc --noEmit clean; npm run test:unit 316/316; full Playwright chrome suite on seat port 5184 via tests/visual-polish.playwright.config.ts 29/29 including tests/a11y-keyboard.spec.ts (VIRO-0016 a11y suite green, not regressed); node node_modules/vite/bin/vite.js build complete (web dist + electron preload)",
+          "New committed enforcement: tests/visual-polish-tokens.spec.ts (5) + tests/visual-polish-chrome.spec.ts (8) freeze tokens/radius/fonts/accent-state rules/icon distinctness; accent only on active tool/selection/focus (focus is the VIRO-0016-mandated keyboard-selection indicator)"
         ]
       },
       "rejection": null
@@ -1939,12 +1966,6 @@
     }
   },
   "agents": {
-    "zcode-polish-pc2": {
-      "role": "builder",
-      "machine": "pc-cloud1",
-      "packet": "VIRO-0017",
-      "heartbeat_at": "2026-08-28T22:00:54.173Z"
-    },
     "zcode-effects-pc1": {
       "role": "builder",
       "machine": "pc-cloud1",
@@ -1978,8 +1999,8 @@
         "tests/visual-polish-*"
       ],
       "acquired_at": "2026-08-28T19:33:41.736Z",
-      "current_agent": "zcode-polish-pc2",
-      "current_stage": "build",
+      "current_agent": null,
+      "current_stage": "verify",
       "heartbeat_at": "2026-08-28T22:00:54.173Z"
     },
     "VIRO-0146": {
@@ -1998,12 +2019,6 @@
     }
   },
   "events": [
-    {
-      "at": "2026-08-28T08:07:40.389Z",
-      "type": "agent.heartbeat",
-      "agent": "zcode-perf-pc2",
-      "packet": "VIRO-0012"
-    },
     {
       "at": "2026-08-28T08:19:29.964Z",
       "type": "agent.heartbeat",
@@ -4107,6 +4122,14 @@
       "type": "agent.heartbeat",
       "agent": "zcode-polish-pc2",
       "packet": "VIRO-0017"
+    },
+    {
+      "at": "2026-08-28T22:03:08.541Z",
+      "type": "packet.advanced",
+      "packet": "VIRO-0017",
+      "from": "build",
+      "to": "verify",
+      "by": "zcode-polish-pc2"
     }
   ]
 }
