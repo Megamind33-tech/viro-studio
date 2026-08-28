@@ -324,3 +324,38 @@ test("a PSD-like 4-level tree survives duplicate then delete of outer groups", (
   assert.ok(noDanglingParents(del2));
   assert.deepEqual(validateDocument(del2), []);
 });
+
+// ── VERIFIER (zcode-verify-pc6) independent regression: deep co-selection ────
+
+test("duplicating [group + grandchild] does not duplicate the grandchild twice", () => {
+  // v_a hangs under the UNSELECTED g_inner, one level below the selected
+  // g_outer. The co-selection guard in duplicateSelected only checks ONE parent
+  // level (`!selectedIds.has(l.parentId)`), so v_a is treated as its own root in
+  // addition to travelling with g_outer's subtree: it is duplicated TWICE, and
+  // both copies land at the SAME world position (stacked twins), while the
+  // selection reports two roots. Contract per the ops.ts comment and the
+  // VIRO-0140 delivery evidence: a selected layer that sits inside another
+  // selected subtree travels with that subtree and is never re-duplicated.
+  const doc = makeDoc();
+  doc.activeLayerIds = ["g_outer", "v_a"];
+  const next = duplicateSelected(doc);
+
+  assert.equal(next.activeLayerIds.length, 1, "selection is exactly the group copy");
+  const names = next.pages[0].layers.map((l) => l.name);
+  for (const n of ["g_outer", "g_inner", "v_a", "v_b", "v_c"]) {
+    const count = names.filter((x) => x === n).length;
+    assert.ok(count === 2, `${n} must appear exactly twice (original + one copy), got ${count}`);
+  }
+
+  // No two same-named copies may render at the same world position (stacked
+  // twins are user-invisible corruption).
+  const page = next.pages[0];
+  const seen = new Map();
+  for (const l of page.layers) {
+    const b = worldBounds(page, l);
+    const key = `${l.name}|${b.x.toFixed(6)},${b.y.toFixed(6)},${b.w.toFixed(6)},${b.h.toFixed(6)}`;
+    assert.ok(!seen.has(key), `stacked duplicate detected: two "${l.name}" layers at identical world bounds`);
+    seen.set(key, l.id);
+  }
+  assert.deepEqual(validateDocument(next), []);
+});
