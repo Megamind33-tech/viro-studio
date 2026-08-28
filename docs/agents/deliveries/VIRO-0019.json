@@ -1,0 +1,44 @@
+{
+  "id": "VIRO-0019",
+  "title": "Orchestrator identity hardening: bound claims to machine/session evidence",
+  "priority": "P2",
+  "domain": "verification",
+  "state": "ACTIVE",
+  "outcome": "The shared control plane records and validates richer worker identity (stable worker ID + machine + session token) so two workers cannot accidentally operate under the same identity, stale-lease recovery becomes faster and safer, and the lease/state-machine logic in orchestrator-core is protected by its own unit tests.",
+  "before": "Mandate 2026-08-27 (Governor parallel-delivery directive, section 14): until authenticated worker identity is implemented, identity rests on convention; claim supports --machine but nothing validates uniqueness or binds a session to a claim. orchestrator-core.mjs lease/claim logic has no dedicated unit tests. The Governor has separately reduced lease_ttl_minutes from 90 to 30 in .viro/orchestrator.json in this activation commit.",
+  "after": "Claims carry machine + a per-session token; a second live claim under the same worker ID with different session evidence is refused with a clear error; stale-assignment detection is unit-tested; identity fields appear in briefs and the team board.",
+  "allowed_paths": [
+    "scripts/lib/**",
+    "scripts/viro-orchestrator.mjs",
+    "scripts/viro-orchestrator-git.mjs",
+    "scripts/viro-release.mjs",
+    "docs/agents/**",
+    "docs/agents/deliveries/VIRO-0019.json"
+  ],
+  "depends_on": [],
+  "acceptance": [
+    "Backward compatible: existing state files without session tokens still load and operate; a state written by the old code is readable by the new code.",
+    "Duplicate live identity (same worker ID, different session token, unexpired heartbeat) is refused with an explicit error.",
+    "Unit tests cover claim/lease/stale/reap logic in orchestrator-core, runnable via node --test without the product app.",
+    "Both transports (REST and git) behave identically for the new identity fields.",
+    "Live dry-run against the real viro-agent-control branch proves claims, heartbeats, briefs and advances still work for an ordinary worker."
+  ],
+  "evidence": [
+    "Unit test output for orchestrator-core lease logic",
+    "Duplicate-identity refusal demo",
+    "Backward-compatibility demo with a pre-change state file",
+    "Live end-to-end claim/heartbeat/advance dry-run output"
+  ],
+  "builder": { "status": "PENDING", "notes": "Governance-engineering packet; deployed by the Orchestrator in wave 2 to avoid control-plane churn during first product wave." },
+  "verifier": { "status": "PENDING", "notes": "Independent verification required." },
+  "critic": { "status": "NOT_APPLICABLE", "notes": "Governance tooling; no product UI." },
+  "delta": {
+    "before": "Identity by convention; no core lease-logic unit tests.",
+    "after": "Session-bound identity with refusal on duplicate live identity, tested core logic, backward-compatible state.",
+    "proof": [],
+    "regression_protection": [
+      "Ordinary claim/heartbeat/advance/reject flows unchanged and dry-run proven"
+    ],
+    "new_debt": "none yet"
+  }
+}

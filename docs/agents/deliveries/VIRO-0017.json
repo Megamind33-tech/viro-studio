@@ -1,0 +1,43 @@
+{
+  "id": "VIRO-0017",
+  "title": "UI visual-polish defect sweep against the AAA brief without layout invention",
+  "priority": "P3",
+  "domain": "ui-ux",
+  "state": "QUEUED",
+  "outcome": "Existing UI surfaces conform to the GOVERNOR.md UX rules (panel tokens #2B2B2B/#323232, pasteboard #1F1F1F, copper accent #E07A2F only on active tool/selection, Segoe UI, radius 0-2px, honest empty states, distinct semantic icons): every measured deviation from the token spec is corrected in place with no new layout, no new components, and no descriptive prose.",
+  "before": "GOVERNOR.md UX Rules define the desk spec; VIRO-0016's audit may surface cosmetic deviations, and no token-conformance sweep exists. This packet is deliberately scoped to defect correction inside existing UI/CSS surfaces only.",
+  "after": "Token conformance verified programmatically or by enumerated inspection report; all deviations fixed; before/after captures document each intentional change; no functional behavior change.",
+  "allowed_paths": [
+    "index.html",
+    "src/chrome/**",
+    "tests/**",
+    "docs/reviews/0017-visual-polish-sweep.md",
+    "docs/agents/deliveries/VIRO-0017.json"
+  ],
+  "depends_on": ["VIRO-0016"],
+  "acceptance": [
+    "Enumerated deviation list committed with before/after evidence per item.",
+    "Color/radius/token conformance verified against the spec values.",
+    "Accent color appears only on active tool/selection states.",
+    "No functional regression: full chrome suites green.",
+    "npx tsc --noEmit, npm run test:chrome and npm run build pass."
+  ],
+  "evidence": [
+    "docs/reviews/0017-visual-polish-sweep.md with per-item before/after captures",
+    "Token conformance verification output",
+    "npm run test:chrome green",
+    "npm run build"
+  ],
+  "builder": { "status": "PENDING", "notes": "Gated on VIRO-0016 DONE." },
+  "verifier": { "status": "PENDING", "notes": "Independent verification required." },
+  "critic": { "status": "PENDING", "notes": "Required: critic judges the polish result against the AAA brief." },
+  "delta": {
+    "before": "Token conformance unevidenced; incidental visual drift possible.",
+    "after": "Documented conformance sweep with all deviations corrected.",
+    "proof": [],
+    "regression_protection": [
+      "Full chrome E2E suites green"
+    ],
+    "new_debt": "none yet"
+  }
+}

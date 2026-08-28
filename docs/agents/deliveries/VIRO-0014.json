@@ -1,0 +1,42 @@
+{
+  "id": "VIRO-0014",
+  "title": "Font/image/import sanitization regression hardening",
+  "priority": "P2",
+  "domain": "assets-import",
+  "state": "QUEUED",
+  "outcome": "User-uploaded fonts and images are validated before entering the library or the renderer: the font registry and image sniffing paths reject hostile or malformed inputs with typed errors, proven by a regression suite, with no change to valid-file behavior.",
+  "before": "GOVERNOR.md Security Rules require defensive sanitization of fonts/images; the truth ledger lists the font registry as proven for valid uploads, but no negative-input regression suite exists for font or image parsing paths (src/engine/font-registry.ts, src/engine/sniff.ts). Follows the import-fuzz corpus work so parser-level findings can inform validation coverage.",
+  "after": "A negative-input regression suite covers font upload, image sniffing and placement paths; hostile inputs are rejected with typed errors; valid fonts/images continue to register and render identically.",
+  "allowed_paths": [
+    "src/import/**",
+    "src/engine/font-registry.ts",
+    "src/engine/sniff.ts",
+    "tests/**",
+    "docs/agents/deliveries/VIRO-0014.json"
+  ],
+  "depends_on": ["VIRO-0013"],
+  "acceptance": [
+    "Malformed font files (truncated, wrong magic, hostile name tables) are rejected with typed errors, never corrupting the registry state.",
+    "Malformed/lying-mime images are rejected or safely sniffed per existing sniff.ts policy.",
+    "Valid font and image flows unchanged: existing font-registry and image tests green.",
+    "npx tsc --noEmit, targeted tests and npm run build pass."
+  ],
+  "evidence": [
+    "Negative-input regression suite output",
+    "Valid-flow non-regression proof",
+    "npx tsc --noEmit",
+    "npm run build"
+  ],
+  "builder": { "status": "PENDING", "notes": "Gated on VIRO-0013 DONE." },
+  "verifier": { "status": "PENDING", "notes": "Independent verification required." },
+  "critic": { "status": "NOT_APPLICABLE", "notes": "Engine validation hardening; no UI change." },
+  "delta": {
+    "before": "Font/image validation proven only for valid inputs.",
+    "after": "Negative-input regression suite with typed rejections and unchanged valid flows.",
+    "proof": [],
+    "regression_protection": [
+      "Existing font-registry and image tests green"
+    ],
+    "new_debt": "none yet"
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "id": "VIRO-0012",
+  "title": "60-FPS interaction profiling harness with one verified bottleneck fix",
+  "priority": "P2",
+  "domain": "canvas-rendering",
+  "state": "ACTIVE",
+  "outcome": "A repeatable, checked-in measurement harness produces real frame-time numbers for common canvas interactions (move, resize, marquee, pan, zoom, and a many-layer document with layer effects), identifies the actual bottleneck from data, and delivers at most one minimal, visually-identical compositor fix for a proven bottleneck (candidate: unbounded shadow saveLayer region) — or documents with measurements that no fix is justified yet.",
+  "before": "GOVERNOR.md Performance Budgets require 60 FPS for common interactions, and docs/reviews/sprint-critic-01.md flags (P2) that shadow saveLayer is unbounded, allocating up to a full-page offscreen plus blur per shadowed layer per composite. No repeatable frame-time harness exists in the repository; no baseline numbers exist. Builder must record before-numbers first.",
+  "after": "scripts/perf contains a harness that boots the real editor and reports per-operation frame times; a baseline report is committed; the identified fix (if any) is pixel-identical on fixed captures and improves measured frame time on the targeted operation without regressing others.",
+  "allowed_paths": [
+    "src/engine/compositor.ts",
+    "scripts/perf/**",
+    "docs/research/0012-frame-profiling.md",
+    "docs/agents/deliveries/VIRO-0012.json"
+  ],
+  "depends_on": [],
+  "acceptance": [
+    "Harness runs headlessly from a clean checkout and emits frame-time numbers for at least: drag move, resize, pan, zoom, and a 30-layer document with drop shadows.",
+    "Baseline numbers recorded before any production change and committed in the report.",
+    "Any compositor change is proven pixel-identical on before/after captures of a representative document (canvas screenshot diff) and improves the targeted operation's measured frame time or documents why not.",
+    "No visual change to any rendered output; existing suites stay green.",
+    "npx tsc --noEmit and npm run build pass."
+  ],
+  "evidence": [
+    "Committed baseline frame-time report (docs/research/0012-frame-profiling.md)",
+    "Before/after numbers for the targeted operation",
+    "Pixel-diff proof of identical rendering",
+    "npx tsc --noEmit",
+    "npm run build"
+  ],
+  "builder": { "status": "PENDING", "notes": "Claimable immediately: scope does not overlap the VIRO-0005 lease." },
+  "verifier": { "status": "PENDING", "notes": "Independent re-run of harness + pixel-diff required." },
+  "critic": { "status": "NOT_APPLICABLE", "notes": "Engine-only; pixel-identical requirement replaces aesthetic review." },
+  "delta": {
+    "before": "No frame-time harness; unbounded shadow saveLayer suspected but unmeasured.",
+    "after": "Checked-in harness, committed baseline, and one measured minimal fix or a documented no-fix decision.",
+    "proof": [],
+    "regression_protection": [
+      "Pixel-diff on representative document before/after compositor change",
+      "Unit + engines suites green"
+    ],
+    "new_debt": "none yet"
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "id": "VIRO-0015",
+  "title": "PNG/PDF export regression corpus and fidelity report expansion",
+  "priority": "P2",
+  "domain": "export",
+  "state": "QUEUED",
+  "outcome": "A versioned export regression corpus (documents plus expected PDF operator topology and PNG pixel checksums) is checked in and runnable, so compound-path behavior proven by VIRO-0005 becomes part of the standing baseline and future exporter changes are measured against real artifacts, with the export report expanded to cover every claimed classification.",
+  "before": "VIRO-0005 delivered compound-contour vector PDF export with targeted tests (tests/pdf-compound.test.mjs, tests/pdf-compound.spec.ts), but there is no standing versioned corpus of export documents covering single/compound/stroke/effects/text/raster mixes, and PdfExportReport coverage of every field it reports is incomplete.",
+  "after": "One command regenerates and one command verifies the corpus; every corpus document has committed expected artifacts (operator-level for PDF, checksums for PNG); report fields (vectorPaths, rasterFallbacks, others) each have an assertion.",
+  "allowed_paths": [
+    "src/export/**",
+    "tests/**",
+    "docs/agents/deliveries/VIRO-0015.json"
+  ],
+  "depends_on": ["VIRO-0005"],
+  "acceptance": [
+    "Corpus includes: single-contour vector, compound boolean ring, disjoint union, stroke-only, fill+stroke, text layer, raster layer, and effects layer.",
+    "Verification command fails on any operator-topology or pixel-checksum divergence.",
+    "Every PdfExportReport field asserted at least once across the corpus.",
+    "npx tsc --noEmit, corpus suite and npm run build pass."
+  ],
+  "evidence": [
+    "Corpus verification run output (green)",
+    "Deliberate-mutation check: one seeded exporter mutation makes verification fail (corpus is not vacuous)",
+    "npx tsc --noEmit",
+    "npm run build"
+  ],
+  "builder": { "status": "PENDING", "notes": "Gated on VIRO-0005 DONE." },
+  "verifier": { "status": "PENDING", "notes": "Independent verification required." },
+  "critic": { "status": "NOT_APPLICABLE", "notes": "Test/QA corpus; no product behavior change intended." },
+  "delta": {
+    "before": "Point tests for compound export; no standing corpus or report-field coverage.",
+    "after": "Versioned corpus with artifact-level verification commands and full report-field assertions.",
+    "proof": [],
+    "regression_protection": [
+      "tests/pdf-compound.* remain green and are folded into the corpus"
+    ],
+    "new_debt": "none yet"
+  }
+}

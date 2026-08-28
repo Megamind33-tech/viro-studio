@@ -2,7 +2,7 @@
   "version": 1,
   "control_branch": "viro-agent-control",
   "state_path": ".viro-control/state.json",
-  "lease_ttl_minutes": 90,
+  "lease_ttl_minutes": 30,
   "max_packets_per_agent": 1,
   "require_remote_for_writes": true,
   "delivery_directory": "docs/agents/deliveries",
