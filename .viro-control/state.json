@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 305,
-  "updated_at": "2026-08-28T19:13:01.500Z",
+  "revision": 306,
+  "updated_at": "2026-08-28T19:13:19.365Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -1034,7 +1034,7 @@
       "dependencies": [],
       "critic_needed": false,
       "stage": "verify",
-      "status": "BLOCKED",
+      "status": "QUEUED",
       "assigned_agent": null,
       "assigned_role": null,
       "work_branch": "agent/viro-0019/zcode-gov-audit-pc1",
@@ -1084,12 +1084,7 @@
           "transports identical: both share all identity logic via orchestrator-core; REST parses (node --check) but was not live-tested without GITHUB_TOKEN — stated honestly; git transport proven live end-to-end; candidate SHA e4cf09752e10bf59729a95bf41a3386c1fef5f31 pushed to agent/viro-0019/zcode-gov-audit-pc1"
         ]
       },
-      "rejection": {
-        "by": "governor",
-        "stage": "verify",
-        "reason": "session zcode-verify-pc9 garbage-collected after repeated network flaps (74m stale); work preserved in worktree per checkpoint protocol; fresh session reassigned",
-        "at": "2026-08-28T19:13:01.487Z"
-      },
+      "rejection": null,
       "assigned_session": "sess-verify-pc9",
       "assigned_machine": "pc-cloud1"
     },
@@ -1517,13 +1512,6 @@
     }
   },
   "events": [
-    {
-      "at": "2026-08-27T16:55:00.000Z",
-      "type": "packet.imported",
-      "packet": "VIRO-0005",
-      "by": "governor",
-      "detail": "Activated real remaining P1: compound multi-contour vector PDF export fidelity."
-    },
     {
       "at": "2026-08-27T17:19:44.200Z",
       "type": "packet.reconciled_from_manifest",
@@ -3495,6 +3483,12 @@
       "agent": "zcode-verify-pc9",
       "by": "governor",
       "reason": "session zcode-verify-pc9 garbage-collected after repeated network flaps (74m stale); work preserved in worktree per checkpoint protocol; fresh session reassigned"
+    },
+    {
+      "at": "2026-08-28T19:13:19.365Z",
+      "type": "packet.unblocked",
+      "packet": "VIRO-0019",
+      "by": "governor"
     }
   ]
 }
