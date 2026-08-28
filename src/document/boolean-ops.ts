@@ -38,8 +38,13 @@ export function requireBooleanEngine(): CanvasKit {
   return ck;
 }
 
-/** The contours a layer contributes: its v6 list, or its single legacy contour. */
-function layerContours(layer: VectorLayer): Contour[] {
+/**
+ * The contours a layer contributes: its v6 list, or its single legacy contour.
+ * This IS the v6 precedence read — the compositor's `drawVector`, the
+ * validator and the hash all agree with it — so contour-addressed editing
+ * resolves its target through this one function rather than restating the rule.
+ */
+export function layerContours(layer: VectorLayer): Contour[] {
   return layer.contours && layer.contours.length
     ? layer.contours
     : [{ nodes: layer.nodes, closed: layer.closed }];

@@ -54,7 +54,9 @@ function makeDoc() {
   page.layers.push(
     { ...base(), id: "ly_rect", name: "Rect", kind: "vector", transform: { x: 100, y: 100, w: 200, h: 100, rotation: 0 }, closed: true, nodes: [], fill: RED, stroke: null },
     { ...base(), id: "ly_rect2", name: "Rect 2", kind: "vector", transform: { x: 400, y: 100, w: 200, h: 100, rotation: 0 }, closed: true, nodes: [], fill: RED, stroke: null },
-    { ...base(), id: "ly_path", name: "Path", kind: "vector", transform: { x: 300, y: 300, w: 200, h: 200, rotation: 0 }, closed: false, nodes: [{ x: 0, y: 0, inX: 0, inY: 0, outX: 0, outY: 0 }, { x: 50, y: 50, inX: 0, inY: 0, outX: 0, outY: 0 }], fill: null, stroke: { color: RED, width: 2 } },
+    // ly_path carries 3 nodes so path.deleteNode can delete one and still sit
+    // above the 2-node drawable minimum (validateContours' floor).
+    { ...base(), id: "ly_path", name: "Path", kind: "vector", transform: { x: 300, y: 300, w: 200, h: 200, rotation: 0 }, closed: false, nodes: [{ x: 0, y: 0, inX: 0, inY: 0, outX: 0, outY: 0 }, { x: 50, y: 50, inX: 0, inY: 0, outX: 0, outY: 0 }, { x: 100, y: 100, inX: 0, inY: 0, outX: 0, outY: 0 }], fill: null, stroke: { color: RED, width: 2 } },
     { ...base(), id: "ly_img", name: "Pic", kind: "image-frame", transform: { x: 500, y: 500, w: 300, h: 150, rotation: 0 }, assetId: "as_1", fit: "cover", focal: { x: 0.5, y: 0.5 }, crop: null },
     { ...base(), id: "ly_type", name: "Type", kind: "type-frame", transform: { x: 700, y: 900, w: 600, h: 300, rotation: 0 }, storyId: "st_1", nextFrameId: null },
     { ...base(), id: "ly_group", name: "Group", kind: "group", transform: { x: 900, y: 1400, w: 400, h: 400, rotation: 0 } },
@@ -107,6 +109,14 @@ const CASES = {
   "vector.addPath": { valid: { x: 20, y: 30, color: COPPER }, invalid: { x: 20, y: 30 }, match: /required as a float 0-1/ },
   "path.appendNode": { valid: { layerId: "ly_path", x: 90, y: 90 }, invalid: { layerId: "ly_type", x: 1, y: 1 }, match: /needs vector/ },
   "path.close": { valid: { layerId: "ly_path" }, invalid: { layerId: "ly_type" }, match: /needs vector/ },
+  "path.moveNode": { valid: { layerId: "ly_path", contourIndex: 0, nodeIndex: 1, x: 90, y: 90 }, invalid: { layerId: "ly_path", contourIndex: 0, nodeIndex: 99, x: 90, y: 90 }, match: /nodeIndex/ },
+  "path.insertNode": {
+    valid: { layerId: "ly_path", contourIndex: 0, afterNodeIndex: 1, node: { x: 25, y: 25, inX: 25, inY: 25, outX: 25, outY: 25 } },
+    invalid: { layerId: "ly_path", contourIndex: 0, afterNodeIndex: 3, node: { x: 25, y: 25, inX: 25, inY: 25, outX: 25, outY: 25 } },
+    match: /afterNodeIndex/,
+  },
+  "path.deleteNode": { valid: { layerId: "ly_path", contourIndex: 0, nodeIndex: 1 }, invalid: { layerId: "ly_path", contourIndex: 0, nodeIndex: 99 }, match: /nodeIndex/ },
+  "path.closeContour": { valid: { layerId: "ly_path", contourIndex: 0, closed: true }, invalid: { layerId: "ly_path", contourIndex: 0, closed: 1 }, match: /must be true or false/ },
 
   "type.addFrame": { valid: { fontId: "noto-sans", x: 40, y: 40 }, invalid: { fontId: "", x: 40, y: 40 }, match: /non-empty string/ },
   "image.place": {
