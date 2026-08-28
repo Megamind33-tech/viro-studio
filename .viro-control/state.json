@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 415,
-  "updated_at": "2026-08-28T23:00:46.780Z",
+  "revision": 416,
+  "updated_at": "2026-08-28T23:11:13.890Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -1946,12 +1946,12 @@
       ],
       "dependencies": [],
       "critic_needed": true,
-      "stage": "build",
-      "status": "ACTIVE",
-      "assigned_agent": "zcode-effects-pc1",
-      "assigned_role": "builder",
+      "stage": "verify",
+      "status": "QUEUED",
+      "assigned_agent": null,
+      "assigned_role": null,
       "work_branch": "agent/viro-0146/zcode-gov-audit-pc1",
-      "heartbeat_at": "2026-08-28T22:55:06.036Z",
+      "heartbeat_at": null,
       "attempts": 0,
       "evidence": [
         {
@@ -1959,15 +1959,42 @@
           "by": "zcode-gov-audit-pc1",
           "item": "before-state confirmed 2026-08-28: VIRO-0015 corpus pins effects-layer PDF byte-identical to unshadowed control while compositor fingerprint differs; grep src/export has zero effects handling; types.ts exporter claim false; src/export lease free (0015 reconciled)",
           "at": "2026-08-28T21:32:43.477Z"
+        },
+        {
+          "stage": "build",
+          "by": "zcode-effects-pc1",
+          "item": "candidate 06015c3 on agent/viro-0146/zcode-gov-audit-pc1 (690d410 exporter+corpus flips, 4a568ed pdf.js parity suite+oracle+5203 config, 65b2b7d oracle EOL pin)",
+          "at": "2026-08-28T23:11:13.869Z"
+        },
+        {
+          "stage": "build",
+          "by": "zcode-effects-pc1",
+          "item": "approach: Skia-rasterised shadow underlay (MakeDropShadowOnly sigma=blur/2, alpha=colour.a x opacity, 3sigma) embedded as transparent-PNG XObject beneath vector content; no-CK/oversize regions and glow/stroke/gradient-overlay recorded in rasterFallbacks+notes, never silent",
+          "at": "2026-08-28T23:11:13.890Z"
+        },
+        {
+          "stage": "build",
+          "by": "zcode-effects-pc1",
+          "item": "corpus 13/13 incl flipped effects parity pin + unchanged PNG fingerprints; pdf.js 3.11.174 rendered-PDF vs canvas: pixel-identical (firstDiff=-1), band ink 55.44/44.38% both arms, control 0% both arms; tsc exit 0; test:unit 336/336; pdf-compound+pdf-font node 10/10; chrome suite on 5203 via in-lease config 17 passed (1 documented cold-boot retry) incl pdf-compound 5/5 + parity 2/2; vite build exit 0",
+          "at": "2026-08-28T23:11:13.890Z"
+        },
+        {
+          "stage": "build",
+          "by": "zcode-effects-pc1",
+          "item": "delivery JSON: docs/agents/deliveries/VIRO-0146.json builder PASS with full proof list",
+          "at": "2026-08-28T23:11:13.890Z"
         }
       ],
       "last_handoff": {
-        "from": "audit",
-        "to": "build",
-        "by": "zcode-gov-audit-pc1",
-        "at": "2026-08-28T21:32:43.480Z",
+        "from": "build",
+        "to": "verify",
+        "by": "zcode-effects-pc1",
+        "at": "2026-08-28T23:11:13.890Z",
         "evidence": [
-          "before-state confirmed 2026-08-28: VIRO-0015 corpus pins effects-layer PDF byte-identical to unshadowed control while compositor fingerprint differs; grep src/export has zero effects handling; types.ts exporter claim false; src/export lease free (0015 reconciled)"
+          "candidate 06015c3 on agent/viro-0146/zcode-gov-audit-pc1 (690d410 exporter+corpus flips, 4a568ed pdf.js parity suite+oracle+5203 config, 65b2b7d oracle EOL pin)",
+          "approach: Skia-rasterised shadow underlay (MakeDropShadowOnly sigma=blur/2, alpha=colour.a x opacity, 3sigma) embedded as transparent-PNG XObject beneath vector content; no-CK/oversize regions and glow/stroke/gradient-overlay recorded in rasterFallbacks+notes, never silent",
+          "corpus 13/13 incl flipped effects parity pin + unchanged PNG fingerprints; pdf.js 3.11.174 rendered-PDF vs canvas: pixel-identical (firstDiff=-1), band ink 55.44/44.38% both arms, control 0% both arms; tsc exit 0; test:unit 336/336; pdf-compound+pdf-font node 10/10; chrome suite on 5203 via in-lease config 17 passed (1 documented cold-boot retry) incl pdf-compound 5/5 + parity 2/2; vite build exit 0",
+          "delivery JSON: docs/agents/deliveries/VIRO-0146.json builder PASS with full proof list"
         ]
       },
       "rejection": null,
@@ -2030,13 +2057,6 @@
     }
   },
   "agents": {
-    "zcode-effects-pc1": {
-      "role": "builder",
-      "machine": "pc-cloud1",
-      "session": "82916b79-821b-41dc-9a84-e0f1a5f90af7",
-      "packet": "VIRO-0146",
-      "heartbeat_at": "2026-08-28T22:55:06.036Z"
-    },
     "zcode-critic-pc3": {
       "role": "critic",
       "machine": "pc-cloud1",
@@ -2077,8 +2097,8 @@
         "docs/agents/deliveries/VIRO-0146.json"
       ],
       "acquired_at": "2026-08-28T21:32:32.991Z",
-      "current_agent": "zcode-effects-pc1",
-      "current_stage": "build",
+      "current_agent": null,
+      "current_stage": "verify",
       "current_session": "82916b79-821b-41dc-9a84-e0f1a5f90af7",
       "heartbeat_at": "2026-08-28T22:55:06.036Z"
     },
@@ -2097,12 +2117,6 @@
     }
   },
   "events": [
-    {
-      "at": "2026-08-28T09:20:49.029Z",
-      "type": "agent.heartbeat",
-      "agent": "zcode-critic-pc1",
-      "packet": "VIRO-0005"
-    },
     {
       "at": "2026-08-28T09:22:18.259Z",
       "type": "agent.heartbeat",
@@ -4256,6 +4270,16 @@
       "packet": "VIRO-0144",
       "session": "51efe904-f1a0-4f6d-9378-10f113c068fc",
       "machine": "pc-cloud1"
+    },
+    {
+      "at": "2026-08-28T23:11:13.890Z",
+      "type": "packet.advanced",
+      "packet": "VIRO-0146",
+      "from": "build",
+      "to": "verify",
+      "by": "zcode-effects-pc1",
+      "machine": "pc-cloud1",
+      "session": "82916b79-821b-41dc-9a84-e0f1a5f90af7"
     }
   ]
 }
