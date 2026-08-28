@@ -569,9 +569,9 @@
   background: #2f2f2f;
 }
 
-#g-anchor .anc-btn-default {
-  border-color: var(--accent);
-}
+/* VIRO-0017 D3: the persistent default-action copper ring was removed — the
+   accent is reserved for active tool/selection. Default actions keep no
+   replacement ornament. */
 
 #g-anchor .anc-btn-thin {
   flex: 0 0 auto;
@@ -597,8 +597,8 @@
   background: #313131;
 }
 
+/* VIRO-0017 D3: copper border dropped; the non-accent ink emphasis stays. */
 #g-anchor .anc-mini-default:not(:disabled) {
-  border-color: var(--accent);
   color: var(--ink);
 }
 

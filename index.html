@@ -515,10 +515,11 @@
           </div>
           <div class="anchor-body">
             <h2>Op queue</h2>
-            <p class="hint">
-              Anchor applies structured ops <code>{ id, op, target, params, reason }</code> to the
-              Press document graph. It is a docked studio, never product chrome.
-            </p>
+            <!-- VIRO-0017 D4: the static hint paragraph ("Anchor applies structured
+              ops … It is a docked studio, never product chrome.") was dead markup —
+              mountAnchorPanel() strips static H2/P at init (anchor-panel.ts) and the
+              governance sentence was descriptive prose, which production UI forbids.
+              Removed. -->
             <div class="empty" id="anchor-ops">No ops in queue.</div>
           </div>
         </section>
