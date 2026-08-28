@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 401,
-  "updated_at": "2026-08-28T22:29:08.421Z",
+  "revision": 402,
+  "updated_at": "2026-08-28T22:35:14.047Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -1178,12 +1178,12 @@
         "VIRO-0016"
       ],
       "critic_needed": true,
-      "stage": "verify",
-      "status": "VERIFY",
-      "assigned_agent": "zcode-verify-pc14",
-      "assigned_role": "verifier",
+      "stage": "critic",
+      "status": "QUEUED",
+      "assigned_agent": null,
+      "assigned_role": null,
       "work_branch": "agent/viro-0017/zcode-gov-audit-pc1",
-      "heartbeat_at": "2026-08-28T22:29:08.421Z",
+      "heartbeat_at": null,
       "attempts": 0,
       "evidence": [
         {
@@ -1215,18 +1215,21 @@
           "by": "zcode-polish-pc2",
           "item": "New committed enforcement: tests/visual-polish-tokens.spec.ts (5) + tests/visual-polish-chrome.spec.ts (8) freeze tokens/radius/fonts/accent-state rules/icon distinctness; accent only on active tool/selection/focus (focus is the VIRO-0016-mandated keyboard-selection indicator)",
           "at": "2026-08-28T22:03:08.541Z"
+        },
+        {
+          "stage": "verify",
+          "by": "zcode-verify-pc14",
+          "item": "candidate 3ad0bb3 (base 5014465) verified independent on clean worktree viro-0017-verify-zcode1: diff 5014465..3ad0bb3 = 8 files all in-lease (index.html, src/chrome/desk.css, src/chrome/anchor-panel.css, tests/visual-polish-*, sweep report, manifest; src/styles diff = 0 so D5/D6 genuinely unedited); gates: tsc --noEmit exit 0, test:unit 316/316, polish suites 13/13 on seat port 5184 via committed config, full chrome 29/29 on verifier port 5231 incl tests/a11y-keyboard.spec.ts 6/6 (VIRO-0016 not regressed, file untouched), vite build exit 0; own from-scratch accent census (playwright probe, 7 driven states: rest, active-tool move+marquee switch, 2-layer selection + align hover, recovery bar open, Anchor Chat mode, Projects dialog, New Document dialog): D1 .recover-primary bg rgb(61,61,61)/border rgb(26,26,26)/text rgb(232,232,232) NOT copper, D2 .align-btn hover border rgb(61,61,61) NOT copper, D3 visible .anc-send border rgb(26,26,26) NOT copper, zero new accent hits, all remaining copper maps to allowed states only (active tool ::before, is-on tabs/rows, checked boxes, textarea :focus, nav-port, doc-tab, nd selected orientation/link); D5 .btn.default Create ring measured still copper exactly as declared out-of-lease; token spot-check: --panel #2b2b2b --raised #323232 --pasteboard #1f1f1f --accent #e07a2f radius 1px, max computed radius 2px (recover-bar), body font Segoe UI; honesty: sweep report methodology + A1-A10 dismissed with stateful evidence + D5/D6 returned to Governor, D4 zero-visual-delta claim proven (mountAnchorPanel strips static H2/P, anchor-panel.ts:334); no TS suppressions, no skipped tests",
+          "at": "2026-08-28T22:35:14.007Z"
         }
       ],
       "last_handoff": {
-        "from": "build",
-        "to": "verify",
-        "by": "zcode-polish-pc2",
-        "at": "2026-08-28T22:03:08.541Z",
+        "from": "verify",
+        "to": "critic",
+        "by": "zcode-verify-pc14",
+        "at": "2026-08-28T22:35:14.046Z",
         "evidence": [
-          "Computed-style audit + fixes delivered on candidate 3ad0bb3 (branch agent/viro-0017/zcode-gov-audit-pc1 pushed; base local main 5014465): enumerated sweep in docs/reviews/0017-visual-polish-sweep.md - 4 in-lease deviations D1-D4 fixed in place (recovery copper CTA -> .btn token set, accent hover borders -> #3d3d3d neutral step, Anchor default-action copper rings removed, dead governance prose removed), 10 allowed-state groups A1-A10 dismissed with per-state live evidence, 2 out-of-lease findings D5/D6 returned to Governor unedited",
-          "Before/after live computed evidence: node_modules/.polish-probe.mjs (uncommitted tool) ran with fix diff stashed/applied; captures node_modules/.polish-shots-{before,after}/; probe diff removes exactly the D1/D2 accent hits and adds 0 accent hits across rest/selection-hover/recovery/anchor/projects states; radius violations 0 in all states; tokens resolve #2b2b2b/#323232/#1f1f1f/#e07a2f radius 1px",
-          "Gates on candidate 3ad0bb3: npx tsc --noEmit clean; npm run test:unit 316/316; full Playwright chrome suite on seat port 5184 via tests/visual-polish.playwright.config.ts 29/29 including tests/a11y-keyboard.spec.ts (VIRO-0016 a11y suite green, not regressed); node node_modules/vite/bin/vite.js build complete (web dist + electron preload)",
-          "New committed enforcement: tests/visual-polish-tokens.spec.ts (5) + tests/visual-polish-chrome.spec.ts (8) freeze tokens/radius/fonts/accent-state rules/icon distinctness; accent only on active tool/selection/focus (focus is the VIRO-0016-mandated keyboard-selection indicator)"
+          "candidate 3ad0bb3 (base 5014465) verified independent on clean worktree viro-0017-verify-zcode1: diff 5014465..3ad0bb3 = 8 files all in-lease (index.html, src/chrome/desk.css, src/chrome/anchor-panel.css, tests/visual-polish-*, sweep report, manifest; src/styles diff = 0 so D5/D6 genuinely unedited); gates: tsc --noEmit exit 0, test:unit 316/316, polish suites 13/13 on seat port 5184 via committed config, full chrome 29/29 on verifier port 5231 incl tests/a11y-keyboard.spec.ts 6/6 (VIRO-0016 not regressed, file untouched), vite build exit 0; own from-scratch accent census (playwright probe, 7 driven states: rest, active-tool move+marquee switch, 2-layer selection + align hover, recovery bar open, Anchor Chat mode, Projects dialog, New Document dialog): D1 .recover-primary bg rgb(61,61,61)/border rgb(26,26,26)/text rgb(232,232,232) NOT copper, D2 .align-btn hover border rgb(61,61,61) NOT copper, D3 visible .anc-send border rgb(26,26,26) NOT copper, zero new accent hits, all remaining copper maps to allowed states only (active tool ::before, is-on tabs/rows, checked boxes, textarea :focus, nav-port, doc-tab, nd selected orientation/link); D5 .btn.default Create ring measured still copper exactly as declared out-of-lease; token spot-check: --panel #2b2b2b --raised #323232 --pasteboard #1f1f1f --accent #e07a2f radius 1px, max computed radius 2px (recover-bar), body font Segoe UI; honesty: sweep report methodology + A1-A10 dismissed with stateful evidence + D5/D6 returned to Governor, D4 zero-visual-delta claim proven (mountAnchorPanel strips static H2/P, anchor-panel.ts:334); no TS suppressions, no skipped tests"
         ]
       },
       "rejection": null,
@@ -1975,13 +1978,6 @@
       "packet": "VIRO-0146",
       "heartbeat_at": "2026-08-28T22:13:21.908Z"
     },
-    "zcode-verify-pc14": {
-      "role": "verifier",
-      "machine": "pc-cloud1",
-      "session": "3d9877d2-e1f3-4d35-b98c-28acaf6cc547",
-      "packet": "VIRO-0017",
-      "heartbeat_at": "2026-08-28T22:29:08.421Z"
-    },
     "zcode-critic-pc4": {
       "role": "critic",
       "machine": "pc-cloud1",
@@ -2015,8 +2011,8 @@
         "tests/visual-polish-*"
       ],
       "acquired_at": "2026-08-28T19:33:41.736Z",
-      "current_agent": "zcode-verify-pc14",
-      "current_stage": "verify",
+      "current_agent": null,
+      "current_stage": "critic",
       "current_session": "3d9877d2-e1f3-4d35-b98c-28acaf6cc547",
       "heartbeat_at": "2026-08-28T22:29:08.421Z"
     },
@@ -2036,12 +2032,6 @@
     }
   },
   "events": [
-    {
-      "at": "2026-08-28T08:51:32.569Z",
-      "type": "agent.heartbeat",
-      "agent": "zcode-verify-pc2",
-      "packet": "VIRO-0005"
-    },
     {
       "at": "2026-08-28T08:57:46.105Z",
       "type": "agent.heartbeat",
@@ -4164,6 +4154,16 @@
       "packet": "VIRO-0017",
       "session": "3d9877d2-e1f3-4d35-b98c-28acaf6cc547",
       "machine": "pc-cloud1"
+    },
+    {
+      "at": "2026-08-28T22:35:14.047Z",
+      "type": "packet.advanced",
+      "packet": "VIRO-0017",
+      "from": "verify",
+      "to": "critic",
+      "by": "zcode-verify-pc14",
+      "machine": "pc-cloud1",
+      "session": "3d9877d2-e1f3-4d35-b98c-28acaf6cc547"
     }
   ]
 }
