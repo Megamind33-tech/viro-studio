@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 300,
-  "updated_at": "2026-08-28T17:58:41.786Z",
+  "revision": 301,
+  "updated_at": "2026-08-28T18:19:45.701Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -1248,7 +1248,7 @@
       "assigned_agent": "zcode-textframe-pc1",
       "assigned_role": "builder",
       "work_branch": "agent/viro-0143/zcode-gov-audit-pc1",
-      "heartbeat_at": "2026-08-28T17:55:06.559Z",
+      "heartbeat_at": "2026-08-28T18:19:45.701Z",
       "attempts": 0,
       "evidence": [
         {
@@ -1394,7 +1394,7 @@
       "role": "builder",
       "machine": "pc-cloud1",
       "packet": "VIRO-0143",
-      "heartbeat_at": "2026-08-28T17:55:06.559Z"
+      "heartbeat_at": "2026-08-28T18:19:45.701Z"
     },
     "zcode-verify-pc9": {
       "role": "verifier",
@@ -1474,7 +1474,7 @@
       "acquired_at": "2026-08-28T16:59:15.701Z",
       "current_agent": "zcode-textframe-pc1",
       "current_stage": "build",
-      "heartbeat_at": "2026-08-28T17:55:06.559Z"
+      "heartbeat_at": "2026-08-28T18:19:45.701Z"
     },
     "VIRO-0017": {
       "packet": "VIRO-0017",
@@ -1508,12 +1508,6 @@
     }
   },
   "events": [
-    {
-      "at": "2026-08-27T16:16:00.000Z",
-      "type": "control.bootstrap",
-      "packet": "VIRO-0002",
-      "detail": "Shared queue provisioned; no agent has claimed work."
-    },
     {
       "at": "2026-08-27T16:38:31.590Z",
       "type": "packet.claimed",
@@ -3481,6 +3475,12 @@
       "from": "build",
       "to": "verify",
       "by": "zcode-exportqa-pc1"
+    },
+    {
+      "at": "2026-08-28T18:19:45.701Z",
+      "type": "agent.heartbeat",
+      "agent": "zcode-textframe-pc1",
+      "packet": "VIRO-0143"
     }
   ]
 }
