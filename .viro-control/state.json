@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 350,
-  "updated_at": "2026-08-28T20:03:42.856Z",
+  "revision": 351,
+  "updated_at": "2026-08-28T20:04:12.389Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -1466,11 +1466,11 @@
       ],
       "critic_needed": true,
       "stage": "verify",
-      "status": "QUEUED",
-      "assigned_agent": null,
-      "assigned_role": null,
+      "status": "VERIFY",
+      "assigned_agent": "zcode-verify-pc12",
+      "assigned_role": "verifier",
       "work_branch": "agent/viro-0143/zcode-gov-audit-pc1",
-      "heartbeat_at": null,
+      "heartbeat_at": "2026-08-28T20:04:12.389Z",
       "attempts": 0,
       "evidence": [
         {
@@ -1509,7 +1509,9 @@
           "npx tsc --noEmit exit 0; npm run test:unit 316/316 exit 0; node node_modules/vite/bin/vite.js build exit 0. SEAT HANDOVER: implementation authored by zcode-textframe-pc1 (1c8eea2+35b1670 on 72b05f0, session lost); pc2 inherited per replacement directive, rebased onto 5014465 (VIRO-0014 delta touches only font-import files, zero lease overlap), re-reviewed diff, re-ran all gates. BLOCKED-SCOPE NOTE: autoSize bus command registration requires off-lease src/document/ui-commands.ts + tests/ui-commands.test.mjs — sanctioned fallback exercised (read-only measurement + command spec frame.autoFitHeight in delivery JSON); recorded follow-ups: compositor typeLayout ~L744 + pdf.ts ~L724 should pass layer.textFrame"
         ]
       },
-      "rejection": null
+      "rejection": null,
+      "assigned_machine": "pc-cloud1",
+      "assigned_session": "09cc77df-6a55-4bec-a989-ed5242198ade"
     },
     "VIRO-0144": {
       "id": "VIRO-0144",
@@ -1631,6 +1633,13 @@
       "machine": "pc-cloud1",
       "packet": "VIRO-0017",
       "heartbeat_at": "2026-08-28T19:38:57.536Z"
+    },
+    "zcode-verify-pc12": {
+      "role": "verifier",
+      "machine": "pc-cloud1",
+      "session": "09cc77df-6a55-4bec-a989-ed5242198ade",
+      "packet": "VIRO-0143",
+      "heartbeat_at": "2026-08-28T20:04:12.389Z"
     }
   },
   "leases": {
@@ -1669,9 +1678,9 @@
         "docs/agents/deliveries/VIRO-0143.json"
       ],
       "acquired_at": "2026-08-28T19:25:06.822Z",
-      "current_agent": null,
+      "current_agent": "zcode-verify-pc12",
       "current_stage": "verify",
-      "heartbeat_at": "2026-08-28T19:39:19.193Z"
+      "current_session": "09cc77df-6a55-4bec-a989-ed5242198ade"
     },
     "VIRO-0011": {
       "packet": "VIRO-0011",
@@ -1702,11 +1711,6 @@
     }
   },
   "events": [
-    {
-      "at": "2026-08-28T04:58:28.803Z",
-      "type": "packet.reconciled_from_manifest",
-      "packet": "VIRO-0002"
-    },
     {
       "at": "2026-08-28T05:04:28.335Z",
       "type": "agent.heartbeat",
@@ -3730,6 +3734,15 @@
       "at": "2026-08-28T20:03:42.856Z",
       "type": "packet.reconciled_from_manifest",
       "packet": "VIRO-0002"
+    },
+    {
+      "at": "2026-08-28T20:04:12.389Z",
+      "type": "packet.claimed",
+      "packet": "VIRO-0143",
+      "agent": "zcode-verify-pc12",
+      "role": "verifier",
+      "machine": "pc-cloud1",
+      "session": "09cc77df-6a55-4bec-a989-ed5242198ade"
     }
   ]
 }
