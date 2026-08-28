@@ -1,6 +1,7 @@
 import { readPsd, type Layer as PsdLayer } from "ag-psd";
 import type { PressDocument, Rgba } from "../document/types";
 import { addImageFrame, createDocument, uid } from "../document/factory";
+import { ImportParseError, MAX_IMPORT_DIMENSION } from "./errors";
 
 function canvasToAsset(canvas: HTMLCanvasElement, name: string) {
   return {
@@ -12,12 +13,29 @@ function canvasToAsset(canvas: HTMLCanvasElement, name: string) {
   };
 }
 
+/**
+ * Layer-tree ingest. Deliberately iterative with an explicit stack: a hostile
+ * PSD may declare tens of thousands of nested groups, and recursion here would
+ * overflow the call stack with an uncatchable-at-this-layer RangeError. The
+ * traversal order is identical to the previous recursive walk.
+ */
 function walk(doc: PressDocument, layers: PsdLayer[] | undefined, parentId: string | null, ox: number, oy: number): PressDocument {
-  if (!layers) return doc;
   let next = doc;
-  for (const layer of layers) {
+  const stack: Array<{ list: PsdLayer[]; parentId: string | null; index: number }> = layers?.length
+    ? [{ list: layers, parentId, index: 0 }]
+    : [];
+  while (stack.length) {
+    const frame = stack[stack.length - 1]!;
+    if (frame.index >= frame.list.length) {
+      stack.pop();
+      continue;
+    }
+    const layer = frame.list[frame.index++]!;
     if (layer.hidden && !layer.children) continue;
-    if (layer.children?.length) {
+    // Hostile files cannot make ag-psd hand us a pseudo-array here, but the
+    // guard keeps the walk total: only a real array descends.
+    const children: PsdLayer[] = Array.isArray(layer.children) ? layer.children : [];
+    if (children.length) {
       const page = next.pages[0]!;
       const gid = uid("ly");
       page.layers.push({
@@ -35,16 +53,16 @@ function walk(doc: PressDocument, layers: PsdLayer[] | undefined, parentId: stri
           h: Math.max(1, (layer.bottom ?? 0) - (layer.top ?? 0)),
           rotation: 0,
         },
-        parentId,
+        parentId: frame.parentId,
       });
-      next = walk(next, layer.children, gid, ox, oy);
+      stack.push({ list: children, parentId: gid, index: 0 });
       continue;
     }
     const canvas = layer.canvas as HTMLCanvasElement | undefined;
     if (!canvas || !canvas.width) continue;
     next = addImageFrame(next, canvasToAsset(canvas, layer.name || "Layer"), (layer.left ?? 0) + ox, (layer.top ?? 0) + oy);
     const placed = next.pages[0]!.layers[next.pages[0]!.layers.length - 1]!;
-    placed.parentId = parentId;
+    placed.parentId = frame.parentId;
     placed.visible = !layer.hidden;
     placed.opacity = (layer.opacity ?? 1) > 1 ? (layer.opacity ?? 1) / 255 : (layer.opacity ?? 1);
     placed.transform.w = canvas.width;
@@ -55,9 +73,28 @@ function walk(doc: PressDocument, layers: PsdLayer[] | undefined, parentId: stri
 
 /** PSD → Press. ag-psd converts supported colour modes to RGB. Text/smart objects without bitmaps are skipped. */
 export function documentFromPsd(buffer: ArrayBuffer, name: string): PressDocument {
-  const psd = readPsd(buffer, { skipCompositeImageData: false, skipLayerImageData: false, skipThumbnail: true });
-  const w = psd.width || 1;
-  const h = psd.height || 1;
+  let psd: ReturnType<typeof readPsd>;
+  try {
+    psd = readPsd(buffer, { skipCompositeImageData: false, skipLayerImageData: false, skipThumbnail: true });
+  } catch (err) {
+    // ag-psd surfaces malformed files as bare Errors and raw RangeErrors from
+    // DataView reads. Neither may escape the import boundary: rethrow as the
+    // typed import rejection with the reader failure as cause.
+    throw new ImportParseError("psd", "unreadable", `“${name}” is not a readable PSD file`, err);
+  }
+  if (
+    !Number.isFinite(psd.width) || !Number.isFinite(psd.height) ||
+    psd.width < 1 || psd.height < 1 ||
+    psd.width > MAX_IMPORT_DIMENSION || psd.height > MAX_IMPORT_DIMENSION
+  ) {
+    throw new ImportParseError(
+      "psd",
+      "dimensions-out-of-range",
+      `“${name}” declares a ${psd.width}×${psd.height} canvas; .psd files are limited to ${MAX_IMPORT_DIMENSION}px per edge`,
+    );
+  }
+  const w = psd.width;
+  const h = psd.height;
   let doc = createDocument({
     name: name.replace(/\.psd$/i, "") || "PSD",
     ppi: psd.imageResources?.resolutionInfo?.horizontalResolution ?? 72,
