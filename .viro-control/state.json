@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 135,
-  "updated_at": "2026-08-28T10:18:34.641Z",
+  "revision": 136,
+  "updated_at": "2026-08-28T10:18:43.973Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -280,15 +280,30 @@
       ],
       "dependencies": [],
       "critic_needed": false,
-      "stage": "audit",
-      "status": "ACTIVE",
-      "assigned_agent": "zcode-gov-audit-pc1",
-      "assigned_role": "gap-auditor",
+      "stage": "build",
+      "status": "QUEUED",
+      "assigned_agent": null,
+      "assigned_role": null,
       "work_branch": "agent/viro-0010/zcode-gov-audit-pc1",
-      "heartbeat_at": "2026-08-28T10:18:34.641Z",
+      "heartbeat_at": null,
       "attempts": 0,
-      "evidence": [],
-      "last_handoff": null,
+      "evidence": [
+        {
+          "stage": "audit",
+          "by": "zcode-gov-audit-pc1",
+          "item": "gap-audit before-state on main confirmed by Governor audit pass 2026-08-28; manifest before/after validated against repository; no duplicate implementation on main; see docs/agents/deliveries/VIRO-0010.json evidence basis",
+          "at": "2026-08-28T10:18:43.969Z"
+        }
+      ],
+      "last_handoff": {
+        "from": "audit",
+        "to": "build",
+        "by": "zcode-gov-audit-pc1",
+        "at": "2026-08-28T10:18:43.973Z",
+        "evidence": [
+          "gap-audit before-state on main confirmed by Governor audit pass 2026-08-28; manifest before/after validated against repository; no duplicate implementation on main; see docs/agents/deliveries/VIRO-0010.json evidence basis"
+        ]
+      },
       "rejection": null
     },
     "VIRO-0011": {
@@ -784,14 +799,7 @@
       "rejection": null
     }
   },
-  "agents": {
-    "zcode-gov-audit-pc1": {
-      "role": "gap-auditor",
-      "machine": "pc-cloud1",
-      "packet": "VIRO-0010",
-      "heartbeat_at": "2026-08-28T10:18:34.641Z"
-    }
-  },
+  "agents": {},
   "leases": {
     "VIRO-0012": {
       "packet": "VIRO-0012",
@@ -814,8 +822,8 @@
         "docs/agents/deliveries/VIRO-0010.json"
       ],
       "acquired_at": "2026-08-28T10:18:34.641Z",
-      "current_agent": "zcode-gov-audit-pc1",
-      "current_stage": "audit"
+      "current_agent": null,
+      "current_stage": "build"
     }
   },
   "events": [
@@ -1638,6 +1646,14 @@
       "agent": "zcode-gov-audit-pc1",
       "role": "gap-auditor",
       "machine": "pc-cloud1"
+    },
+    {
+      "at": "2026-08-28T10:18:43.973Z",
+      "type": "packet.advanced",
+      "packet": "VIRO-0010",
+      "from": "audit",
+      "to": "build",
+      "by": "zcode-gov-audit-pc1"
     }
   ]
 }
