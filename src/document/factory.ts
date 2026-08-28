@@ -1042,6 +1042,50 @@ export function validateStroke(stroke: VectorStroke, where: string): string[] {
   return errs;
 }
 
+/* ------------------------------------------------------------------ *
+ * Open-time repair
+ * ------------------------------------------------------------------ */
+
+export interface DanglingParentRepair {
+  /** How many layers were detached from parents that do not exist. */
+  repaired: number;
+  /** One human-readable line per repaired layer, for status surfaces. */
+  notes: string[];
+}
+
+/**
+ * Heal a document that already carries dangling parentId links — corruption
+ * the pre-fix deep delete could write to disk (a deleted group's grandchildren
+ * survived with parentIds naming layers that no longer exist).
+ *
+ * A layer whose parent is missing renders at its LOCAL coordinates composed
+ * against nothing (transform.ts `parentChain` stops at the gap), so its local
+ * x/y are already exactly what the user sees as page coordinates. The repair
+ * therefore detaches the layer to the page (`parentId = null`) WITHOUT touching
+ * its transform: the record is made to agree with the pixels — the visually
+ * stable page-space outcome. No teleport, and nothing is invented.
+ *
+ * Idempotent by construction: after a repair pass no dangling link remains, so
+ * reopening the repaired file and repairing again reports zero and changes
+ * nothing. Per-page on purpose, matching validateDocument's per-page parent
+ * check, so a repaired document validates clean.
+ */
+export function repairDanglingParents(doc: PressDocument): DanglingParentRepair {
+  const repair: DanglingParentRepair = { repaired: 0, notes: [] };
+  for (const page of doc.pages) {
+    const ids = new Set(page.layers.map((l) => l.id));
+    for (const layer of page.layers) {
+      if (!layer.parentId || ids.has(layer.parentId)) continue;
+      repair.notes.push(
+        `layer ${layer.id} referenced missing parent ${layer.parentId}; detached to page space`,
+      );
+      layer.parentId = null;
+      repair.repaired++;
+    }
+  }
+  return repair;
+}
+
 /** Structural check against types.ts. Returns a list of problems; empty means valid. */
 export function validateDocument(doc: PressDocument): string[] {
   const errs: string[] = [];

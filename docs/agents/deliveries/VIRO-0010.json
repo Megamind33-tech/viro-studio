@@ -29,13 +29,28 @@
     "npm run test:chrome",
     "npm run build"
   ],
-  "builder": { "status": "PENDING", "notes": "Claimable after VIRO-0005 releases the tests/** lease." },
+  "builder": {
+    "status": "PASS",
+    "notes": "Build-stage handoff by zcode-persist-pc1 (independent verification still pending; builder does not verify its own work). src/app.ts: autosaveTick serializes the document at most once per tick and shares the plain snapshot between the recovery and project sinks; writeRecovery/persistCurrentProject accept the shared snapshot and announce truthful failure status via a new announce() that bypasses emit()/trackRevision() so a failing large-document autosave cannot re-arm a 1.2s retry-storm; dirty stays set so the next edit or pagehide flush retries; a rejected put never touches the stored record, so the last good snapshot stays intact; documented recoverySink seam (null = real IndexedDB store) lets tests inject quota/IO failures without patching module bindings. No schema or recovery file format change. New tests: tests/autosave-hardening.test.mjs (node unit; requires --experimental-transform-types because the app.ts import graph uses TS parameter properties that strip-only mode cannot load) and tests/autosave-failure.spec.mjs (browser E2E against real IndexedDB + the existing recovery prompt/Restore path).",
+    "proof": [
+      "npx tsc --noEmit exit 0",
+      "node --experimental-transform-types --import ./tests/ts-register.mjs --test tests/autosave-hardening.test.mjs: 7/7",
+      "VIRO_URL=http://127.0.0.1:5175 node tests/autosave-failure.spec.mjs: 13/13 checks (last good snapshot intact with unchanged savedAt, truthful 'Autosave failed (...)' status, failing tick clones=1, reload/Restore returns exactly the pre-failure document, no page errors)",
+      "node tests/recovery.spec.mjs (assertions untouched): 13/13",
+      "npm run test:unit: 316/316; npm run test:chrome: 5/5; npm run build: exit 0",
+      "Before/after clone measurement (JSON.stringify reference-count probe, stack-attributed): success tick before 1 / after 1; failing-recovery tick before 2 (one per sink; 4 observed when the already-armed debounce re-ran both sinks because dirty never cleared) / after 1; idle tick after 0"
+    ]
+  },
   "verifier": { "status": "PENDING", "notes": "Independent verification required." },
   "critic": { "status": "NOT_APPLICABLE", "notes": "Engine-only persistence hardening; no aesthetic or workflow redesign. Any new user-visible status text must still be shown in verifier evidence." },
   "delta": {
     "before": "Autosave deep-clones the full document twice per tick and has untested quota/write-failure behavior.",
     "after": "Single serialization per tick, explicit failure handling, last-good-snapshot survival proven by test.",
-    "proof": [],
+    "proof": [
+      "Failing-recovery autosave tick: before 2 whole-document serializations (stack-attributed to writeRecovery + persistCurrentProject), after 1 shared serialization; success tick 1 -> 1; idle tick 0 after",
+      "tests/autosave-hardening.test.mjs 7/7 + tests/autosave-failure.spec.mjs 13/13: quota-failure during autosave keeps the last good snapshot (layers + savedAt unchanged in IndexedDB) and the existing recovery prompt/Restore path returns exactly that snapshot",
+      "Failure status 'Autosave failed (...) — edits after the last good autosave exist only in this tab; save a .press.json copy now.' exercised by both tests; no fake-success wording; failing write does not re-arm the autosave timer"
+    ],
     "regression_protection": [
       "tests/recovery.spec.mjs assertions unchanged and green"
     ],

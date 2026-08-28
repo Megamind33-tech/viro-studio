@@ -27,16 +27,32 @@
     "npx tsc --noEmit",
     "npm run build"
   ],
-  "builder": { "status": "PENDING", "notes": "Gated on VIRO-0013 DONE." },
+  "builder": {
+    "status": "DELIVERED",
+    "notes": "Builder zcode-sanitize-pc1 (pc-cloud1), branch agent/viro-0014/zcode-gov-audit-pc1 based on post-wave-merge main 72b05f0 (worktree rebased from 9f0ed70; inherited banked prep drafts verified 5/5 in before-state mode on the new base first). Before-state re-confirmed: loadFace (HarfBuzz WASM) accepts text bytes, empty buffers and a 50%-truncated real TTF; FontRegistry.importBytes persisted hostile bytes to IndexedDB and prettyFamily retained path separators/NULs from hostile filenames; sniffBytes trusted extension fallbacks so text named .ttf reached the font importer. Fixes, all inside the lease: (1) src/engine/font-registry.ts — exported validateFontBytes enforcing zero-byte, 20 MiB cap, container magic (sfnt/OTTO/true/ttcf/wOFF/wOF2), 64-byte minimum and sfnt table-directory bounds before loadFace; typed FontImportError {code: too-small|bad-magic|too-large|undecodable} wraps loadFace with cause; importBytes sanitizes filenames (path separators, control bytes, 120-char cap) before prettyFamily; persistence stays strictly after successful decode; the same validator now guards loadBundled (tripwire), loadUserFonts (rows persisted pre-hardening) and ensureLoaded (system-picker bytes). (2) src/engine/sniff.ts — SniffedFile gains magic field; image/font kinds are now produced only by a real magic match, so extension lies (text named .ttf/.png) classify unknown and cannot reach importFontBytes/placeImage through ingestFiles' existing call site; exported validateImageBytes enforces empty/25 MiB cap/wrong-magic/truncated/bad-dimensions (PNG IHDR, GIF screen descriptor, BMP core/info headers, WEBP RIFF payload, JPEG SOF walk) with typed ImageImportError; DOM decode stays browser-side. (3) tests/import-sanitize-corpus.mjs corpusVersion 2 (hardened classifications for six extension-lie/zero-byte entries, per-case expectCode/imageCode, hostile BMP generator corrected to spec little-endian header fields; fonts digest 9bde3d2fe3abbdccff1cc34d8fb1a02a63d2cb047a59f7d38ba283345ab3e54f, images digest 5790b9f31d6f8223a580972e38a7e140948af64f6899c98f587e1808b79a2b63) and tests/import-sanitize.test.mjs flipped to hardened MODE with per-case typed-code assertions. Known honest record: validateImageBytes is exported and unit-proven but app.ts (outside this lease) does not yet call it before placeImage decode; the wired image hardening on this base is the sniffBytes lie refusal. Valid-file behavior unchanged: real NotoSans TTF still imports with family 'NotoSans' through the new boundary.",
+    "proof": [
+      "node --experimental-strip-types --import ./tests/ts-register.mjs --test tests/import-sanitize.test.mjs: 5/5 pass in hardened mode, run twice (deterministic)",
+      "Before-state proof on new base before implementing: same suite in before-state MODE 5/5 pass with hardened test skipped (hostile acceptance documented, positive control green)",
+      "npx tsc --noEmit: clean",
+      "npm run test:unit: 316/316 pass (fixed list; text-model and font-registry consumers unaffected)",
+      "npm run build (vite): success"
+    ]
+  },
   "verifier": { "status": "PENDING", "notes": "Independent verification required." },
   "critic": { "status": "NOT_APPLICABLE", "notes": "Engine validation hardening; no UI change." },
   "delta": {
-    "before": "Font/image validation proven only for valid inputs.",
-    "after": "Negative-input regression suite with typed rejections and unchanged valid flows.",
-    "proof": [],
-    "regression_protection": [
-      "Existing font-registry and image tests green"
+    "before": "Font/image validation proven only for valid inputs; hostile fonts persisted to IndexedDB; extension lies reached decoders.",
+    "after": "Negative-input regression suite with typed rejections at the font registry and sniff boundaries; valid flows byte-identical.",
+    "proof": [
+      "tests/import-sanitize.test.mjs 5/5 green twice in hardened mode (17 corpus font cases incl. 25 MiB bomb and 50%-cut real TTF; 9 image cases incl. IHDR/BMP dims bombs and polyglot PNG)",
+      "font corpus digest 9bde3d2fe3abbdccff1cc34d8fb1a02a63d2cb047a59f7d38ba283345ab3e54f, image corpus digest 5790b9f31d6f8223a580972e38a7e140948af64f6899c98f587e1808b79a2b63 (corpusVersion 2, changes recorded in the corpus header)",
+      "npx tsc --noEmit clean; npm run test:unit 316/316; npm run build success"
     ],
-    "new_debt": "none yet"
+    "regression_protection": [
+      "Positive control: real NotoSans-Regular.ttf still imports through validateFontBytes with unchanged family/style/id shape",
+      "loadFace leniency test kept green as documentation of why the registry boundary must stay in front of HarfBuzz",
+      "npm run test:unit 316/316 (existing FontRegistry consumers: text-model, rich-text harness)"
+    ],
+    "new_debt": "app.ts ingestFiles does not yet call validateImageBytes before placeImage (app.ts outside this packet's lease) — one-call wiring plus status surfacing for ImageImportError is the natural follow-up; sniffBytes' extension-lie refusal is already wired through ingestFiles' existing call site."
   }
 }

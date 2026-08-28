@@ -106,7 +106,9 @@
 }
 
 .align-btn:hover:not(:disabled) {
-  border-color: var(--accent);
+  /* VIRO-0017 D2: hover is not an active/selection state, so the accent is
+     reserved; the neutral hover step is the raised-control border tone. */
+  border-color: #3d3d3d;
 }
 
 .align-btn:disabled {
@@ -250,7 +252,8 @@
 }
 
 .proj-btn:hover {
-  border-color: var(--accent);
+  /* VIRO-0017 D2: neutral hover step; accent is active/selection only. */
+  border-color: #3d3d3d;
 }
 
 .proj-open:focus-visible,
@@ -307,13 +310,18 @@
 }
 
 .recover-btn:hover {
-  border-color: var(--accent);
+  /* VIRO-0017 D2: neutral hover step; accent is active/selection only. */
+  border-color: #3d3d3d;
 }
 
 .recover-primary {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #1a1a1a;
+  /* VIRO-0017 D1: was a solid accent CTA fill — copper is reserved for
+     active tool/selection, so Restore now uses the standard raised-button
+     treatment (.btn/.anc-btn tokens) and stays distinct from Discard by its
+     fill alone. */
+  background: #3d3d3d;
+  border-color: #1a1a1a;
+  color: var(--ink);
 }
 
 .recover-btn:focus-visible {
@@ -342,4 +350,14 @@
   line-height: 1;
   opacity: 0.01;
   pointer-events: none;
+}
+
+/* VIRO-0016: the layer name is the row's real select control, so it is a
+   <button class="nm"> now. These three declarations keep the button painting
+   exactly where the old <span> painted — same box, same left-aligned,
+   ellipsed single line — so pointer pixels do not move. */
+.ly button.nm {
+  display: block;
+  width: 100%;
+  text-align: left;
 }

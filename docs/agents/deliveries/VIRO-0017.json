@@ -28,16 +28,28 @@
     "npm run test:chrome green",
     "npm run build"
   ],
-  "builder": { "status": "PENDING", "notes": "Gated on VIRO-0016 DONE." },
+  "builder": {
+    "status": "DELIVERED",
+    "notes": "Builder zcode-polish-pc2 (pc-cloud1), branch agent/viro-0017/zcode-gov-audit-pc1 based on local main 5014465 (report commit authored by the first seat zcode-polish-pc1 on a 72b05f0 base, rebased onto 5014465 by this seat; VIRO-0014 stack between the two touches no chrome path - empty diff on index.html/src/chrome/src/styles 72b05f0..5014465). Method (docs/reviews/0017-visual-polish-sweep.md): static accent/radius/font enumeration + live computed-style audit (headless Chromium, same flags as playwright.config.ts) of the running desk on 127.0.0.1:5184 across five driven states (rest / 2-layer selection+align hover / recovery bar / Anchor studio / Projects dialog). Findings: 4 in-lease deviations D1-D4 (fixed), 10 allowed-state groups A1-A10 (dismissed with per-state evidence), 2 out-of-lease deviations D5 (src/styles/desk.css .btn.default ring) and D6 (nd-pv guide strokes) returned to the Governor unedited. Fixes, all inside the lease: (D1) src/chrome/desk.css .recover-primary solid var(--accent) CTA -> the .btn/.anc-btn token set (#3d3d3d fill, #1a1a1a border, --ink text; Restore stays distinct from Discard by fill alone); (D2) .align-btn/.proj-btn/.recover-btn :hover border var(--accent) -> #3d3d3d neutral hover step; (D3) #g-anchor .anc-btn-default and .anc-mini-default persistent copper rings removed, non-accent ink emphasis kept, no replacement ornament; (D4) dead governance prose removed from #g-anchor static markup (mountAnchorPanel strips it at init, zero painted-pixel delta; an explanatory HTML comment remains). Before/after evidence: node_modules/.polish-probe.mjs (uncommitted tool, 0016 precedent) ran twice with the fix diff stashed/applied; per-item captures in node_modules/.polish-shots-{before,after}/ (recover-bar.png, align-btn-hover.png, anchor-panel.png, desk-full.png, projects-dialog.png). Probe diff: exactly the D1/D2 accent hits removed, zero accent hits added in any state; radius violations 0 in all states; tokens resolve #2b2b2b/#323232/#1f1f1f/#e07a2f, radius 1px. Enforcement: tests/visual-polish-tokens.spec.ts (5) + tests/visual-polish-chrome.spec.ts (8) + tests/visual-polish.playwright.config.ts (seat-local runner that runs the identical suite on the assigned port 5184 because canonical 5173 reuseExistingServer can silently target a foreign worktree on a shared box). Gates on candidate: npx tsc --noEmit clean; test:unit 316/316; full Playwright suite on 5184 29/29 (incl. VIRO-0016 a11y-keyboard and the two new suites); node node_modules/vite/bin/vite.js build complete (web dist + electron preload). No functional change: only CSS declarations and one dead markup block touched."
+  },
   "verifier": { "status": "PENDING", "notes": "Independent verification required." },
   "critic": { "status": "PENDING", "notes": "Required: critic judges the polish result against the AAA brief." },
   "delta": {
-    "before": "Token conformance unevidenced; incidental visual drift possible.",
-    "after": "Documented conformance sweep with all deviations corrected.",
-    "proof": [],
-    "regression_protection": [
-      "Full chrome E2E suites green"
+    "before": "Token conformance unevidenced; 4 measured accent-scope deviations (solid copper recovery CTA, copper hover borders on three non-stateful buttons, persistent copper rings on Anchor default actions, dead governance prose in Anchor markup) plus 2 out-of-lease deviations recorded for the Governor.",
+    "after": "All 4 in-lease deviations fixed in place with live computed-style before/after proof; 13 committed computed-style tests freeze tokens, radius, fonts, accent-state rules and icon distinctness; zero accent hits added in any probed state; no layout, component, or functional change.",
+    "proof": [
+      "docs/reviews/0017-visual-polish-sweep.md - enumerated audit (methodology, D1-D4 fixed, A1-A10 dismissed with evidence, D5/D6 out-of-lease returned to Governor)",
+      "npx tsc --noEmit - clean",
+      "npm run test:unit - 316/316",
+      "npx playwright test --config=tests/visual-polish.playwright.config.ts on port 5184 - 29/29 (incl. tests/a11y-keyboard.spec.ts green, VIRO-0016 not regressed)",
+      "node node_modules/vite/bin/vite.js build - complete web dist + electron preload",
+      "node_modules/.polish-shots-{before,after}/probe-report.json - accent-census diff: D1/D2 hits removed, 0 added across rest/selection-hover/recovery/anchor/projects states"
     ],
-    "new_debt": "none yet"
+    "regression_protection": [
+      "tests/visual-polish-tokens.spec.ts - token resolution, surface paints, radius sweep, font census, honest empty states",
+      "tests/visual-polish-chrome.spec.ts - hover-accent CSSOM ban, Anchor default-ring neutrality, recovery raised-button treatment, neutral hover with selection, accent statefulness (active tool + selected row), focus accent retention (VIRO-0016 boundary), icon distinctness, prose removal",
+      "tests/a11y-keyboard.spec.ts - full VIRO-0016 suite rerun green on the candidate"
+    ],
+    "new_debt": "D5 (.btn.default copper ring, src/styles/desk.css) and D6 (New-Document preview guide strokes) are out-of-lease findings returned to the Governor; multi-tab .doc-tab accent caveat recorded in the sweep report."
   }
 }
