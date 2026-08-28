@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 123,
-  "updated_at": "2026-08-28T09:56:23.405Z",
+  "revision": 124,
+  "updated_at": "2026-08-28T09:56:30.446Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -269,12 +269,12 @@
       ],
       "dependencies": [],
       "critic_needed": false,
-      "stage": "verify",
-      "status": "VERIFY",
-      "assigned_agent": "zcode-verify-pc3",
-      "assigned_role": "verifier",
+      "stage": "release",
+      "status": "QUEUED",
+      "assigned_agent": null,
+      "assigned_role": null,
       "work_branch": "agent/viro-0012/zcode-gov-audit-pc1",
-      "heartbeat_at": "2026-08-28T09:56:23.405Z",
+      "heartbeat_at": null,
       "attempts": 0,
       "evidence": [
         {
@@ -318,18 +318,42 @@
           "by": "zcode-perf-pc2",
           "item": "Gates: npx tsc --noEmit clean; npm run test:unit 316/316; npm run build exit 0; node tests/effects.spec.mjs 15/15; branch agent/viro-0012/zcode-gov-audit-pc1 pushed, head f5baa1a",
           "at": "2026-08-28T09:15:31.871Z"
+        },
+        {
+          "stage": "verify",
+          "by": "zcode-verify-pc3",
+          "item": "scope audit: diff 14e2812..f5baa1a = 15 files all inside lease (src/engine/compositor.ts, scripts/perf/**, docs/research/0012-frame-profiling.md, docs/agents/deliveries/VIRO-0012.json); baseline commit f973318 touches zero prod code, compositor change only in f5baa1a",
+          "at": "2026-08-28T09:56:30.443Z"
+        },
+        {
+          "stage": "verify",
+          "by": "zcode-verify-pc3",
+          "item": "gates: npx tsc --noEmit exit 0; npm run test:unit 316/316; npm run test:chrome 5/5 green (isolated verifier worktree server port 5192, no foreign-server reuse); npm run build exit 0; tests/effects.spec.mjs 15/15 vs worktree server",
+          "at": "2026-08-28T09:56:30.446Z"
+        },
+        {
+          "stage": "verify",
+          "by": "zcode-verify-pc3",
+          "item": "pixel-identity reproof: own from-scratch captures in clean detached worktrees — 14e2812 sha 0fa979a3fc68810c0e8b8801690bf2281220d171023d9aa54546ba0622b4b44c and f5baa1a same sha, 2480x3508 RGBA, capture compare = PIXEL-IDENTICAL exit 0",
+          "at": "2026-08-28T09:56:30.446Z"
+        },
+        {
+          "stage": "verify",
+          "by": "zcode-verify-pc3",
+          "item": "measurement reproduction (same machine pc-cloud1): idle/shadow30 85556.8ms median @14e2812 -> 771.1ms @f5baa1a = 111x; g/shadow30/zoom drawMs 88362.3ms -> 846.6ms = 104x; g/shadow30/move 791.4ms after; committed results/after-fix.json + baseline-run.log + baseline-zoom.json match docs/research/0012-frame-profiling.md tables line-for-line",
+          "at": "2026-08-28T09:56:30.446Z"
         }
       ],
       "last_handoff": {
-        "from": "build",
-        "to": "verify",
-        "by": "zcode-perf-pc2",
-        "at": "2026-08-28T09:15:31.871Z",
+        "from": "verify",
+        "to": "release",
+        "by": "zcode-verify-pc3",
+        "at": "2026-08-28T09:56:30.446Z",
         "evidence": [
-          "Harness scripts/perf (run.mjs 13 scenarios idle+move/resize/pan/zoom x starter/plain30/shadow30; capture.mjs raw-RGBA sha-256 pixel proof); baseline committed at f973318 BEFORE any prod change: idle/shadow30 115482.4ms median vs plain30 165.8ms (~700x, geometry identical)",
-          "Single compositor fix f5baa1a: withDropShadow saveLayer bounded to layerBounds + 3sigma + |offset| + nested glow/stroke dilation + vector stroke half + 2px; pixel-identical proof capture compare before after = PIXEL-IDENTICAL sha 0fa979a3fc68810c0e8b8801690bf2281220d171023d9aa54546ba0622b4b44c (2480x3508)",
-          "Measured after: idle/shadow30 908.9ms median (127x), shadow gesture drawMs p95 95562-131008ms -> 984-1203ms, starter/plain30 within noise; report docs/research/0012-frame-profiling.md",
-          "Gates: npx tsc --noEmit clean; npm run test:unit 316/316; npm run build exit 0; node tests/effects.spec.mjs 15/15; branch agent/viro-0012/zcode-gov-audit-pc1 pushed, head f5baa1a"
+          "scope audit: diff 14e2812..f5baa1a = 15 files all inside lease (src/engine/compositor.ts, scripts/perf/**, docs/research/0012-frame-profiling.md, docs/agents/deliveries/VIRO-0012.json); baseline commit f973318 touches zero prod code, compositor change only in f5baa1a",
+          "gates: npx tsc --noEmit exit 0; npm run test:unit 316/316; npm run test:chrome 5/5 green (isolated verifier worktree server port 5192, no foreign-server reuse); npm run build exit 0; tests/effects.spec.mjs 15/15 vs worktree server",
+          "pixel-identity reproof: own from-scratch captures in clean detached worktrees — 14e2812 sha 0fa979a3fc68810c0e8b8801690bf2281220d171023d9aa54546ba0622b4b44c and f5baa1a same sha, 2480x3508 RGBA, capture compare = PIXEL-IDENTICAL exit 0",
+          "measurement reproduction (same machine pc-cloud1): idle/shadow30 85556.8ms median @14e2812 -> 771.1ms @f5baa1a = 111x; g/shadow30/zoom drawMs 88362.3ms -> 846.6ms = 104x; g/shadow30/move 791.4ms after; committed results/after-fix.json + baseline-run.log + baseline-zoom.json match docs/research/0012-frame-profiling.md tables line-for-line"
         ]
       },
       "rejection": null
@@ -632,12 +656,6 @@
       "machine": "pc-cloud1",
       "packet": "VIRO-0005",
       "heartbeat_at": "2026-08-28T09:39:47.560Z"
-    },
-    "zcode-verify-pc3": {
-      "role": "verifier",
-      "machine": "pc-cloud1",
-      "packet": "VIRO-0012",
-      "heartbeat_at": "2026-08-28T09:56:23.405Z"
     }
   },
   "leases": {
@@ -662,8 +680,8 @@
         "docs/agents/deliveries/VIRO-0012.json"
       ],
       "acquired_at": "2026-08-28T06:43:47.797Z",
-      "current_agent": "zcode-verify-pc3",
-      "current_stage": "verify",
+      "current_agent": null,
+      "current_stage": "release",
       "heartbeat_at": "2026-08-28T09:56:23.405Z"
     }
   },
@@ -1402,6 +1420,14 @@
       "type": "agent.heartbeat",
       "agent": "zcode-verify-pc3",
       "packet": "VIRO-0012"
+    },
+    {
+      "at": "2026-08-28T09:56:30.446Z",
+      "type": "packet.advanced",
+      "packet": "VIRO-0012",
+      "from": "verify",
+      "to": "release",
+      "by": "zcode-verify-pc3"
     }
   ]
 }
