@@ -11,7 +11,7 @@
  * size, and they let one glyph outline cache serve every size on the page.
  */
 import type { Canvas, CanvasKit, Paint, Path } from "canvaskit-wasm";
-import type { CharacterStyle, Rgba, Story, TypeFrameLayer } from "../document/types";
+import type { CharacterStyle, Rgba, Story, TextFrameProperties, TypeFrameLayer } from "../document/types";
 import { graphemeBoundaries } from "../document/text-model";
 import { fontRegistry } from "./font-registry";
 
@@ -222,6 +222,8 @@ export interface ComposeResult {
   heightPx: number;
   /** px from the frame top to the first baseline. The frame's optical top edge. */
   firstBaselinePx: number;
+  /** Descent depth in px of the last set line; the story face's descent when nothing was set. */
+  lastDescentPx: number;
   caretStops: CaretStop[];
 }
 
@@ -503,25 +505,64 @@ function breakParagraph(spans: CharSpan[], text: string, firstW: number, restW: 
 /** Where the pen starts on a line: the indent, or the indent plus the alignment slack. */
 function alignPen(
   lineW: number,
+  origin: number,
   x0: number,
   measure: number,
   align: Story["paragraph"]["align"],
 ): { pen: number; slack: number } {
+  // `origin` is the absolute pen origin (inset left + indent); `x0` is the
+  // paragraph indent alone. Room and slack live inside the measure, so the
+  // indent — never the inset origin — reduces them.
   const room = Math.max(0, measure - x0);
   const slack = room - lineW;
-  let pen = x0;
-  if (align === "right") pen = x0 + Math.max(0, slack);
-  else if (align === "center") pen = x0 + Math.max(0, slack / 2);
+  let pen = origin;
+  if (align === "right") pen = origin + Math.max(0, slack);
+  else if (align === "center") pen = origin + Math.max(0, slack / 2);
   return { pen, slack };
 }
 
-export function composeFrame(face: FacePack, story: Story, frameW: number, frameH: number): ComposeResult {
-  const m = metricsFor(face, story);
-  const measure = Math.max(1, frameW);
+/** Inset values resolved for composition; absent or invalid entries are 0. */
+interface FrameInsets {
+  top: number;
+  right: number;
+  bottom: number;
+  left: number;
+}
 
-  const glyphs: ShapedGlyph[] = [];
-  const caretStops: CaretStop[] = [];
-  let y = m.ascent;
+function insetsOf(tf: TextFrameProperties | undefined): FrameInsets {
+  const v = (x: number | undefined): number =>
+    x !== undefined && Number.isFinite(x) ? Math.max(0, x) : 0;
+  return {
+    top: v(tf?.inset.top),
+    right: v(tf?.inset.right),
+    bottom: v(tf?.inset.bottom),
+    left: v(tf?.inset.left),
+  };
+}
+
+export function composeFrame(
+  face: FacePack,
+  story: Story,
+  frameW: number,
+  frameH: number,
+  textFrame?: TextFrameProperties,
+): ComposeResult {
+  const inset = insetsOf(textFrame);
+  // The pen starts at the top-left inset; the measure and the foot shrink by
+  // the insets. With zero insets every expression below reduces to the exact
+  // arithmetic this file shipped with, so legacy frames render bit-identically.
+  const originX = inset.left;
+  const measure = Math.max(1, frameW - inset.left - inset.right);
+  const contentH = Math.max(1, frameH - inset.top - inset.bottom);
+  const foot = frameH - inset.bottom;
+
+  // `dy` shifts the whole composed block down inside the content box; vertical
+  // alignment resolves it after a measuring pass.
+  const compose = (dy: number): ComposeResult => {
+    const m = metricsFor(face, story);
+    const glyphs: ShapedGlyph[] = [];
+    const caretStops: CaretStop[] = [];
+    let y = inset.top + dy + m.ascent;
   let overflow = false;
   let lineCount = 0;
   let lastBaseline = 0;
@@ -542,7 +583,7 @@ export function composeFrame(face: FacePack, story: Story, frameW: number, frame
     last: boolean,
     align: ParaStyle["align"],
   ): void => {
-    if (y > frameH + 0.5) {
+    if (y > foot + 0.5) {
       overflow = true;
       return;
     }
@@ -559,7 +600,7 @@ export function composeFrame(face: FacePack, story: Story, frameW: number, frame
       for (const g of run.glyphs) if (g.gid === sp.style.face.spaceGid) spaces += 1;
       pieces.push({ style: sp.style, run });
     }
-    const { pen: startPen, slack } = alignPen(lineW, x0, measure, align);
+    const { pen: startPen, slack } = alignPen(lineW, originX + x0, x0, measure, align);
     let gap = 0;
     if (align === "justify" && !last && slack > 0 && spaces > 0) gap = slack / spaces;
     let pen = startPen;
@@ -617,6 +658,7 @@ export function composeFrame(face: FacePack, story: Story, frameW: number, frame
   ): void => {
     const { pen: startPen } = alignPen(
       spanWidth(spans, para, start, start + line.length),
+      originX + x0,
       x0,
       measure,
       align,
@@ -670,8 +712,8 @@ export function composeFrame(face: FacePack, story: Story, frameW: number, frame
   if (!caretStops.length) {
     caretStops.push({
       offset: 0,
-      x: Math.max(0, Math.min(story.paragraph.firstLineIndent || 0, measure - 1)),
-      y: m.ascent,
+      x: originX + Math.max(0, Math.min(story.paragraph.firstLineIndent || 0, measure - 1)),
+      y: inset.top + dy + m.ascent,
       height: m.leading,
     });
   }
@@ -681,9 +723,27 @@ export function composeFrame(face: FacePack, story: Story, frameW: number, frame
     overflow,
     lineCount,
     heightPx: lineCount ? lastBaseline + lastDescent : 0,
-    firstBaselinePx: m.ascent,
+    firstBaselinePx: inset.top + dy + m.ascent,
+    lastDescentPx: lastDescent,
     caretStops,
   };
+  };
+
+  // Vertical justification ("justify") needs per-line gap distribution and is
+  // not composed yet; like "top" it starts the block at the top inset.
+  // Center/bottom shift only text that FITS — an overflowing frame aligns at
+  // the top inset exactly as it would without vertical alignment, so the
+  // overflow indicator and the dropped lines stay where the measure puts them.
+  const va = textFrame?.verticalAlign;
+  if (va === "center" || va === "bottom") {
+    const topSet = compose(0);
+    if (topSet.overflow) return topSet;
+    const blockH = Math.max(0, topSet.heightPx - inset.top);
+    const free = Math.max(0, contentH - blockH);
+    const dy = va === "center" ? free / 2 : free;
+    return dy > 0 ? compose(dy) : topSet;
+  }
+  return compose(0);
 }
 
 /* ------------------------------------------------------------------ *
@@ -721,7 +781,7 @@ export function drawTypeFrame(
   story: Story,
   face: FacePack,
 ): ComposeResult {
-  const composed = composeFrame(face, story, layer.transform.w, layer.transform.h);
+  const composed = composeFrame(face, story, layer.transform.w, layer.transform.h, layer.textFrame);
   if (!composed.glyphs.length) return composed;
 
   // One paint per distinct fill: a uniform story paints exactly as it did
@@ -754,4 +814,46 @@ export function drawTypeFrame(
   }
   for (const p of paints.values()) p.delete();
   return composed;
+}
+
+/* ------------------------------------------------------------------ *
+ * Auto-size measurement (read-only)
+ * ------------------------------------------------------------------ */
+
+export interface AutoFitMeasure {
+  /** Frame width in px. "height" auto-size never changes the measure. */
+  w: number;
+  /** Frame height in px that fits the composed story, insets included. */
+  h: number;
+}
+
+/**
+ * How big the frame should be so its story fits without overflow. Only
+ * `autoSize: "height"` is measured: the measure (width) is kept and the foot
+ * lands on the last descender plus the bottom inset; an empty frame still gets
+ * one line box. Any other autoSize mode ("none", "width", "both") returns null
+ * — point-type composition without a measure is a different breaker mode and
+ * is deliberately not approximated here.
+ *
+ * Measurement is read-only on purpose: applying it mutates layer geometry,
+ * which is document state and therefore belongs to a reversible bus command.
+ * That command cannot live in this leased file (the commands registry is
+ * `src/document/ui-commands.ts`); the exact command spec the registry still
+ * needs is recorded in `docs/agents/deliveries/VIRO-0143.json`.
+ */
+export function measureAutoFit(face: FacePack, story: Story, layer: TypeFrameLayer): AutoFitMeasure | null {
+  const tf = layer.textFrame;
+  if (tf?.autoSize !== "height") return null;
+  const inset = insetsOf(tf);
+  // Measure against an UNBOUNDED foot with vertical alignment neutralized: a
+  // frame that is currently too small drops its trailing lines before the
+  // measurement can see them, and center/bottom placement only means anything
+  // once the content already fits. The insets still shrink the measure, so the
+  // line breaking is exactly what the fitted frame will show.
+  const measuring: TextFrameProperties = { ...tf, verticalAlign: "top" };
+  const composed = composeFrame(face, story, layer.transform.w, Number.MAX_VALUE / 16, measuring);
+  const contentH = composed.lineCount
+    ? composed.heightPx
+    : composed.firstBaselinePx + composed.lastDescentPx;
+  return { w: layer.transform.w, h: contentH + inset.bottom };
 }
