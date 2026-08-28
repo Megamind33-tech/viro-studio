@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 129,
-  "updated_at": "2026-08-28T10:10:46.643Z",
+  "revision": 131,
+  "updated_at": "2026-08-28T10:16:53.187Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -702,6 +702,30 @@
       "dependencies": [
         "VIRO-0143"
       ],
+      "critic_needed": true,
+      "stage": "audit",
+      "status": "QUEUED",
+      "assigned_agent": null,
+      "assigned_role": null,
+      "work_branch": null,
+      "heartbeat_at": null,
+      "attempts": 0,
+      "evidence": [],
+      "last_handoff": null,
+      "rejection": null
+    },
+    "VIRO-0145": {
+      "id": "VIRO-0145",
+      "title": "Fix corrupt embedded FontFile2 subsets in vector PDF text export",
+      "priority": "P1",
+      "domain": "export",
+      "outcome": "Text exported to vector PDF embeds valid font subsets: third-party viewers (pdf.js, fontkit) parse the embedded FontFile2 and render every glyph used on the page completely, with the export report unchanged and compound/single-contour vector proofs from VIRO-0005 still green.",
+      "scope": [
+        "src/export/pdf.ts",
+        "tests/**",
+        "docs/agents/deliveries/VIRO-0145.json"
+      ],
+      "dependencies": [],
       "critic_needed": true,
       "stage": "audit",
       "status": "QUEUED",
@@ -1521,6 +1545,16 @@
       "from": "critic",
       "to": "release",
       "by": "zcode-critic-pc1"
+    },
+    {
+      "at": "2026-08-28T10:16:53.072Z",
+      "type": "packet.reconciled_from_manifest",
+      "packet": "VIRO-0002"
+    },
+    {
+      "at": "2026-08-28T10:16:53.187Z",
+      "type": "packet.imported",
+      "packet": "VIRO-0145"
     }
   ]
 }
