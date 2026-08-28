@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 111,
-  "updated_at": "2026-08-28T09:17:52.096Z",
+  "revision": 112,
+  "updated_at": "2026-08-28T09:17:58.142Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -67,12 +67,12 @@
         "VIRO-0002"
       ],
       "critic_needed": true,
-      "stage": "verify",
-      "status": "VERIFY",
-      "assigned_agent": "zcode-verify-pc2",
-      "assigned_role": "verifier",
+      "stage": "critic",
+      "status": "QUEUED",
+      "assigned_agent": null,
+      "assigned_role": null,
       "work_branch": "agent/viro-0005/claude-audit-cloud1",
-      "heartbeat_at": "2026-08-28T09:17:52.096Z",
+      "heartbeat_at": null,
       "attempts": 0,
       "evidence": [
         {
@@ -170,20 +170,35 @@
           "by": "claude-export-pc1",
           "item": "real PDFs generated for subtract-ring/disjoint-union/legacy-single-contour with report.vectorPaths=1 and rasterFallbacks=[] for both compound cases",
           "at": "2026-08-27T22:20:11.848Z"
+        },
+        {
+          "stage": "verify",
+          "by": "zcode-verify-pc2",
+          "item": "Full gates on frozen builder SHA 4d2576c: npx tsc --noEmit exit 0; npm run test:engines PASS; npm run test:unit 316/316 0 fail 0 skipped; node --experimental-strip-types --test tests/pdf-compound.test.mjs 5/5; playwright suite 10/10 passed (5 chrome + 5 pdf-compound spec) against this worktree's own vite on 127.0.0.1:5190; npm run test:slices 13/13 scripts (162 checks); npm run build exit 0",
+          "at": "2026-08-28T09:17:58.139Z"
+        },
+        {
+          "stage": "verify",
+          "by": "zcode-verify-pc2",
+          "item": "Operator-level independent proof in the live app: window.viroAnchor.applyDetailed two overlapping rects + subtractSelected -> result.contours=2 result.nodes=0; exportPagePdf with the exact src/app.ts exportPdf arguments; decoded FlateDecode stream: ring emits m=2 c=8 h=2 with f*=1 f=0 (even-odd), the single re is a re W n page clip not a fill; hole subpath bbox 496x701.6 strictly inside outer 1488x2104.8 so even-odd leaves the centre a real hole; report.vectorPaths=1 rasterFallbacks=[]",
+          "at": "2026-08-28T09:17:58.141Z"
+        },
+        {
+          "stage": "verify",
+          "by": "zcode-verify-pc2",
+          "item": "Single-contour control (fresh doc, plain rect, no contours field): m=1 c=4 h=1 f=1 f*=0 — topology identical to the audit's pre-change baseline; report.vectorPaths=1 rasterFallbacks=[]; exported PDF artifacts saved in temp: viro-0005-verify-ring.pdf / viro-0005-verify-control.pdf; verifier added zero src/ changes and left zero tracked diffs (temp playwright 5190 run-config removed after use)",
+          "at": "2026-08-28T09:17:58.141Z"
         }
       ],
       "last_handoff": {
-        "from": "build",
-        "to": "verify",
-        "by": "claude-export-pc1",
-        "at": "2026-08-27T22:20:11.848Z",
+        "from": "verify",
+        "to": "critic",
+        "by": "zcode-verify-pc2",
+        "at": "2026-08-28T09:17:58.141Z",
         "evidence": [
-          "commit 8c6f2dba66136be5ea773e4cba1feb03805c2733 pushed to origin/agent/viro-0005/claude-audit-cloud1",
-          "npx tsc --noEmit clean",
-          "321/321 unit tests (316 baseline + 5 new targeted pdf-compound tests)",
-          "npm run build exit 0",
-          "npm run test:engines PASS",
-          "real PDFs generated for subtract-ring/disjoint-union/legacy-single-contour with report.vectorPaths=1 and rasterFallbacks=[] for both compound cases"
+          "Full gates on frozen builder SHA 4d2576c: npx tsc --noEmit exit 0; npm run test:engines PASS; npm run test:unit 316/316 0 fail 0 skipped; node --experimental-strip-types --test tests/pdf-compound.test.mjs 5/5; playwright suite 10/10 passed (5 chrome + 5 pdf-compound spec) against this worktree's own vite on 127.0.0.1:5190; npm run test:slices 13/13 scripts (162 checks); npm run build exit 0",
+          "Operator-level independent proof in the live app: window.viroAnchor.applyDetailed two overlapping rects + subtractSelected -> result.contours=2 result.nodes=0; exportPagePdf with the exact src/app.ts exportPdf arguments; decoded FlateDecode stream: ring emits m=2 c=8 h=2 with f*=1 f=0 (even-odd), the single re is a re W n page clip not a fill; hole subpath bbox 496x701.6 strictly inside outer 1488x2104.8 so even-odd leaves the centre a real hole; report.vectorPaths=1 rasterFallbacks=[]",
+          "Single-contour control (fresh doc, plain rect, no contours field): m=1 c=4 h=1 f=1 f*=0 — topology identical to the audit's pre-change baseline; report.vectorPaths=1 rasterFallbacks=[]; exported PDF artifacts saved in temp: viro-0005-verify-ring.pdf / viro-0005-verify-control.pdf; verifier added zero src/ changes and left zero tracked diffs (temp playwright 5190 run-config removed after use)"
         ]
       },
       "rejection": null
@@ -611,14 +626,7 @@
       "rejection": null
     }
   },
-  "agents": {
-    "zcode-verify-pc2": {
-      "role": "verifier",
-      "machine": "pc-cloud1",
-      "packet": "VIRO-0005",
-      "heartbeat_at": "2026-08-28T09:17:52.096Z"
-    }
-  },
+  "agents": {},
   "leases": {
     "VIRO-0005": {
       "packet": "VIRO-0005",
@@ -628,8 +636,8 @@
         "docs/agents/deliveries/VIRO-0005.json"
       ],
       "acquired_at": "2026-08-28T06:42:55.349Z",
-      "current_agent": "zcode-verify-pc2",
-      "current_stage": "verify",
+      "current_agent": null,
+      "current_stage": "critic",
       "heartbeat_at": "2026-08-28T09:17:52.096Z"
     },
     "VIRO-0012": {
@@ -1304,6 +1312,14 @@
       "type": "agent.heartbeat",
       "agent": "zcode-verify-pc2",
       "packet": "VIRO-0005"
+    },
+    {
+      "at": "2026-08-28T09:17:58.142Z",
+      "type": "packet.advanced",
+      "packet": "VIRO-0005",
+      "from": "verify",
+      "to": "critic",
+      "by": "zcode-verify-pc2"
     }
   ]
 }
