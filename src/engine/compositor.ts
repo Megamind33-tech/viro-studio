@@ -1618,10 +1618,10 @@ export class Compositor {
       // Groups honour effects too — a drop shadow, glow or outline applies to
       // the composited group silhouette, not each child. Renders on canvas,
       // export and thumbs.
-      this.withEffects(ck, sk, layer, () => this.drawGroup(ck, sk, surf, doc, page, layer));
+      this.withEffects(ck, sk, page, layer, () => this.drawGroup(ck, sk, surf, doc, page, layer));
       return;
     }
-    this.drawLayerWithEffects(ck, sk, doc, layer);
+    this.drawLayerWithEffects(ck, sk, page, doc, layer);
   }
 
   /** Composite a group and its children (one save-layer for opacity + blend). */
@@ -1649,7 +1649,14 @@ export class Compositor {
    * costs nothing. Shared by leaf layers and groups so neither can silently
    * ignore an enabled effect.
    */
-  private withDropShadow(ck: CanvasKit, sk: Canvas, shadow: DropShadowEffect | null, draw: () => void): void {
+  private withDropShadow(
+    ck: CanvasKit,
+    sk: Canvas,
+    page: Page,
+    layer: Layer,
+    shadow: DropShadowEffect | null,
+    draw: () => void,
+  ): void {
     if (shadow && shadow.enabled && shadow.blur >= 0) {
       const paint = new ck.Paint();
       const a = Math.min(1, Math.max(0, shadow.color.a * shadow.opacity));
@@ -1657,13 +1664,52 @@ export class Compositor {
       const sigma = Math.max(0, shadow.blur) * 0.5;
       const filter = ck.ImageFilter.MakeDropShadowOnly(shadow.offsetX, shadow.offsetY, sigma, sigma, c, null);
       paint.setImageFilter(filter);
-      sk.saveLayer(paint);
+      const bounds = this.shadowLayerBounds(ck, page, layer, shadow);
+      sk.saveLayer(paint, bounds);
       draw();
       sk.restore();
       filter.delete();
       paint.delete();
     }
     draw();
+  }
+
+  /**
+   * Explicit saveLayer region for a shadow pre-pass: the layer's drawn extent
+   * (`layerBounds`) plus every spread that can put pixels inside this layer.
+   * Skia clips layer CONTENT to saveLayer bounds, so the rect must cover the
+   * layer box, 3σ of the shadow blur (Skia's blur kernel is truncated at 3σ),
+   * the shadow offset, and — because the outer-glow and stroke pre-passes draw
+   * INSIDE the shadow layer — their dilation too, plus a small anti-alias
+   * epsilon. Without bounds the layer covers the whole page clip from
+   * `compositePage`, i.e. a full-page offscreen + blur per shadowed layer per
+   * composite; bounded, it is the layer box plus ~3σ (67× less area on a
+   * 300×200 layer on A4). The shadow itself may extend past these bounds: the
+   * image filter grows the composited layer outward on its own, independent of
+   * the clip, so the rendered shadow is unchanged. Null falls back to the
+   * previous unbounded behaviour when the layer draws nothing measurable.
+   */
+  private shadowLayerBounds(ck: CanvasKit, page: Page, layer: Layer, shadow: DropShadowEffect): Float32Array | null {
+    const box = this.layerBounds(page, layer, 0);
+    if (!box) return null;
+    const glow = outerGlowOf(layer);
+    const strokeFx = strokeEffectOf(layer);
+    const vecStrokeHalf = layer.kind === "vector" ? (layer.stroke?.width ?? 0) / 2 : 0;
+    const padX =
+      1.5 * Math.max(0, shadow.blur) +
+      Math.abs(shadow.offsetX) +
+      (glow?.enabled ? 1.5 * Math.max(0, glow.blur) : 0) +
+      (strokeFx?.enabled ? Math.max(0.5, strokeFx.width) : 0) +
+      vecStrokeHalf +
+      2;
+    const padY =
+      1.5 * Math.max(0, shadow.blur) +
+      Math.abs(shadow.offsetY) +
+      (glow?.enabled ? 1.5 * Math.max(0, glow.blur) : 0) +
+      (strokeFx?.enabled ? Math.max(0.5, strokeFx.width) : 0) +
+      vecStrokeHalf +
+      2;
+    return ck.LTRBRect(box.x - padX, box.y - padY, box.x + box.w + padX, box.y + box.h + padY);
   }
 
   /**
@@ -1723,8 +1769,8 @@ export class Compositor {
    * wrapper no-ops when its effect is absent. Gradient overlay is painted
    * inside `drawLayer` (clipped to the layer's own alpha) and so is not here.
    */
-  private withEffects(ck: CanvasKit, sk: Canvas, layer: Layer, draw: () => void): void {
-    this.withDropShadow(ck, sk, dropShadowOf(layer), () =>
+  private withEffects(ck: CanvasKit, sk: Canvas, page: Page, layer: Layer, draw: () => void): void {
+    this.withDropShadow(ck, sk, page, layer, dropShadowOf(layer), () =>
       this.withOuterGlow(ck, sk, outerGlowOf(layer), () =>
         this.withStrokeEffect(ck, sk, strokeEffectOf(layer), draw),
       ),
@@ -1732,8 +1778,8 @@ export class Compositor {
   }
 
   /** Draw a leaf layer, applying any enabled non-destructive effects. */
-  private drawLayerWithEffects(ck: CanvasKit, sk: Canvas, doc: PressDocument, layer: Layer): void {
-    this.withEffects(ck, sk, layer, () => this.drawLayer(ck, sk, doc, layer));
+  private drawLayerWithEffects(ck: CanvasKit, sk: Canvas, page: Page, doc: PressDocument, layer: Layer): void {
+    this.withEffects(ck, sk, page, layer, () => this.drawLayer(ck, sk, doc, layer));
   }
 
   private applyAdjustment(ck: CanvasKit, sk: Canvas, surf: Surface, layer: AdjustmentLayer): void {

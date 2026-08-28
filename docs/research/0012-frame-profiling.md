@@ -121,10 +121,37 @@ neighbourhood is unchanged.
 **Proof:** `capture.mjs compare before after` on the `shadow30` document — exact raw-RGBA
 SHA-256 of the full page composite, before vs after — plus the full gate suite.
 
-## 5. After-fix results
+## 5. After-fix results (commit `5e06ef1`, same machine/browser, same harness settings)
 
-_(recorded after the fix lands; see §6 for the verdict)_
+Pixel proof (full page, `shadow30`, raw RGBA re-decoded from the composite):
+`capture.mjs compare before after` → both `2480×3508`,
+sha-256 `0fa979a3fc68810c0e8b8801690bf2281220d171023d9aa54546ba0622b4b44c` — **PIXEL-IDENTICAL**.
+
+| scenario | drawMs median before → after | × | frameMs p95 before → after |
+|---|---:|---:|---:|
+| idle/shadow30 | 115 482.4 → **908.9** | **127×** | — |
+| g/shadow30/move | 104 327.2 → 922.3 | 113× | 117 211.9 → 1 216.6 max |
+| g/shadow30/resize | 90 166.4 → 972.5 | 93× | 131 511.5 → 2 416.6 max |
+| g/shadow30/pan | 85 476.1 → 897.8 | 95× | 118 828.6 → 1 116.5 max |
+| g/shadow30/zoom | 91 683.7 → 930.2 | 99× | 95 679.5 → 1 000.0 max |
+| idle/plain30 | 165.8 → 163.8 | 1.0× (unchanged) | — |
+| plain30 gestures | 70.0-140.8 → 61.5-125.9 | ~1× (within run noise) | no regression |
+
+After fix, `shadow30` interaction frame p95 is 1.0-2.4 s vs 95-131 s before — the
+difference between unusable and laggy-but-working under a software rasterizer. Remaining
+headroom (each bounded blur still costs ~25 ms × 30 layers under SwiftShader; a
+GPU/hardware target would be far cheaper) is real but out of scope for this packet's
+one-change budget.
 
 ## 6. Verdict
 
-_(filled at handoff)_
+**FIX SHIPPED** — the measured bottleneck (unbounded shadow `saveLayer`, sprint-critic-01
+P2-1) was real, catastrophic (~700× idle-composite inflation, ~0.01 FPS interaction on a
+30-layer shadowed document), and the minimal bound delivers 93-127× on the affected paths
+with a bit-exact page composite (sha-256 equal before/after) and no regression on
+non-shadow scenarios.
+
+Gates at handoff: `npx tsc --noEmit` clean · `npm run test:unit` green · `npm run build`
+green · repo effects pixel-diff E2E (`tests/effects.spec.mjs`) green on the changed
+compositor. Production delta: `src/engine/compositor.ts` only (shadow `saveLayer` bounds +
+`page` threading to `withEffects`/`withDropShadow`/`drawLayerWithEffects`).

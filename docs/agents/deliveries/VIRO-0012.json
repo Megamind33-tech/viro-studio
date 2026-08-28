@@ -1,0 +1,55 @@
+{
+  "id": "VIRO-0012",
+  "title": "60-FPS interaction profiling harness with one verified bottleneck fix",
+  "priority": "P2",
+  "domain": "canvas-rendering",
+  "state": "ACTIVE",
+  "outcome": "A repeatable, checked-in measurement harness produces real frame-time numbers for common canvas interactions (move, resize, pan, zoom, and a many-layer document with layer effects), identifies the actual bottleneck from data, and delivers at most one minimal, visually-identical compositor fix for a proven bottleneck (candidate: unbounded shadow saveLayer region) — or documents with measurements that no fix is justified yet.",
+  "before": "GOVERNOR.md Performance Budgets require 60 FPS for common interactions, and docs/reviews/sprint-critic-01.md flags (P2) that shadow saveLayer is unbounded, allocating up to a full-page offscreen plus blur per shadowed layer per composite. No repeatable frame-time harness exists in the repository; no baseline numbers exist. Builder must record before-numbers first.",
+  "after": "scripts/perf contains a harness that boots the real editor and reports per-operation frame times; a baseline report is committed; the identified fix (if any) is pixel-identical on fixed captures and improves measured frame time on the targeted operation without regressing others.",
+  "allowed_paths": [
+    "src/engine/compositor.ts",
+    "scripts/perf/**",
+    "docs/research/0012-frame-profiling.md",
+    "docs/agents/deliveries/VIRO-0012.json"
+  ],
+  "depends_on": [],
+  "acceptance": [
+    "Harness runs headlessly from a clean checkout and emits frame-time numbers for at least: drag move, resize, pan, zoom, and a 30-layer document with drop shadows.",
+    "Baseline numbers recorded before any production change and committed in the report.",
+    "Any compositor change is proven pixel-identical on before/after captures of a representative document (canvas screenshot diff) and improves the targeted operation's measured frame time or documents why not.",
+    "No visual change to any rendered output; existing suites stay green.",
+    "npx tsc --noEmit and npm run build pass."
+  ],
+  "evidence": [
+    "Committed baseline frame-time report (docs/research/0012-frame-profiling.md)",
+    "Before/after numbers for the targeted operation",
+    "Pixel-diff proof of identical rendering",
+    "npx tsc --noEmit",
+    "npm run build"
+  ],
+  "builder": {
+    "status": "DONE",
+    "notes": "Harness in scripts/perf (run.mjs 13 scenarios: idle + move/resize/pan/zoom on starter, plain30, shadow30; capture.mjs pixel proof). Baseline committed at f973318 BEFORE any production change. Single compositor fix: withDropShadow saveLayer bounded to layerBounds + spread (3σ shadow blur + |offset| + nested glow/stroke dilation + vector stroke half-width + 2px AA epsilon; null-bounds fallback preserves old behaviour). Pixel-identical: shadow30 page composite raw-RGBA sha-256 equal before/after (0fa979a3fc68810c0e8b8801690bf2281220d171023d9aa54546ba0622b4b44c, 2480x3508). Measured: idle/shadow30 115482.4ms -> 908.9ms median (127x); shadow gesture drawMs p95 95562-131008ms -> 984-1203ms; plain/starter scenarios unchanged within run noise. Gates: npx tsc --noEmit clean; npm run test:unit 316/316; npm run build exit 0; tests/effects.spec.mjs 15/15 (leaf+group shadow/glow/stroke/gradient render checks)."
+  },
+  "verifier": { "status": "PENDING", "notes": "Independent re-run of harness + pixel-diff required." },
+  "critic": { "status": "NOT_APPLICABLE", "notes": "Engine-only; pixel-identical requirement replaces aesthetic review." },
+  "delta": {
+    "before": "No frame-time harness; unbounded shadow saveLayer suspected but unmeasured.",
+    "after": "Checked-in harness, committed baseline, one measured minimal fix (bounded shadow saveLayer) with bit-exact rendering.",
+    "proof": [
+      "docs/research/0012-frame-profiling.md §2 baseline table (commit f973318, pre-fix)",
+      "capture.mjs compare before after: PIXEL-IDENTICAL, sha 0fa979a3fc68810c0e8b8801690bf2281220d171023d9aa54546ba0622b4b44c",
+      "results/after-fix.json vs results/baseline-run.log + results/baseline-zoom.json: shadow paths 93-127x, others within noise",
+      "npx tsc --noEmit exit 0",
+      "npm run test:unit 316/316 pass",
+      "npm run build exit 0",
+      "node tests/effects.spec.mjs 15/15 pass"
+    ],
+    "regression_protection": [
+      "Pixel-diff on representative document before/after compositor change",
+      "Unit + engines suites green"
+    ],
+    "new_debt": "shadow composite still ~5.5x plain30 under software Skia (30 bounded blurs per composite); further silhouette caching is out of this packet's one-change scope"
+  }
+}
