@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 233,
-  "updated_at": "2026-08-28T16:58:15.458Z",
+  "revision": 234,
+  "updated_at": "2026-08-28T16:58:23.286Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -420,11 +420,11 @@
       ],
       "critic_needed": false,
       "stage": "audit",
-      "status": "QUEUED",
-      "assigned_agent": null,
-      "assigned_role": null,
-      "work_branch": null,
-      "heartbeat_at": null,
+      "status": "ACTIVE",
+      "assigned_agent": "zcode-gov-audit-pc1",
+      "assigned_role": "gap-auditor",
+      "work_branch": "agent/viro-0011/zcode-gov-audit-pc1",
+      "heartbeat_at": "2026-08-28T16:58:23.286Z",
       "attempts": 0,
       "evidence": [],
       "last_handoff": null,
@@ -1147,8 +1147,28 @@
       "rejection": null
     }
   },
-  "agents": {},
-  "leases": {},
+  "agents": {
+    "zcode-gov-audit-pc1": {
+      "role": "gap-auditor",
+      "machine": "pc-cloud1",
+      "packet": "VIRO-0011",
+      "heartbeat_at": "2026-08-28T16:58:23.286Z"
+    }
+  },
+  "leases": {
+    "VIRO-0011": {
+      "packet": "VIRO-0011",
+      "scope": [
+        "src/app.ts",
+        "src/library/store.ts",
+        "docs/agents/deliveries/VIRO-0011.json",
+        "tests/recovery-identity-*"
+      ],
+      "acquired_at": "2026-08-28T16:58:23.286Z",
+      "current_agent": "zcode-gov-audit-pc1",
+      "current_stage": "audit"
+    }
+  },
   "events": [
     {
       "at": "2026-08-27T16:16:00.000Z",
@@ -2661,6 +2681,14 @@
       "evidence": [
         "landed via LOCAL merge af7519b (candidate c93b7ac; pdf-font 5/5 + 0145x0005 combination proven); sweep green; critic deferred"
       ]
+    },
+    {
+      "at": "2026-08-28T16:58:23.286Z",
+      "type": "packet.claimed",
+      "packet": "VIRO-0011",
+      "agent": "zcode-gov-audit-pc1",
+      "role": "gap-auditor",
+      "machine": "pc-cloud1"
     }
   ]
 }
