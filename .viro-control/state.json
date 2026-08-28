@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 318,
-  "updated_at": "2026-08-28T19:22:34.466Z",
+  "revision": 319,
+  "updated_at": "2026-08-28T19:23:37.175Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -1277,8 +1277,8 @@
       "scope": [
         "src/engine/type.ts",
         "src/document/text-model.ts",
-        "docs/agents/deliveries/VIRO-0143.json",
-        "tests/text-frame-*"
+        "tests/text-frame-*",
+        "docs/agents/deliveries/VIRO-0143.json"
       ],
       "dependencies": [
         "VIRO-0142"
@@ -1441,11 +1441,6 @@
     }
   },
   "events": [
-    {
-      "at": "2026-08-27T22:08:16.070Z",
-      "type": "packet.reconciled_from_manifest",
-      "packet": "VIRO-0002"
-    },
     {
       "at": "2026-08-27T22:08:31.870Z",
       "type": "agent.heartbeat",
@@ -3425,6 +3420,11 @@
     },
     {
       "at": "2026-08-28T19:22:34.466Z",
+      "type": "packet.reconciled_from_manifest",
+      "packet": "VIRO-0002"
+    },
+    {
+      "at": "2026-08-28T19:23:37.175Z",
       "type": "packet.reconciled_from_manifest",
       "packet": "VIRO-0002"
     }
