@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 346,
-  "updated_at": "2026-08-28T20:02:34.253Z",
+  "revision": 347,
+  "updated_at": "2026-08-28T20:02:56.410Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -841,7 +841,7 @@
       "assigned_agent": "zcode-verify-pc11",
       "assigned_role": "verifier",
       "work_branch": "agent/viro-0015/zcode-gov-audit-pc1",
-      "heartbeat_at": "2026-08-28T19:48:02.335Z",
+      "heartbeat_at": "2026-08-28T20:02:56.410Z",
       "attempts": 0,
       "evidence": [
         {
@@ -1514,7 +1514,7 @@
       "role": "verifier",
       "machine": "pc-cloud1",
       "packet": "VIRO-0015",
-      "heartbeat_at": "2026-08-28T19:48:02.335Z"
+      "heartbeat_at": "2026-08-28T20:02:56.410Z"
     },
     "zcode-verify-pc10b": {
       "role": "verifier",
@@ -1546,7 +1546,7 @@
       "acquired_at": "2026-08-28T16:58:52.208Z",
       "current_agent": "zcode-verify-pc11",
       "current_stage": "verify",
-      "heartbeat_at": "2026-08-28T19:48:02.335Z"
+      "heartbeat_at": "2026-08-28T20:02:56.410Z"
     },
     "VIRO-0141": {
       "packet": "VIRO-0141",
@@ -1604,14 +1604,6 @@
     }
   },
   "events": [
-    {
-      "at": "2026-08-28T04:48:30.795Z",
-      "type": "packet.claimed",
-      "packet": "VIRO-0012",
-      "agent": "zcode-perf-pc1",
-      "role": "builder",
-      "machine": "pc-cloud1"
-    },
     {
       "at": "2026-08-28T04:48:43.172Z",
       "type": "agent.heartbeat",
@@ -3627,6 +3619,14 @@
       "evidence": [
         "landed via LOCAL merge 5ce3085 (candidate e4cf097; verifier PASS 23/23 + both-direction live compat + duplicate-refusal zero-mutation); primary repo now runs the hardened control plane live - claim/heartbeat/check re-verified post-merge"
       ]
+    },
+    {
+      "at": "2026-08-28T20:02:56.410Z",
+      "type": "agent.heartbeat",
+      "agent": "zcode-verify-pc11",
+      "packet": "VIRO-0015",
+      "session": null,
+      "machine": "pc-cloud1"
     }
   ]
 }
