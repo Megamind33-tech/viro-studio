@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 303,
-  "updated_at": "2026-08-28T19:10:41.361Z",
+  "revision": 304,
+  "updated_at": "2026-08-28T19:11:08.817Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -702,8 +702,8 @@
         "VIRO-0013"
       ],
       "critic_needed": false,
-      "stage": "release",
-      "status": "RELEASE",
+      "stage": "done",
+      "status": "RECONCILED",
       "assigned_agent": null,
       "assigned_role": null,
       "work_branch": "agent/viro-0014/zcode-gov-audit-pc1",
@@ -787,18 +787,21 @@
           "by": "zcode-release-pc1",
           "item": "content ALSO merged to LOCAL main under owner order (supersedes PR after push)",
           "at": "2026-08-28T19:10:41.313Z"
+        },
+        {
+          "stage": "reconcile",
+          "by": "governor",
+          "item": "landed via LOCAL merge under owner order 2026-08-28 (candidate ac2df9f, verifier PASS 20/20 hostile probes); release approval recorded on PR #22; remote push deferred by owner",
+          "at": "2026-08-28T19:11:08.814Z"
         }
       ],
       "last_handoff": {
-        "from": "release",
-        "to": "merge-gate",
-        "by": "zcode-release-pc1",
-        "at": "2026-08-28T19:10:41.313Z",
+        "from": "historical",
+        "to": "done",
+        "by": "governor",
+        "at": "2026-08-28T19:11:08.814Z",
         "evidence": [
-          "PR #22 binds approval to head SHA ac2df9f844955a5519b29c85505a704c47e8f83c",
-          "independent verifier zcode-verify-pc8: scope clean, 20/20 hostile probes, persistence-after-decode proven, gates green",
-          "critic NOT_APPLICABLE per manifest: engine validation hardening",
-          "content ALSO merged to LOCAL main under owner order (supersedes PR after push)"
+          "landed via LOCAL merge under owner order 2026-08-28 (candidate ac2df9f, verifier PASS 20/20 hostile probes); release approval recorded on PR #22; remote push deferred by owner"
         ]
       },
       "rejection": null,
@@ -1462,19 +1465,6 @@
       "current_stage": "build",
       "heartbeat_at": "2026-08-28T17:54:36.500Z"
     },
-    "VIRO-0014": {
-      "packet": "VIRO-0014",
-      "scope": [
-        "src/import/**",
-        "src/engine/font-registry.ts",
-        "src/engine/sniff.ts",
-        "docs/agents/deliveries/VIRO-0014.json",
-        "tests/import-sanitize-*"
-      ],
-      "acquired_at": "2026-08-28T16:58:36.785Z",
-      "current_agent": null,
-      "current_stage": "release"
-    },
     "VIRO-0015": {
       "packet": "VIRO-0015",
       "scope": [
@@ -1545,13 +1535,6 @@
     }
   },
   "events": [
-    {
-      "at": "2026-08-27T16:47:19.204Z",
-      "type": "packet.blocked",
-      "packet": "VIRO-0002",
-      "by": "claude-audit-cloud1",
-      "reason": "Gap audit found the before-state stale and requested Governor reconciliation instead of Builder deployment."
-    },
     {
       "at": "2026-08-27T16:55:00.000Z",
       "type": "packet.reconciled",
@@ -3520,6 +3503,15 @@
       "by": "zcode-release-pc1",
       "pr": 22,
       "head_sha": "ac2df9f844955a5519b29c85505a704c47e8f83c"
+    },
+    {
+      "at": "2026-08-28T19:11:08.817Z",
+      "type": "packet.reconciled",
+      "packet": "VIRO-0014",
+      "by": "governor",
+      "evidence": [
+        "landed via LOCAL merge under owner order 2026-08-28 (candidate ac2df9f, verifier PASS 20/20 hostile probes); release approval recorded on PR #22; remote push deferred by owner"
+      ]
     }
   ]
 }
