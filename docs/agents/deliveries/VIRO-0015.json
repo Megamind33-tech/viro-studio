@@ -25,16 +25,33 @@
     "npx tsc --noEmit",
     "npm run build"
   ],
-  "builder": { "status": "PENDING", "notes": "Gated on VIRO-0005 DONE." },
+  "builder": {
+    "status": "PENDING",
+    "notes": "Built on branch agent/viro-0015/zcode-gov-audit-pc1 from base 72b05f0 (VIRO-0005 + VIRO-0145 already merged in). Corpus lands as tests/export-corpus-{docs,verify,png}.mjs + export-corpus.test.mjs + export-corpus-png.json. The two compound cases banked DEFERRED-UNTIL-REBASE were ACTIVATED against the merged exporter and their post-rebase expectations held (subtract ring and disjoint union both emit m:2 h:2 f*:1 with fill 0; no exporter defect found). Two further cases added for acceptance coverage: compound-stroke-only (S + w, no fill ops) and compound-fill-stroke (B*). EFFECTS FIDELITY DECISION (recorded at claim): the exporter ignores layer.effects entirely and records no note; the corpus PINS this current behaviour — the effects case's PDF report and operator census are pinned IDENTICAL to an unshadowed control, while the PNG arm pins a DIFFERENT compositor fingerprint, proving the canvas draws the shadow the PDF drops. Canvas/PDF parity gap + missing report note are exporter findings reported under this packet, not fixed here (QA-corpus packet, per packet rules). The PNG arm runs the real compositor through a playwright harness (tests/export-corpus-png.mjs, ensureServer + SwiftShader launch args); fingerprints are decoded-IDAT SHA-256 pinned in tests/export-corpus-png.json; regenerate deliberately with CORPUS_PIN=1. Verification command (single): node --experimental-strip-types --import ./tests/ts-register.mjs --test tests/export-corpus.test.mjs. Note: tests/export-corpus-ck.mjs (banked CanvasKit bootstrap draft) is superseded by the runner's inline bootstrap and intentionally left uncommitted. Verdict is the verifier's to give.",
+    "proof": [
+      "corpus suite: 13/13 (9 corpus documents; manifest guard, 9 pdf-arm report+topology tests, effects-vs-control parity pin, png fingerprint arm, vacuity self-check)",
+      "vacuity (comparator level): mutationSelfChecks rejects content-hash, topology-expectation and png-pixel-hash mutations; the runner fails the suite unless all three are caught",
+      "vacuity (end to end): one corrupted PNG pin digit in tests/export-corpus-png.json made the png arm FAIL (pass 12 / fail 1), then restored — the verification command really bites on pixel divergence",
+      "determinism: pins reproduced across two independent full runs (identical sha256 per case); effects fingerprint e0c53aa2... != control 8512f183... (canvas draws the shadow)",
+      "every corpus row pins ALL seven PdfExportReport fields (assertReportCoverage enforces pagePt, vectorPaths, textRuns, glyphs, images, rasterFallbacks, notes per case)",
+      "npx tsc --noEmit -> exit 0",
+      "npm run test:unit -> tests 316, pass 316, fail 0 (baseline unchanged)",
+      "prior packet suites re-run untouched: tests/pdf-compound.test.mjs 5/5 + tests/pdf-font-embed.test.mjs 5/5 (10/10)",
+      "npm run build -> exit 0 (full dist/ emitted, 47M)"
+    ]
+  },
   "verifier": { "status": "PENDING", "notes": "Independent verification required." },
   "critic": { "status": "NOT_APPLICABLE", "notes": "Test/QA corpus; no product behavior change intended." },
   "delta": {
     "before": "Point tests for compound export; no standing corpus or report-field coverage.",
     "after": "Versioned corpus with artifact-level verification commands and full report-field assertions.",
-    "proof": [],
+    "proof": [
+      "tests/export-corpus.test.mjs 13/13 via node --test (pdf operator topology, all-field report assertions, PNG decoded-IDAT sha256 pins through the playwright/compositor harness, vacuity self-check)",
+      "deliberate corruption of one committed PNG pin fails the suite (recorded), and mutationSelfChecks rejects hash/topology/pixel mutations at comparator level"
+    ],
     "regression_protection": [
       "tests/pdf-compound.* remain green and are folded into the corpus"
     ],
-    "new_debt": "none yet"
+    "new_debt": "Exporter findings reported, not fixed (QA-corpus packet): (1) layer.effects are dropped in PDF export with no report note (pinned via effects-vs-control parity); (2) tests/export-corpus-ck.mjs banked draft superseded, left uncommitted; (3) one observed chromium launch crash under heavy concurrent browser load (same flake class playwright.config retries cover) — a plain re-run passed."
   }
 }
