@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 203,
-  "updated_at": "2026-08-28T11:39:29.903Z",
+  "revision": 204,
+  "updated_at": "2026-08-28T11:39:42.942Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -1034,12 +1034,12 @@
       ],
       "dependencies": [],
       "critic_needed": true,
-      "stage": "build",
-      "status": "ACTIVE",
-      "assigned_agent": "zcode-pdffont-pc1",
-      "assigned_role": "builder",
+      "stage": "verify",
+      "status": "QUEUED",
+      "assigned_agent": null,
+      "assigned_role": null,
       "work_branch": "agent/viro-0145/zcode-gov-audit-pc1",
-      "heartbeat_at": "2026-08-28T11:37:15.646Z",
+      "heartbeat_at": null,
       "attempts": 0,
       "evidence": [
         {
@@ -1047,15 +1047,56 @@
           "by": "zcode-gov-audit-pc1",
           "item": "gap-audit before-state confirmed on main by Governor audit pass 2026-08-28; manifest before/after validated; no duplicate implementation; evidence basis in docs/agents/deliveries/VIRO-0145.json",
           "at": "2026-08-28T10:23:23.650Z"
+        },
+        {
+          "stage": "build",
+          "by": "zcode-pdffont-pc1",
+          "item": "candidate c93b7ac (fix a79daee) on agent/viro-0145/zcode-gov-audit-pc1: faceFor() embeds subset:false; FontFile2 byte-identical to source TTF",
+          "at": "2026-08-28T11:39:42.938Z"
+        },
+        {
+          "stage": "build",
+          "by": "zcode-pdffont-pc1",
+          "item": "root cause: pdf-lib vendored fontkit TTFSubset emits glyf 1313B vs loca end 1312, outlines of glyphs 4+12 throw in fontkit; full-embed chosen per acceptance 3, size +1.2MB/face documented in manifest",
+          "at": "2026-08-28T11:39:42.942Z"
+        },
+        {
+          "stage": "build",
+          "by": "zcode-pdffont-pc1",
+          "item": "tests/pdf-font-embed.test.mjs 5/5 (seam defect, full-face parse, per-glyph outline coverage, ToUnicode round-trip incl word space, truthful report)",
+          "at": "2026-08-28T11:39:42.942Z"
+        },
+        {
+          "stage": "build",
+          "by": "zcode-pdffont-pc1",
+          "item": "gates: tsc clean; npm run test:unit 316/316 unchanged; npm run build exit 0",
+          "at": "2026-08-28T11:39:42.942Z"
+        },
+        {
+          "stage": "build",
+          "by": "zcode-pdffont-pc1",
+          "item": "pdf.js 4.10.38 cross-check (scratch, outside repo): getTextContent exactly 'VIRO typographic', operatorList OK, no font warnings; pixel render 4123 dark px vs 1618 corrupt before-state",
+          "at": "2026-08-28T11:39:42.942Z"
+        },
+        {
+          "stage": "build",
+          "by": "zcode-pdffont-pc1",
+          "item": "compound suite deferred to integration rebase onto VIRO-0005 (test absent at base 14e2812, per coordinator 2026-08-28); test:chrome deferred to independent verification per speed protocol; EmbeddedFace parameter-property rewrite noted for VIRO-0005 rebase",
+          "at": "2026-08-28T11:39:42.942Z"
         }
       ],
       "last_handoff": {
-        "from": "audit",
-        "to": "build",
-        "by": "zcode-gov-audit-pc1",
-        "at": "2026-08-28T10:23:23.695Z",
+        "from": "build",
+        "to": "verify",
+        "by": "zcode-pdffont-pc1",
+        "at": "2026-08-28T11:39:42.942Z",
         "evidence": [
-          "gap-audit before-state confirmed on main by Governor audit pass 2026-08-28; manifest before/after validated; no duplicate implementation; evidence basis in docs/agents/deliveries/VIRO-0145.json"
+          "candidate c93b7ac (fix a79daee) on agent/viro-0145/zcode-gov-audit-pc1: faceFor() embeds subset:false; FontFile2 byte-identical to source TTF",
+          "root cause: pdf-lib vendored fontkit TTFSubset emits glyf 1313B vs loca end 1312, outlines of glyphs 4+12 throw in fontkit; full-embed chosen per acceptance 3, size +1.2MB/face documented in manifest",
+          "tests/pdf-font-embed.test.mjs 5/5 (seam defect, full-face parse, per-glyph outline coverage, ToUnicode round-trip incl word space, truthful report)",
+          "gates: tsc clean; npm run test:unit 316/316 unchanged; npm run build exit 0",
+          "pdf.js 4.10.38 cross-check (scratch, outside repo): getTextContent exactly 'VIRO typographic', operatorList OK, no font warnings; pixel render 4123 dark px vs 1618 corrupt before-state",
+          "compound suite deferred to integration rebase onto VIRO-0005 (test absent at base 14e2812, per coordinator 2026-08-28); test:chrome deferred to independent verification per speed protocol; EmbeddedFace parameter-property rewrite noted for VIRO-0005 rebase"
         ]
       },
       "rejection": null
@@ -1073,12 +1114,6 @@
       "machine": "pc-cloud1",
       "packet": "VIRO-0142",
       "heartbeat_at": "2026-08-28T11:28:58.203Z"
-    },
-    "zcode-pdffont-pc1": {
-      "role": "builder",
-      "machine": "pc-cloud1",
-      "packet": "VIRO-0145",
-      "heartbeat_at": "2026-08-28T11:37:15.646Z"
     },
     "zcode-verify-pc4": {
       "role": "verifier",
@@ -1174,8 +1209,8 @@
         "tests/pdf-font-*"
       ],
       "acquired_at": "2026-08-28T10:23:05.364Z",
-      "current_agent": "zcode-pdffont-pc1",
-      "current_stage": "build",
+      "current_agent": null,
+      "current_stage": "verify",
       "heartbeat_at": "2026-08-28T11:37:15.646Z"
     },
     "VIRO-0010": {
@@ -2486,6 +2521,14 @@
       "type": "agent.heartbeat",
       "agent": "zcode-verify-pc6",
       "packet": "VIRO-0140"
+    },
+    {
+      "at": "2026-08-28T11:39:42.942Z",
+      "type": "packet.advanced",
+      "packet": "VIRO-0145",
+      "from": "build",
+      "to": "verify",
+      "by": "zcode-pdffont-pc1"
     }
   ]
 }
