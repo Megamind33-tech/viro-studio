@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 226,
-  "updated_at": "2026-08-28T16:57:32.688Z",
+  "revision": 227,
+  "updated_at": "2026-08-28T16:57:39.293Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -446,8 +446,8 @@
       ],
       "dependencies": [],
       "critic_needed": false,
-      "stage": "release",
-      "status": "BLOCKED",
+      "stage": "done",
+      "status": "RECONCILED",
       "assigned_agent": null,
       "assigned_role": null,
       "work_branch": "agent/viro-0012/zcode-gov-audit-pc1",
@@ -549,27 +549,24 @@
           "by": "zcode-release-pc1",
           "item": "critic NOT_APPLICABLE per manifest: engine-only, pixel-identical",
           "at": "2026-08-28T10:02:12.068Z"
+        },
+        {
+          "stage": "reconcile",
+          "by": "governor",
+          "item": "landed via LOCAL merge 8406c56 (candidate f5baa1a, ~111x shadow speedup pixel-identical, verifier PASS); sweep green",
+          "at": "2026-08-28T16:57:39.292Z"
         }
       ],
       "last_handoff": {
-        "from": "release",
-        "to": "merge-gate",
-        "by": "zcode-release-pc1",
-        "at": "2026-08-28T10:02:12.068Z",
+        "from": "historical",
+        "to": "done",
+        "by": "governor",
+        "at": "2026-08-28T16:57:39.292Z",
         "evidence": [
-          "PR #20 binds approval to head SHA f5baa1a6c85b9957aef17742674b3ffd31b9b564",
-          "independent verifier zcode-verify-pc3: scope audit clean (15 files all in lease), tsc 0, unit 316/316, chrome 5/5, build 0, effects 15/15",
-          "pixel-identity independently reproofed from scratch: base vs candidate page composites identical sha256 0fa979a3fc68810c0e8b8801690bf2281220d171023d9aa54546ba0622b4b44c",
-          "measurement reproduced: shadow30 idle ~111x, zoom ~104x vs base 14e2812",
-          "critic NOT_APPLICABLE per manifest: engine-only, pixel-identical"
+          "landed via LOCAL merge 8406c56 (candidate f5baa1a, ~111x shadow speedup pixel-identical, verifier PASS); sweep green"
         ]
       },
-      "rejection": {
-        "by": "governor",
-        "stage": "release",
-        "reason": "OWNER ORDER 2026-08-28: content merged to LOCAL main (merge commit 8406c56, candidate f5baa1a). PR #20 superseded after push - close it, do not sweep-merge. Independent verifier PASS preserved.",
-        "at": "2026-08-28T16:18:47.984Z"
-      },
+      "rejection": null,
       "release_approval": {
         "status": "APPROVED",
         "by": "zcode-release-pc1",
@@ -2614,6 +2611,15 @@
       "by": "governor",
       "evidence": [
         "content landed on main via owner-ordered LOCAL merge e8d1e2e (candidate 4d2576c, builder+verifier+critic PASS); full sweep green on merged main (tsc 0, unit 316/316, chrome 16/16, slices 13/13, build 0); remote push deferred by owner"
+      ]
+    },
+    {
+      "at": "2026-08-28T16:57:39.293Z",
+      "type": "packet.reconciled",
+      "packet": "VIRO-0012",
+      "by": "governor",
+      "evidence": [
+        "landed via LOCAL merge 8406c56 (candidate f5baa1a, ~111x shadow speedup pixel-identical, verifier PASS); sweep green"
       ]
     }
   ]
