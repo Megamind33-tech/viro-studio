@@ -17,12 +17,13 @@
  * there, which is why `stats().snapshotEntries` should be read as "document
  * replacements", not as migration debt.
  */
-import type { Align, BlendMode, CharacterStyle, ImageFit, ParagraphStyle, PressDocument, ResampleAlgo, Rgba, StrokeCap, StrokeJoin, VectorLayer } from "./types";
+import type { Align, BlendMode, CharacterStyle, Contour, ImageFit, ParagraphStyle, PressDocument, ResampleAlgo, Rgba, StrokeCap, StrokeJoin, VectorLayer } from "./types";
 import { SKIA_BLEND } from "./types";
 import { applyCharacterRange, applyParagraphRange, assertTextRange, replaceStoryRange, type TextAffinity } from "./text-model";
 import { CommandError, deriveInverse, registerCommand, v, type CommandDef } from "./commands";
 import {
   booleanCombineVectors,
+  layerContours,
   requireBooleanEngine,
   type BooleanOp,
 } from "./boolean-ops";
@@ -34,6 +35,7 @@ import {
   addVectorRect,
   applyImageSize,
   cloneDoc,
+  MAX_CONTOUR_NODES,
   MAX_DASH_INTERVALS,
   findLayer,
   selectedLayers,
@@ -46,13 +48,17 @@ import {
   appendPathNode,
   applyFill,
   closePath,
+  deleteContourNode,
   deleteSelected,
   duplicateSelected,
   groupSelected,
+  insertContourNode,
   mergeStroke,
+  moveContourNode,
   reorderLayer,
   replaceAssetData,
   setCharacter,
+  setContourClosed,
   setLayerBlend,
   setLayerLocked,
   setLayerOpacity,
@@ -192,6 +198,49 @@ const layerOnly = (type: string, opts: { kind?: string; unlocked?: boolean } = {
   v.requireLayer(doc, layerId, type, opts);
   return { layerId };
 };
+
+/** A required integer parameter, bounded below (indices are 0-based). */
+function intIndex(o: Record<string, unknown>, key: string, type: string, min = 0): number {
+  const n = o[key];
+  if (typeof n !== "number" || !Number.isInteger(n)) {
+    throw new CommandError(`${type}: "${key}" must be an integer, got ${JSON.stringify(n)}`);
+  }
+  if (n < min) throw new CommandError(`${type}: "${key}" must be >= ${min}, got ${n}`);
+  return n;
+}
+
+/**
+ * Contour addressing shared by the path.* node commands:
+ * `{layerId, contourIndex}` into the AUTHORITATIVE contour list. The contour is
+ * resolved with boolean-ops `layerContours` — the SAME precedence the
+ * compositor draws — so index 0 on a legacy vector is its single
+ * `{nodes, closed}` contour and index i on a boolean result is `contours[i]`.
+ * Every failure throws a named CommandError BEFORE anything is applied, so a
+ * rejected command never lands in history.
+ */
+function contourTarget(doc: PressDocument, type: string, raw: unknown) {
+  const o = v.obj(raw, type);
+  const layerId = v.str(o, "layerId", type);
+  const layer = v.requireLayer(doc, layerId, type, { kind: "vector", unlocked: true }) as VectorLayer;
+  const contours = layerContours(layer);
+  const contourIndex = intIndex(o, "contourIndex", type);
+  const contour = contours[contourIndex];
+  if (!contour) {
+    throw new CommandError(
+      `${type}: "contourIndex" ${contourIndex} is out of range — layer "${layer.name}" has ${contours.length} contour(s)`,
+    );
+  }
+  return { o, layer, layerId, contour, contourIndex };
+}
+
+/** The addressed node must exist; the error names the offending parameter. */
+function requireNode(contour: Contour, index: number, key: string, type: string): void {
+  if (!contour.nodes[index]) {
+    throw new CommandError(
+      `${type}: "${key}" ${index} is out of range — the addressed contour has ${contour.nodes.length} node(s)`,
+    );
+  }
+}
 
 function typeStory(doc: PressDocument, layerId: string, type: string) {
   const layer = v.requireLayer(doc, layerId, type, { kind: "type-frame", unlocked: true });
@@ -421,7 +470,16 @@ const DEFS: CommandDef<never>[] = [
     validate: (raw, doc) => {
       const o = v.obj(raw, "path.appendNode");
       const layerId = v.str(o, "layerId", "path.appendNode");
-      v.requireLayer(doc, layerId, "path.appendNode", { kind: "vector", unlocked: true });
+      const layer = v.requireLayer(doc, layerId, "path.appendNode", { kind: "vector", unlocked: true }) as VectorLayer;
+      // CORRUPTION GUARD: on a boolean result the legacy `nodes` list is empty
+      // and inert — appending there rewrites the transform from nothing
+      // (Infinity bounds) while the renderer keeps drawing the contours. Route
+      // the caller to the contour-addressed command instead.
+      if (layer.contours && layer.contours.length) {
+        throw new CommandError(
+          `path.appendNode: layer "${layer.name}" is contours-authoritative (a boolean result) — use path.insertNode with {layerId, contourIndex, afterNodeIndex, node}; appending to its inert legacy nodes would corrupt the layer`,
+        );
+      }
       return { layerId, x: reqNum(o, "x", "path.appendNode"), y: reqNum(o, "y", "path.appendNode") };
     },
     apply: (p, doc) => appendPathNode(doc, p.layerId, p.x, p.y),
@@ -431,6 +489,110 @@ const DEFS: CommandDef<never>[] = [
     label: "Close path",
     validate: layerOnly("path.close", { kind: "vector", unlocked: true }),
     apply: (p, doc) => closePath(doc, p.layerId),
+  }),
+  define({
+    type: "path.moveNode",
+    label: "Move node",
+    validate: (raw, doc) => {
+      const { o, layerId, contour, contourIndex } = contourTarget(doc, "path.moveNode", raw);
+      const nodeIndex = intIndex(o, "nodeIndex", "path.moveNode");
+      requireNode(contour, nodeIndex, "nodeIndex", "path.moveNode");
+      return {
+        layerId,
+        contourIndex,
+        nodeIndex,
+        x: reqNum(o, "x", "path.moveNode"),
+        y: reqNum(o, "y", "path.moveNode"),
+      };
+    },
+    // The anchor moves to (x, y); its handles translate by the same delta (the
+    // op owns that), so a drag carries the segment tangents along. The inverse
+    // is derived: patch.ts carries the prior layer record wholesale, so undo is
+    // byte-exact no matter how much geometry one node moves.
+    apply: (p, doc) => moveContourNode(doc, p.layerId, p.contourIndex, p.nodeIndex, p.x, p.y),
+  }),
+  define({
+    type: "path.insertNode",
+    label: "Insert node",
+    validate: (raw, doc) => {
+      const { o, layerId, contour, contourIndex } = contourTarget(doc, "path.insertNode", raw);
+      // 0..n-1 splices between existing nodes on any contour; n appends, which
+      // is only meaningful on a CLOSED contour — the new node becomes the tail
+      // of the closing segment. An open contour has no segment past its end.
+      const afterNodeIndex = intIndex(o, "afterNodeIndex", "path.insertNode");
+      const max = contour.closed ? contour.nodes.length : contour.nodes.length - 1;
+      if (afterNodeIndex > max) {
+        throw new CommandError(
+          `path.insertNode: "afterNodeIndex" ${afterNodeIndex} is out of range — a ${contour.closed ? "closed" : "open"} contour of ${contour.nodes.length} node(s) accepts 0..${max}`,
+        );
+      }
+      if (contour.nodes.length >= MAX_CONTOUR_NODES) {
+        throw new CommandError(`path.insertNode: the addressed contour already carries the maximum ${MAX_CONTOUR_NODES} nodes`);
+      }
+      if (!o.node || typeof o.node !== "object" || Array.isArray(o.node)) {
+        throw new CommandError(`path.insertNode: "node" is required as {x, y, inX, inY, outX, outY} in layer-local coordinates`);
+      }
+      const n = o.node as Record<string, unknown>;
+      return {
+        layerId,
+        contourIndex,
+        afterNodeIndex,
+        node: {
+          x: reqNum(n, "x", "path.insertNode"),
+          y: reqNum(n, "y", "path.insertNode"),
+          inX: reqNum(n, "inX", "path.insertNode"),
+          inY: reqNum(n, "inY", "path.insertNode"),
+          outX: reqNum(n, "outX", "path.insertNode"),
+          outY: reqNum(n, "outY", "path.insertNode"),
+        },
+      };
+    },
+    apply: (p, doc) => insertContourNode(doc, p.layerId, p.contourIndex, p.afterNodeIndex, p.node),
+  }),
+  define({
+    type: "path.deleteNode",
+    label: "Delete node",
+    validate: (raw, doc) => {
+      const { o, layerId, contour, contourIndex } = contourTarget(doc, "path.deleteNode", raw);
+      const nodeIndex = intIndex(o, "nodeIndex", "path.deleteNode");
+      requireNode(contour, nodeIndex, "nodeIndex", "path.deleteNode");
+      // Mirror validateContours: a contour below 2 nodes draws nothing, so
+      // deleting into that state must be refused, not silently corrupt.
+      if (contour.nodes.length <= 2) {
+        throw new CommandError(
+          `path.deleteNode: a contour needs at least 2 nodes and this one has ${contour.nodes.length} — reshape it or delete the whole contour instead`,
+        );
+      }
+      return { layerId, contourIndex, nodeIndex };
+    },
+    apply: (p, doc) => deleteContourNode(doc, p.layerId, p.contourIndex, p.nodeIndex),
+  }),
+  define({
+    type: "path.closeContour",
+    label: (p: { layerId: string; contourIndex: number; closed: boolean }) => (p.closed ? "Close contour" : "Open contour"),
+    validate: (raw, doc) => {
+      const { o, layer, layerId, contour, contourIndex } = contourTarget(doc, "path.closeContour", raw);
+      if (typeof o.closed !== "boolean") {
+        throw new CommandError(`path.closeContour: "closed" must be true or false`);
+      }
+      // Do not mint what validateDocument would reject: a fill is drawn only
+      // when some contour is closed, so opening the LAST closed contour of a
+      // filled layer is refused until the fill goes too.
+      if (!o.closed && layer.fill) {
+        const otherClosed = layer.contours && layer.contours.length
+          ? layer.contours.some((c, i) => i !== contourIndex && c.closed)
+          : false;
+        if (!otherClosed) {
+          throw new CommandError(
+            `path.closeContour: opening contour ${contourIndex} would leave layer "${layer.name}" filled with no closed contour the compositor will draw — clear the fill first`,
+          );
+        }
+      }
+      return { layerId, contourIndex, closed: o.closed };
+    },
+    // Index 0 on a legacy vector edits layer.closed — the contour-addressed
+    // generalisation of path.close, which stays for compatibility.
+    apply: (p, doc) => setContourClosed(doc, p.layerId, p.contourIndex, p.closed),
   }),
   define({
     type: "type.addFrame",
