@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 113,
-  "updated_at": "2026-08-28T09:20:06.992Z",
+  "revision": 114,
+  "updated_at": "2026-08-28T09:20:25.767Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -68,11 +68,11 @@
       ],
       "critic_needed": true,
       "stage": "critic",
-      "status": "QUEUED",
-      "assigned_agent": null,
-      "assigned_role": null,
+      "status": "CRITIC",
+      "assigned_agent": "zcode-critic-pc1",
+      "assigned_role": "critic",
       "work_branch": "agent/viro-0005/claude-audit-cloud1",
-      "heartbeat_at": null,
+      "heartbeat_at": "2026-08-28T09:20:25.767Z",
       "attempts": 0,
       "evidence": [
         {
@@ -626,7 +626,14 @@
       "rejection": null
     }
   },
-  "agents": {},
+  "agents": {
+    "zcode-critic-pc1": {
+      "role": "critic",
+      "machine": "pc-cloud1",
+      "packet": "VIRO-0005",
+      "heartbeat_at": "2026-08-28T09:20:25.767Z"
+    }
+  },
   "leases": {
     "VIRO-0005": {
       "packet": "VIRO-0005",
@@ -636,9 +643,8 @@
         "docs/agents/deliveries/VIRO-0005.json"
       ],
       "acquired_at": "2026-08-28T06:42:55.349Z",
-      "current_agent": null,
-      "current_stage": "critic",
-      "heartbeat_at": "2026-08-28T09:17:52.096Z"
+      "current_agent": "zcode-critic-pc1",
+      "current_stage": "critic"
     },
     "VIRO-0012": {
       "packet": "VIRO-0012",
@@ -1325,6 +1331,14 @@
       "at": "2026-08-28T09:20:06.992Z",
       "type": "packet.reconciled_from_manifest",
       "packet": "VIRO-0002"
+    },
+    {
+      "at": "2026-08-28T09:20:25.767Z",
+      "type": "packet.claimed",
+      "packet": "VIRO-0005",
+      "agent": "zcode-critic-pc1",
+      "role": "critic",
+      "machine": "pc-cloud1"
     }
   ]
 }
