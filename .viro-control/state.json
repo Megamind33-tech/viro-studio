@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 217,
-  "updated_at": "2026-08-28T16:18:47.986Z",
+  "revision": 218,
+  "updated_at": "2026-08-28T16:18:55.208Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -281,7 +281,7 @@
       "dependencies": [],
       "critic_needed": false,
       "stage": "release",
-      "status": "RELEASE",
+      "status": "BLOCKED",
       "assigned_agent": null,
       "assigned_role": null,
       "work_branch": "agent/viro-0010/zcode-gov-audit-pc1",
@@ -385,7 +385,12 @@
           "critic NOT_APPLICABLE per manifest: engine-only persistence, no aesthetic surface"
         ]
       },
-      "rejection": null,
+      "rejection": {
+        "by": "governor",
+        "stage": "release",
+        "reason": "OWNER ORDER 2026-08-28: content merged to LOCAL main (merge commit 363c133, candidate 00f6341). PR #21 superseded after push - close it, do not sweep-merge. Independent verifier PASS preserved.",
+        "at": "2026-08-28T16:18:55.207Z"
+      },
       "release_approval": {
         "status": "APPROVED",
         "by": "zcode-release-pc1",
@@ -1235,18 +1240,6 @@
       "current_agent": "zcode-verify-pc7",
       "current_stage": "verify",
       "heartbeat_at": "2026-08-28T11:50:37.732Z"
-    },
-    "VIRO-0010": {
-      "packet": "VIRO-0010",
-      "scope": [
-        "src/app.ts",
-        "src/library/store.ts",
-        "docs/agents/deliveries/VIRO-0010.json",
-        "tests/autosave-*"
-      ],
-      "acquired_at": "2026-08-28T10:25:01.213Z",
-      "current_agent": null,
-      "current_stage": "release"
     },
     "VIRO-0019": {
       "packet": "VIRO-0019",
@@ -2645,6 +2638,13 @@
       "packet": "VIRO-0012",
       "by": "governor",
       "reason": "OWNER ORDER 2026-08-28: content merged to LOCAL main (merge commit 8406c56, candidate f5baa1a). PR #20 superseded after push - close it, do not sweep-merge. Independent verifier PASS preserved."
+    },
+    {
+      "at": "2026-08-28T16:18:55.208Z",
+      "type": "packet.blocked",
+      "packet": "VIRO-0010",
+      "by": "governor",
+      "reason": "OWNER ORDER 2026-08-28: content merged to LOCAL main (merge commit 363c133, candidate 00f6341). PR #21 superseded after push - close it, do not sweep-merge. Independent verifier PASS preserved."
     }
   ]
 }
