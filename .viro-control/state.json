@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 339,
-  "updated_at": "2026-08-28T19:48:02.335Z",
+  "revision": 340,
+  "updated_at": "2026-08-28T19:50:02.883Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -1322,12 +1322,12 @@
         "VIRO-0142"
       ],
       "critic_needed": true,
-      "stage": "build",
-      "status": "ACTIVE",
-      "assigned_agent": "zcode-textframe-pc2",
-      "assigned_role": "builder",
+      "stage": "verify",
+      "status": "QUEUED",
+      "assigned_agent": null,
+      "assigned_role": null,
       "work_branch": "agent/viro-0143/zcode-gov-audit-pc1",
-      "heartbeat_at": "2026-08-28T19:39:19.193Z",
+      "heartbeat_at": null,
       "attempts": 0,
       "evidence": [
         {
@@ -1335,15 +1335,35 @@
           "by": "zcode-gov-audit-pc1",
           "item": "before-state confirmed on local main post-wave-merge 2026-08-28; manifest basis valid; builder drafts banked where applicable; unlocked by reconciliation of merged dependency",
           "at": "2026-08-28T16:59:21.474Z"
+        },
+        {
+          "stage": "build",
+          "by": "zcode-textframe-pc2",
+          "item": "commits ef15238+07408db+ebf9da4 on agent/viro-0143/zcode-gov-audit-pc1 (base 5014465): composeFrame consumes textFrame insets (reduced measure/foot, shifted first baseline, carets follow) + verticalAlign center/bottom (measuring pass then block shift; justify->top fallback; overflow stays top-aligned); drawTypeFrame passes layer.textFrame; measureAutoFit read-only autoSize height (height-independent, inset-aware, unbounded-foot)",
+          "at": "2026-08-28T19:50:02.874Z"
+        },
+        {
+          "stage": "build",
+          "by": "zcode-textframe-pc2",
+          "item": "tests/text-frame-inset+valign+autosize+pixel-baseline.test.mjs 19/19 pass re-run by pc2 (inset rewrap 5->6 lines + ink-free insets + screenshots inset-0/inset-24; valign ink-midpoint center within 4px + bottom at foot + caret follows shift + overflow top-aligned + justify fallback pinned; autosize null-cases + fit swallows overflow + fixed point + inset-aware +/- bottom inset exact; 6-case golden raw-RGBA SHA-256 baseline captured pre-change == post-change pixel-identical; regenerated screenshots byte-identical to committed PNGs)",
+          "at": "2026-08-28T19:50:02.882Z"
+        },
+        {
+          "stage": "build",
+          "by": "zcode-textframe-pc2",
+          "item": "npx tsc --noEmit exit 0; npm run test:unit 316/316 exit 0; node node_modules/vite/bin/vite.js build exit 0. SEAT HANDOVER: implementation authored by zcode-textframe-pc1 (1c8eea2+35b1670 on 72b05f0, session lost); pc2 inherited per replacement directive, rebased onto 5014465 (VIRO-0014 delta touches only font-import files, zero lease overlap), re-reviewed diff, re-ran all gates. BLOCKED-SCOPE NOTE: autoSize bus command registration requires off-lease src/document/ui-commands.ts + tests/ui-commands.test.mjs — sanctioned fallback exercised (read-only measurement + command spec frame.autoFitHeight in delivery JSON); recorded follow-ups: compositor typeLayout ~L744 + pdf.ts ~L724 should pass layer.textFrame",
+          "at": "2026-08-28T19:50:02.882Z"
         }
       ],
       "last_handoff": {
-        "from": "audit",
-        "to": "build",
-        "by": "zcode-gov-audit-pc1",
-        "at": "2026-08-28T16:59:21.475Z",
+        "from": "build",
+        "to": "verify",
+        "by": "zcode-textframe-pc2",
+        "at": "2026-08-28T19:50:02.882Z",
         "evidence": [
-          "before-state confirmed on local main post-wave-merge 2026-08-28; manifest basis valid; builder drafts banked where applicable; unlocked by reconciliation of merged dependency"
+          "commits ef15238+07408db+ebf9da4 on agent/viro-0143/zcode-gov-audit-pc1 (base 5014465): composeFrame consumes textFrame insets (reduced measure/foot, shifted first baseline, carets follow) + verticalAlign center/bottom (measuring pass then block shift; justify->top fallback; overflow stays top-aligned); drawTypeFrame passes layer.textFrame; measureAutoFit read-only autoSize height (height-independent, inset-aware, unbounded-foot)",
+          "tests/text-frame-inset+valign+autosize+pixel-baseline.test.mjs 19/19 pass re-run by pc2 (inset rewrap 5->6 lines + ink-free insets + screenshots inset-0/inset-24; valign ink-midpoint center within 4px + bottom at foot + caret follows shift + overflow top-aligned + justify fallback pinned; autosize null-cases + fit swallows overflow + fixed point + inset-aware +/- bottom inset exact; 6-case golden raw-RGBA SHA-256 baseline captured pre-change == post-change pixel-identical; regenerated screenshots byte-identical to committed PNGs)",
+          "npx tsc --noEmit exit 0; npm run test:unit 316/316 exit 0; node node_modules/vite/bin/vite.js build exit 0. SEAT HANDOVER: implementation authored by zcode-textframe-pc1 (1c8eea2+35b1670 on 72b05f0, session lost); pc2 inherited per replacement directive, rebased onto 5014465 (VIRO-0014 delta touches only font-import files, zero lease overlap), re-reviewed diff, re-ran all gates. BLOCKED-SCOPE NOTE: autoSize bus command registration requires off-lease src/document/ui-commands.ts + tests/ui-commands.test.mjs — sanctioned fallback exercised (read-only measurement + command spec frame.autoFitHeight in delivery JSON); recorded follow-ups: compositor typeLayout ~L744 + pdf.ts ~L724 should pass layer.textFrame"
         ]
       },
       "rejection": null
@@ -1469,12 +1489,6 @@
       "packet": "VIRO-0141",
       "heartbeat_at": "2026-08-28T19:42:15.722Z"
     },
-    "zcode-textframe-pc2": {
-      "role": "builder",
-      "machine": "pc-cloud1",
-      "packet": "VIRO-0143",
-      "heartbeat_at": "2026-08-28T19:39:19.193Z"
-    },
     "zcode-identity-pc2": {
       "role": "builder",
       "machine": "pc-cloud1",
@@ -1524,8 +1538,8 @@
         "docs/agents/deliveries/VIRO-0143.json"
       ],
       "acquired_at": "2026-08-28T19:25:06.822Z",
-      "current_agent": "zcode-textframe-pc2",
-      "current_stage": "build",
+      "current_agent": null,
+      "current_stage": "verify",
       "heartbeat_at": "2026-08-28T19:39:19.193Z"
     },
     "VIRO-0019": {
@@ -1573,11 +1587,6 @@
     }
   },
   "events": [
-    {
-      "at": "2026-08-28T04:39:18.353Z",
-      "type": "packet.reconciled_from_manifest",
-      "packet": "VIRO-0002"
-    },
     {
       "at": "2026-08-28T04:39:31.610Z",
       "type": "packet.reconciled_from_manifest",
@@ -3588,6 +3597,14 @@
       "type": "agent.heartbeat",
       "agent": "zcode-verify-pc11",
       "packet": "VIRO-0015"
+    },
+    {
+      "at": "2026-08-28T19:50:02.883Z",
+      "type": "packet.advanced",
+      "packet": "VIRO-0143",
+      "from": "build",
+      "to": "verify",
+      "by": "zcode-textframe-pc2"
     }
   ]
 }
