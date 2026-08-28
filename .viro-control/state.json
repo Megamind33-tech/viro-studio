@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 369,
-  "updated_at": "2026-08-28T21:32:43.482Z",
+  "revision": 370,
+  "updated_at": "2026-08-28T21:33:52.048Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -1848,14 +1848,6 @@
     }
   },
   "events": [
-    {
-      "at": "2026-08-28T06:40:50.230Z",
-      "type": "assignment.reaped",
-      "packet": "VIRO-0005",
-      "agent": "zcode-verify-pc1",
-      "by": "governor",
-      "reason": "verifier session zcode-verify-pc1 confirmed DEAD (agent process failed: ENOTFOUND zcode.z.ai provider API) mid-verification ~115min; never will heartbeat again; evidence preserved in worktree viro-0005-verify-zcode1/test-results-5190; reassignment follows immediately - Governor recovery per mandate section 13"
-    },
     {
       "at": "2026-08-28T06:41:05.935Z",
       "type": "packet.unblocked",
@@ -3930,6 +3922,11 @@
       "by": "zcode-gov-audit-pc1",
       "machine": "pc-cloud1",
       "session": "d6e0a68f-cf20-48a4-8ee3-89a668f1d053"
+    },
+    {
+      "at": "2026-08-28T21:33:52.048Z",
+      "type": "packet.reconciled_from_manifest",
+      "packet": "VIRO-0002"
     }
   ]
 }
