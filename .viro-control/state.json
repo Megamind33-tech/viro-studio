@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 371,
-  "updated_at": "2026-08-28T21:34:22.084Z",
+  "revision": 372,
+  "updated_at": "2026-08-28T21:34:47.922Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -1744,11 +1744,11 @@
       "dependencies": [],
       "critic_needed": true,
       "stage": "build",
-      "status": "QUEUED",
-      "assigned_agent": null,
-      "assigned_role": null,
+      "status": "ACTIVE",
+      "assigned_agent": "zcode-effects-pc1",
+      "assigned_role": "builder",
       "work_branch": "agent/viro-0146/zcode-gov-audit-pc1",
-      "heartbeat_at": null,
+      "heartbeat_at": "2026-08-28T21:34:47.922Z",
       "attempts": 0,
       "evidence": [
         {
@@ -1769,7 +1769,7 @@
       },
       "rejection": null,
       "assigned_machine": "pc-cloud1",
-      "assigned_session": "d6e0a68f-cf20-48a4-8ee3-89a668f1d053"
+      "assigned_session": "82916b79-821b-41dc-9a84-e0f1a5f90af7"
     }
   },
   "agents": {
@@ -1785,6 +1785,13 @@
       "session": "b8bf70cd-e98b-4765-8116-fb04d0f6a0ab",
       "packet": "VIRO-0011",
       "heartbeat_at": "2026-08-28T21:30:53.235Z"
+    },
+    "zcode-effects-pc1": {
+      "role": "builder",
+      "machine": "pc-cloud1",
+      "session": "82916b79-821b-41dc-9a84-e0f1a5f90af7",
+      "packet": "VIRO-0146",
+      "heartbeat_at": "2026-08-28T21:34:47.922Z"
     }
   },
   "leases": {
@@ -1839,20 +1846,12 @@
         "docs/agents/deliveries/VIRO-0146.json"
       ],
       "acquired_at": "2026-08-28T21:32:32.991Z",
-      "current_agent": null,
+      "current_agent": "zcode-effects-pc1",
       "current_stage": "build",
-      "current_session": "d6e0a68f-cf20-48a4-8ee3-89a668f1d053"
+      "current_session": "82916b79-821b-41dc-9a84-e0f1a5f90af7"
     }
   },
   "events": [
-    {
-      "at": "2026-08-28T06:41:22.856Z",
-      "type": "assignment.reaped",
-      "packet": "VIRO-0012",
-      "agent": "zcode-perf-pc1",
-      "by": "governor",
-      "reason": "builder session zcode-perf-pc1 confirmed DEAD same provider DNS failure mid-build; harness draft preserved uncommitted in worktree viro-0012-perf-zcode1/scripts/perf (capture.mjs run.mjs lib); reassignment follows immediately"
-    },
     {
       "at": "2026-08-28T06:41:35.297Z",
       "type": "packet.unblocked",
@@ -3927,6 +3926,15 @@
       "reason": "alignPen positions right/center-aligned lines in [0,measure] instead of [inset.left, inset.left+measure]: composeFrame passes originX+x0 but room=measure-x0' cancels originX for right align (pen=measure-lineW) and halves it for center. Independent probe (W=400, inset {l:30,r:10,t:20,b:15}, single line, same lineCount): right-aligned ink maxX 358 vs correct 390=W-right (delta -40 = -(left+right), expected -10); center-aligned ink center x 195 vs content-box center 210 (off -left/2). Left-align control is correct (origin +30 exact, baseline +20 exact). Failing test: tests/text-frame-verify-probe-zcode.test.mjs (untracked in verify worktree /c/viro-worktrees/viro-0143-verify-zcode1). All other gates green: tsc 0, unit 316/316, text-frame 19/19, chrome 16/16, build 0, golden 6/6 bit-identical reproduced independently from base 5014465.",
       "machine": "pc-cloud1",
       "session": "09cc77df-6a55-4bec-a989-ed5242198ade"
+    },
+    {
+      "at": "2026-08-28T21:34:47.922Z",
+      "type": "packet.claimed",
+      "packet": "VIRO-0146",
+      "agent": "zcode-effects-pc1",
+      "role": "builder",
+      "machine": "pc-cloud1",
+      "session": "82916b79-821b-41dc-9a84-e0f1a5f90af7"
     }
   ]
 }
