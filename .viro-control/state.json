@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 208,
-  "updated_at": "2026-08-28T11:47:25.343Z",
+  "revision": 209,
+  "updated_at": "2026-08-28T11:47:55.593Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -2577,6 +2577,11 @@
       "packet": "VIRO-0019",
       "session": null,
       "machine": "pc-cloud1"
+    },
+    {
+      "at": "2026-08-28T11:47:55.593Z",
+      "type": "packet.reconciled_from_manifest",
+      "packet": "VIRO-0002"
     }
   ]
 }
