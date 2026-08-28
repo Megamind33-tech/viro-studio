@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 316,
-  "updated_at": "2026-08-28T19:18:39.083Z",
+  "revision": 317,
+  "updated_at": "2026-08-28T19:19:08.735Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -1285,7 +1285,7 @@
       ],
       "critic_needed": true,
       "stage": "build",
-      "status": "BLOCKED",
+      "status": "QUEUED",
       "assigned_agent": null,
       "assigned_role": null,
       "work_branch": "agent/viro-0143/zcode-gov-audit-pc1",
@@ -1308,12 +1308,7 @@
           "before-state confirmed on local main post-wave-merge 2026-08-28; manifest basis valid; builder drafts banked where applicable; unlocked by reconciliation of merged dependency"
         ]
       },
-      "rejection": {
-        "by": "governor",
-        "stage": "build",
-        "reason": "session zcode-textframe-pc1 garbage-collected after repeated network flaps (74m stale); work preserved in worktree per checkpoint protocol; fresh session reassigned",
-        "at": "2026-08-28T19:18:39.083Z"
-      }
+      "rejection": null
     },
     "VIRO-0144": {
       "id": "VIRO-0144",
@@ -1446,11 +1441,6 @@
     }
   },
   "events": [
-    {
-      "at": "2026-08-27T21:55:02.649Z",
-      "type": "packet.reconciled_from_manifest",
-      "packet": "VIRO-0002"
-    },
     {
       "at": "2026-08-27T21:56:28.985Z",
       "type": "packet.reconciled_from_manifest",
@@ -3431,6 +3421,12 @@
       "agent": "zcode-textframe-pc1",
       "by": "governor",
       "reason": "session zcode-textframe-pc1 garbage-collected after repeated network flaps (74m stale); work preserved in worktree per checkpoint protocol; fresh session reassigned"
+    },
+    {
+      "at": "2026-08-28T19:19:08.735Z",
+      "type": "packet.unblocked",
+      "packet": "VIRO-0143",
+      "by": "governor"
     }
   ]
 }
