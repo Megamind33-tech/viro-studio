@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 411,
-  "updated_at": "2026-08-28T22:58:25.165Z",
+  "revision": 412,
+  "updated_at": "2026-08-28T22:58:33.066Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -1823,15 +1823,30 @@
         "VIRO-0143"
       ],
       "critic_needed": true,
-      "stage": "audit",
-      "status": "ACTIVE",
-      "assigned_agent": "zcode-gov-audit-pc1",
-      "assigned_role": "gap-auditor",
+      "stage": "build",
+      "status": "QUEUED",
+      "assigned_agent": null,
+      "assigned_role": null,
       "work_branch": "agent/viro-0144/zcode-gov-audit-pc1",
-      "heartbeat_at": "2026-08-28T22:58:25.165Z",
+      "heartbeat_at": null,
       "attempts": 0,
-      "evidence": [],
-      "last_handoff": null,
+      "evidence": [
+        {
+          "stage": "audit",
+          "by": "zcode-gov-audit-pc1",
+          "item": "before-state confirmed 2026-08-28 on local main (now incl. 0142/0143 type work): ShapedRun drops HarfBuzz cluster (type.ts:60-64,167-177); caret stops re-shaped per prefix (emitStops 398-410) vs whole-line shaping; story script/direction/language fields inert (162-164); base 72b05f0+ merges do not alter these seams",
+          "at": "2026-08-28T22:58:33.062Z"
+        }
+      ],
+      "last_handoff": {
+        "from": "audit",
+        "to": "build",
+        "by": "zcode-gov-audit-pc1",
+        "at": "2026-08-28T22:58:33.066Z",
+        "evidence": [
+          "before-state confirmed 2026-08-28 on local main (now incl. 0142/0143 type work): ShapedRun drops HarfBuzz cluster (type.ts:60-64,167-177); caret stops re-shaped per prefix (emitStops 398-410) vs whole-line shaping; story script/direction/language fields inert (162-164); base 72b05f0+ merges do not alter these seams"
+        ]
+      },
       "rejection": null,
       "assigned_machine": "pc-cloud1",
       "assigned_session": "41729506-a432-4f08-bd05-a3698521d68f"
@@ -2028,13 +2043,6 @@
       "session": "69a08142-3926-4f09-afda-f139c9b80bdd",
       "packet": "VIRO-0017",
       "heartbeat_at": "2026-08-28T22:39:12.158Z"
-    },
-    "zcode-gov-audit-pc1": {
-      "role": "gap-auditor",
-      "machine": "pc-cloud1",
-      "session": "41729506-a432-4f08-bd05-a3698521d68f",
-      "packet": "VIRO-0144",
-      "heartbeat_at": "2026-08-28T22:58:25.165Z"
     }
   },
   "leases": {
@@ -2075,20 +2083,12 @@
         "tests/caret-fidelity-*"
       ],
       "acquired_at": "2026-08-28T22:58:25.165Z",
-      "current_agent": "zcode-gov-audit-pc1",
-      "current_stage": "audit",
+      "current_agent": null,
+      "current_stage": "build",
       "current_session": "41729506-a432-4f08-bd05-a3698521d68f"
     }
   },
   "events": [
-    {
-      "at": "2026-08-28T09:17:58.142Z",
-      "type": "packet.advanced",
-      "packet": "VIRO-0005",
-      "from": "verify",
-      "to": "critic",
-      "by": "zcode-verify-pc2"
-    },
     {
       "at": "2026-08-28T09:20:06.992Z",
       "type": "packet.reconciled_from_manifest",
@@ -4235,6 +4235,16 @@
       "packet": "VIRO-0144",
       "agent": "zcode-gov-audit-pc1",
       "role": "gap-auditor",
+      "machine": "pc-cloud1",
+      "session": "41729506-a432-4f08-bd05-a3698521d68f"
+    },
+    {
+      "at": "2026-08-28T22:58:33.066Z",
+      "type": "packet.advanced",
+      "packet": "VIRO-0144",
+      "from": "audit",
+      "to": "build",
+      "by": "zcode-gov-audit-pc1",
       "machine": "pc-cloud1",
       "session": "41729506-a432-4f08-bd05-a3698521d68f"
     }
