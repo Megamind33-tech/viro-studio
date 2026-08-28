@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 379,
-  "updated_at": "2026-08-28T21:47:49.443Z",
+  "revision": 382,
+  "updated_at": "2026-08-28T21:48:30.152Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -1791,6 +1791,60 @@
       "rejection": null,
       "assigned_machine": "pc-cloud1",
       "assigned_session": "82916b79-821b-41dc-9a84-e0f1a5f90af7"
+    },
+    "VIRO-0147": {
+      "id": "VIRO-0147",
+      "title": "Render per-range styled text in vector PDF export (emitType consumes CharacterRuns)",
+      "priority": "P1",
+      "domain": "export",
+      "outcome": "A document whose text story carries CharacterRun overrides exports to vector PDF with each span painted at its own size/fill/font (per-run Tf and color operators, per-range embedded faces when fontId overrides exist), glyph positions matching the canvas compose-for-compose, and the export report telling the truth about what was emitted.",
+      "scope": [
+        "src/export/pdf.ts",
+        "tests/export-corpus-*",
+        "tests/pdf-styled-text-*",
+        "docs/agents/deliveries/VIRO-0147.json"
+      ],
+      "dependencies": [
+        "VIRO-0146"
+      ],
+      "critic_needed": true,
+      "stage": "audit",
+      "status": "QUEUED",
+      "assigned_agent": null,
+      "assigned_role": null,
+      "work_branch": null,
+      "heartbeat_at": null,
+      "attempts": 0,
+      "evidence": [],
+      "last_handoff": null,
+      "rejection": null
+    },
+    "VIRO-0148": {
+      "id": "VIRO-0148",
+      "title": "Fix inert status live-region: announcement text is overwritten post-boot",
+      "priority": "P3",
+      "domain": "ui-ux",
+      "outcome": "The status cell's aria-live=polite region actually announces save/export/recovery messages: post-boot writes keep the live-region element stable (message text changes in place) so sighted users see 'Saved...'/'PDF exported...' and screen readers announce them, with the doc-size label moving to its own non-live element.",
+      "scope": [
+        "index.html",
+        "src/chrome/**",
+        "tests/a11y-status-*",
+        "docs/agents/deliveries/VIRO-0148.json"
+      ],
+      "dependencies": [
+        "VIRO-0017"
+      ],
+      "critic_needed": true,
+      "stage": "audit",
+      "status": "QUEUED",
+      "assigned_agent": null,
+      "assigned_role": null,
+      "work_branch": null,
+      "heartbeat_at": null,
+      "attempts": 0,
+      "evidence": [],
+      "last_handoff": null,
+      "rejection": null
     }
   },
   "agents": {
@@ -1873,24 +1927,6 @@
     }
   },
   "events": [
-    {
-      "at": "2026-08-28T07:17:11.433Z",
-      "type": "agent.heartbeat",
-      "agent": "zcode-verify-pc2",
-      "packet": "VIRO-0005"
-    },
-    {
-      "at": "2026-08-28T07:18:42.428Z",
-      "type": "agent.heartbeat",
-      "agent": "zcode-verify-pc2",
-      "packet": "VIRO-0005"
-    },
-    {
-      "at": "2026-08-28T07:20:24.817Z",
-      "type": "agent.heartbeat",
-      "agent": "zcode-verify-pc2",
-      "packet": "VIRO-0005"
-    },
     {
       "at": "2026-08-28T07:22:12.238Z",
       "type": "agent.heartbeat",
@@ -3962,6 +3998,21 @@
       "at": "2026-08-28T21:47:49.443Z",
       "type": "packet.reconciled_from_manifest",
       "packet": "VIRO-0002"
+    },
+    {
+      "at": "2026-08-28T21:48:30.149Z",
+      "type": "packet.reconciled_from_manifest",
+      "packet": "VIRO-0002"
+    },
+    {
+      "at": "2026-08-28T21:48:30.152Z",
+      "type": "packet.imported",
+      "packet": "VIRO-0147"
+    },
+    {
+      "at": "2026-08-28T21:48:30.152Z",
+      "type": "packet.imported",
+      "packet": "VIRO-0148"
     }
   ]
 }
