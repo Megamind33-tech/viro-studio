@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 58,
-  "updated_at": "2026-08-28T05:40:33.434Z",
+  "revision": 64,
+  "updated_at": "2026-08-28T05:42:24.472Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -452,6 +452,138 @@
       "evidence": [],
       "last_handoff": null,
       "rejection": null
+    },
+    "VIRO-0140": {
+      "id": "VIRO-0140",
+      "title": "Layer integrity: fix group duplication childless-shell and deep-delete dangling-parent corruption",
+      "priority": "P1",
+      "domain": "editor-core",
+      "outcome": "Duplicating a group produces a complete independent copy (children included) with exact undo/redo; deleting a group of any depth leaves zero layers with dangling parentId; a document already carrying dangling parent links is repaired on open to visually-stable page-space positions; validateDocument stays clean through all three flows.",
+      "scope": [
+        "src/document/ops.ts",
+        "src/document/factory.ts",
+        "tests/**",
+        "docs/agents/deliveries/VIRO-0140.json"
+      ],
+      "dependencies": [],
+      "critic_needed": false,
+      "stage": "audit",
+      "status": "QUEUED",
+      "assigned_agent": null,
+      "assigned_role": null,
+      "work_branch": null,
+      "heartbeat_at": null,
+      "attempts": 0,
+      "evidence": [],
+      "last_handoff": null,
+      "rejection": null
+    },
+    "VIRO-0141": {
+      "id": "VIRO-0141",
+      "title": "Post-boolean contour node editing commands + appendNode corruption guard",
+      "priority": "P2",
+      "domain": "editor-core",
+      "outcome": "Boolean-result vectors (contours-authoritative) become editable at the node level through contour-addressed bus commands (move/insert/delete node, close contour), and the legacy appendNode path refuses to corrupt contours-authoritative layers, with derived inverses so every operation undoes exactly.",
+      "scope": [
+        "src/document/ops.ts",
+        "src/document/ui-commands.ts",
+        "src/document/boolean-ops.ts",
+        "tests/**",
+        "docs/agents/deliveries/VIRO-0141.json"
+      ],
+      "dependencies": [
+        "VIRO-0140"
+      ],
+      "critic_needed": false,
+      "stage": "audit",
+      "status": "QUEUED",
+      "assigned_agent": null,
+      "assigned_role": null,
+      "work_branch": null,
+      "heartbeat_at": null,
+      "attempts": 0,
+      "evidence": [],
+      "last_handoff": null,
+      "rejection": null
+    },
+    "VIRO-0142": {
+      "id": "VIRO-0142",
+      "title": "Render the v4 rich-text contract: per-range character and paragraph styling becomes visible",
+      "priority": "P1",
+      "domain": "canvas-rendering",
+      "outcome": "A v6 text story carrying CharacterRun/ParagraphRun ranges (authored via the existing type.characterRange / type.paragraphRange bus commands) renders with visibly distinct, correctly shaped per-run font/size/fill/tracking and per-paragraph alignment/indent on canvas and thumbnails, with stable undo/redo and save/reopen, while stories with empty runs render byte-identically to today.",
+      "scope": [
+        "src/engine/type.ts",
+        "src/engine/font-registry.ts",
+        "src/document/text-model.ts",
+        "tests/**",
+        "docs/agents/deliveries/VIRO-0142.json"
+      ],
+      "dependencies": [],
+      "critic_needed": true,
+      "stage": "audit",
+      "status": "QUEUED",
+      "assigned_agent": null,
+      "assigned_role": null,
+      "work_branch": null,
+      "heartbeat_at": null,
+      "attempts": 0,
+      "evidence": [],
+      "last_handoff": null,
+      "rejection": null
+    },
+    "VIRO-0143": {
+      "id": "VIRO-0143",
+      "title": "Consume TextFrameProperties: insets, vertical align, auto-size in the type engine",
+      "priority": "P2",
+      "domain": "canvas-rendering",
+      "outcome": "Text frames honor their validated textFrame contract: insets shrink the measure, verticalAlign positions the composed block, autoSize grows the frame to fit content, and single-column zero-inset frames render pixel-identically to today.",
+      "scope": [
+        "src/engine/type.ts",
+        "src/document/text-model.ts",
+        "tests/**",
+        "docs/agents/deliveries/VIRO-0143.json"
+      ],
+      "dependencies": [
+        "VIRO-0142"
+      ],
+      "critic_needed": true,
+      "stage": "audit",
+      "status": "QUEUED",
+      "assigned_agent": null,
+      "assigned_role": null,
+      "work_branch": null,
+      "heartbeat_at": null,
+      "attempts": 0,
+      "evidence": [],
+      "last_handoff": null,
+      "rejection": null
+    },
+    "VIRO-0144": {
+      "id": "VIRO-0144",
+      "title": "Caret/selection fidelity from HarfBuzz clusters + inert script/direction fields",
+      "priority": "P2",
+      "domain": "canvas-rendering",
+      "outcome": "Caret stops derive from HarfBuzz cluster boundaries so carets and selection highlights land correctly under kerning and ligatures; story script/direction/language feed HarfBuzz instead of guessSegmentProperties; per-line compose stops re-shaping every prefix.",
+      "scope": [
+        "src/engine/type.ts",
+        "tests/**",
+        "docs/agents/deliveries/VIRO-0144.json"
+      ],
+      "dependencies": [
+        "VIRO-0143"
+      ],
+      "critic_needed": true,
+      "stage": "audit",
+      "status": "QUEUED",
+      "assigned_agent": null,
+      "assigned_role": null,
+      "work_branch": null,
+      "heartbeat_at": null,
+      "attempts": 0,
+      "evidence": [],
+      "last_handoff": null,
+      "rejection": null
     }
   },
   "agents": {
@@ -832,6 +964,36 @@
       "type": "agent.heartbeat",
       "agent": "zcode-perf-pc1",
       "packet": "VIRO-0012"
+    },
+    {
+      "at": "2026-08-28T05:42:24.469Z",
+      "type": "packet.reconciled_from_manifest",
+      "packet": "VIRO-0002"
+    },
+    {
+      "at": "2026-08-28T05:42:24.472Z",
+      "type": "packet.imported",
+      "packet": "VIRO-0140"
+    },
+    {
+      "at": "2026-08-28T05:42:24.472Z",
+      "type": "packet.imported",
+      "packet": "VIRO-0141"
+    },
+    {
+      "at": "2026-08-28T05:42:24.472Z",
+      "type": "packet.imported",
+      "packet": "VIRO-0142"
+    },
+    {
+      "at": "2026-08-28T05:42:24.472Z",
+      "type": "packet.imported",
+      "packet": "VIRO-0143"
+    },
+    {
+      "at": "2026-08-28T05:42:24.472Z",
+      "type": "packet.imported",
+      "packet": "VIRO-0144"
     }
   ]
 }
