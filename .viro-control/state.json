@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 393,
-  "updated_at": "2026-08-28T22:05:56.542Z",
+  "revision": 394,
+  "updated_at": "2026-08-28T22:06:05.661Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -1179,11 +1179,11 @@
       ],
       "critic_needed": true,
       "stage": "verify",
-      "status": "QUEUED",
-      "assigned_agent": null,
-      "assigned_role": null,
+      "status": "VERIFY",
+      "assigned_agent": "zcode-verify-pc14",
+      "assigned_role": "verifier",
       "work_branch": "agent/viro-0017/zcode-gov-audit-pc1",
-      "heartbeat_at": null,
+      "heartbeat_at": "2026-08-28T22:06:05.661Z",
       "attempts": 0,
       "evidence": [
         {
@@ -1229,7 +1229,9 @@
           "New committed enforcement: tests/visual-polish-tokens.spec.ts (5) + tests/visual-polish-chrome.spec.ts (8) freeze tokens/radius/fonts/accent-state rules/icon distinctness; accent only on active tool/selection/focus (focus is the VIRO-0016-mandated keyboard-selection indicator)"
         ]
       },
-      "rejection": null
+      "rejection": null,
+      "assigned_machine": "pc-cloud1",
+      "assigned_session": "3d9877d2-e1f3-4d35-b98c-28acaf6cc547"
     },
     "VIRO-0019": {
       "id": "VIRO-0019",
@@ -1972,6 +1974,13 @@
       "session": "82916b79-821b-41dc-9a84-e0f1a5f90af7",
       "packet": "VIRO-0146",
       "heartbeat_at": "2026-08-28T21:42:18.838Z"
+    },
+    "zcode-verify-pc14": {
+      "role": "verifier",
+      "machine": "pc-cloud1",
+      "session": "3d9877d2-e1f3-4d35-b98c-28acaf6cc547",
+      "packet": "VIRO-0017",
+      "heartbeat_at": "2026-08-28T22:06:05.661Z"
     }
   },
   "leases": {
@@ -1999,9 +2008,9 @@
         "tests/visual-polish-*"
       ],
       "acquired_at": "2026-08-28T19:33:41.736Z",
-      "current_agent": null,
+      "current_agent": "zcode-verify-pc14",
       "current_stage": "verify",
-      "heartbeat_at": "2026-08-28T22:00:54.173Z"
+      "current_session": "3d9877d2-e1f3-4d35-b98c-28acaf6cc547"
     },
     "VIRO-0146": {
       "packet": "VIRO-0146",
@@ -2019,12 +2028,6 @@
     }
   },
   "events": [
-    {
-      "at": "2026-08-28T08:20:04.834Z",
-      "type": "agent.heartbeat",
-      "agent": "zcode-verify-pc2",
-      "packet": "VIRO-0005"
-    },
     {
       "at": "2026-08-28T08:29:32.928Z",
       "type": "agent.heartbeat",
@@ -4129,6 +4132,15 @@
       "at": "2026-08-28T22:05:56.542Z",
       "type": "packet.reconciled_from_manifest",
       "packet": "VIRO-0002"
+    },
+    {
+      "at": "2026-08-28T22:06:05.661Z",
+      "type": "packet.claimed",
+      "packet": "VIRO-0017",
+      "agent": "zcode-verify-pc14",
+      "role": "verifier",
+      "machine": "pc-cloud1",
+      "session": "3d9877d2-e1f3-4d35-b98c-28acaf6cc547"
     }
   ]
 }
