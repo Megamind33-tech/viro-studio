@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 27,
-  "updated_at": "2026-08-28T04:28:37.104Z",
+  "revision": 37,
+  "updated_at": "2026-08-28T04:36:36.146Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -187,6 +187,242 @@
         ]
       },
       "rejection": null
+    },
+    "VIRO-0010": {
+      "id": "VIRO-0010",
+      "title": "Autosave large-document quota and write-failure hardening",
+      "priority": "P2",
+      "domain": "editor-core",
+      "outcome": "Autosave on a large document (many embedded images) can never lose the last good recovery snapshot: quota or write failures are handled explicitly, any user-visible status stays truthful, and the per-tick cost of autosave is measured and reduced (eliminating the double full-document deep-clone per tick) without changing the document schema or recovery file format in a way that breaks existing recovered sessions.",
+      "scope": [
+        "src/app.ts",
+        "src/library/store.ts",
+        "tests/**",
+        "docs/agents/deliveries/VIRO-0010.json"
+      ],
+      "dependencies": [],
+      "critic_needed": false,
+      "stage": "audit",
+      "status": "QUEUED",
+      "assigned_agent": null,
+      "assigned_role": null,
+      "work_branch": null,
+      "heartbeat_at": null,
+      "attempts": 0,
+      "evidence": [],
+      "last_handoff": null,
+      "rejection": null
+    },
+    "VIRO-0011": {
+      "id": "VIRO-0011",
+      "title": "Document-identity recovery model replacing the single recovery slot",
+      "priority": "P2",
+      "domain": "editor-core",
+      "outcome": "Crash recovery is keyed by document identity: working in document B never destroys the recovery snapshot of document A, recovery restore preserves project identity, and the recovery picker (if any) only ever offers snapshots that still exist in the store.",
+      "scope": [
+        "src/app.ts",
+        "src/library/store.ts",
+        "tests/**",
+        "docs/agents/deliveries/VIRO-0011.json"
+      ],
+      "dependencies": [
+        "VIRO-0010"
+      ],
+      "critic_needed": false,
+      "stage": "audit",
+      "status": "QUEUED",
+      "assigned_agent": null,
+      "assigned_role": null,
+      "work_branch": null,
+      "heartbeat_at": null,
+      "attempts": 0,
+      "evidence": [],
+      "last_handoff": null,
+      "rejection": null
+    },
+    "VIRO-0012": {
+      "id": "VIRO-0012",
+      "title": "60-FPS interaction profiling harness with one verified bottleneck fix",
+      "priority": "P2",
+      "domain": "canvas-rendering",
+      "outcome": "A repeatable, checked-in measurement harness produces real frame-time numbers for common canvas interactions (move, resize, marquee, pan, zoom, and a many-layer document with layer effects), identifies the actual bottleneck from data, and delivers at most one minimal, visually-identical compositor fix for a proven bottleneck (candidate: unbounded shadow saveLayer region) — or documents with measurements that no fix is justified yet.",
+      "scope": [
+        "src/engine/compositor.ts",
+        "scripts/perf/**",
+        "docs/research/0012-frame-profiling.md",
+        "docs/agents/deliveries/VIRO-0012.json"
+      ],
+      "dependencies": [],
+      "critic_needed": false,
+      "stage": "audit",
+      "status": "QUEUED",
+      "assigned_agent": null,
+      "assigned_role": null,
+      "work_branch": null,
+      "heartbeat_at": null,
+      "attempts": 0,
+      "evidence": [],
+      "last_handoff": null,
+      "rejection": null
+    },
+    "VIRO-0013": {
+      "id": "VIRO-0013",
+      "title": "Import parser fuzz and negative-input test corpus for PSD/VDJ/PressJSON",
+      "priority": "P2",
+      "domain": "assets-import",
+      "outcome": "The PSD, VDJ and Press JSON import paths survive arbitrary malformed input without uncaught crashes outside their documented error handling: a checked-in fuzz/negative corpus plus a deterministic runner proves typed, user-safe failure for truncated, oversized, deeply-nested, wrong-mime and hostile-declaration inputs, and any proven parser defect found is fixed with the smallest safe change.",
+      "scope": [
+        "src/import/**",
+        "tests/**",
+        "docs/agents/deliveries/VIRO-0013.json"
+      ],
+      "dependencies": [],
+      "critic_needed": false,
+      "stage": "audit",
+      "status": "QUEUED",
+      "assigned_agent": null,
+      "assigned_role": null,
+      "work_branch": null,
+      "heartbeat_at": null,
+      "attempts": 0,
+      "evidence": [],
+      "last_handoff": null,
+      "rejection": null
+    },
+    "VIRO-0014": {
+      "id": "VIRO-0014",
+      "title": "Font/image/import sanitization regression hardening",
+      "priority": "P2",
+      "domain": "assets-import",
+      "outcome": "User-uploaded fonts and images are validated before entering the library or the renderer: the font registry and image sniffing paths reject hostile or malformed inputs with typed errors, proven by a regression suite, with no change to valid-file behavior.",
+      "scope": [
+        "src/import/**",
+        "src/engine/font-registry.ts",
+        "src/engine/sniff.ts",
+        "tests/**",
+        "docs/agents/deliveries/VIRO-0014.json"
+      ],
+      "dependencies": [
+        "VIRO-0013"
+      ],
+      "critic_needed": false,
+      "stage": "audit",
+      "status": "QUEUED",
+      "assigned_agent": null,
+      "assigned_role": null,
+      "work_branch": null,
+      "heartbeat_at": null,
+      "attempts": 0,
+      "evidence": [],
+      "last_handoff": null,
+      "rejection": null
+    },
+    "VIRO-0015": {
+      "id": "VIRO-0015",
+      "title": "PNG/PDF export regression corpus and fidelity report expansion",
+      "priority": "P2",
+      "domain": "export",
+      "outcome": "A versioned export regression corpus (documents plus expected PDF operator topology and PNG pixel checksums) is checked in and runnable, so compound-path behavior proven by VIRO-0005 becomes part of the standing baseline and future exporter changes are measured against real artifacts, with the export report expanded to cover every claimed classification.",
+      "scope": [
+        "src/export/**",
+        "tests/**",
+        "docs/agents/deliveries/VIRO-0015.json"
+      ],
+      "dependencies": [
+        "VIRO-0005"
+      ],
+      "critic_needed": false,
+      "stage": "audit",
+      "status": "QUEUED",
+      "assigned_agent": null,
+      "assigned_role": null,
+      "work_branch": null,
+      "heartbeat_at": null,
+      "attempts": 0,
+      "evidence": [],
+      "last_handoff": null,
+      "rejection": null
+    },
+    "VIRO-0016": {
+      "id": "VIRO-0016",
+      "title": "Accessibility and keyboard audit of editor chrome with proven-defect fixes",
+      "priority": "P2",
+      "domain": "ui-ux",
+      "outcome": "Core editor journeys (new/open/save, undo/redo, tool switching, zoom, panel navigation) are fully operable by keyboard and by screen-reader-meaningful labels: an audited findings report is committed, every proven accessibility defect found in existing chrome is fixed in place, and no layout or visual redesign is introduced.",
+      "scope": [
+        "index.html",
+        "src/chrome/**",
+        "tests/**",
+        "docs/reviews/0016-accessibility-audit.md",
+        "docs/agents/deliveries/VIRO-0016.json"
+      ],
+      "dependencies": [],
+      "critic_needed": true,
+      "stage": "audit",
+      "status": "QUEUED",
+      "assigned_agent": null,
+      "assigned_role": null,
+      "work_branch": null,
+      "heartbeat_at": null,
+      "attempts": 0,
+      "evidence": [],
+      "last_handoff": null,
+      "rejection": null
+    },
+    "VIRO-0017": {
+      "id": "VIRO-0017",
+      "title": "UI visual-polish defect sweep against the AAA brief without layout invention",
+      "priority": "P3",
+      "domain": "ui-ux",
+      "outcome": "Existing UI surfaces conform to the GOVERNOR.md UX rules (panel tokens #2B2B2B/#323232, pasteboard #1F1F1F, copper accent #E07A2F only on active tool/selection, Segoe UI, radius 0-2px, honest empty states, distinct semantic icons): every measured deviation from the token spec is corrected in place with no new layout, no new components, and no descriptive prose.",
+      "scope": [
+        "index.html",
+        "src/chrome/**",
+        "tests/**",
+        "docs/reviews/0017-visual-polish-sweep.md",
+        "docs/agents/deliveries/VIRO-0017.json"
+      ],
+      "dependencies": [
+        "VIRO-0016"
+      ],
+      "critic_needed": true,
+      "stage": "audit",
+      "status": "QUEUED",
+      "assigned_agent": null,
+      "assigned_role": null,
+      "work_branch": null,
+      "heartbeat_at": null,
+      "attempts": 0,
+      "evidence": [],
+      "last_handoff": null,
+      "rejection": null
+    },
+    "VIRO-0019": {
+      "id": "VIRO-0019",
+      "title": "Orchestrator identity hardening: bound claims to machine/session evidence",
+      "priority": "P2",
+      "domain": "verification",
+      "outcome": "The shared control plane records and validates richer worker identity (stable worker ID + machine + session token) so two workers cannot accidentally operate under the same identity, stale-lease recovery becomes faster and safer, and the lease/state-machine logic in orchestrator-core is protected by its own unit tests.",
+      "scope": [
+        "scripts/lib/**",
+        "scripts/viro-orchestrator.mjs",
+        "scripts/viro-orchestrator-git.mjs",
+        "scripts/viro-release.mjs",
+        "docs/agents/**",
+        "docs/agents/deliveries/VIRO-0019.json"
+      ],
+      "dependencies": [],
+      "critic_needed": false,
+      "stage": "audit",
+      "status": "QUEUED",
+      "assigned_agent": null,
+      "assigned_role": null,
+      "work_branch": null,
+      "heartbeat_at": null,
+      "attempts": 0,
+      "evidence": [],
+      "last_handoff": null,
+      "rejection": null
     }
   },
   "agents": {},
@@ -365,6 +601,56 @@
       "at": "2026-08-28T04:28:37.104Z",
       "type": "packet.reconciled_from_manifest",
       "packet": "VIRO-0002"
+    },
+    {
+      "at": "2026-08-28T04:36:36.133Z",
+      "type": "packet.reconciled_from_manifest",
+      "packet": "VIRO-0002"
+    },
+    {
+      "at": "2026-08-28T04:36:36.145Z",
+      "type": "packet.imported",
+      "packet": "VIRO-0010"
+    },
+    {
+      "at": "2026-08-28T04:36:36.145Z",
+      "type": "packet.imported",
+      "packet": "VIRO-0011"
+    },
+    {
+      "at": "2026-08-28T04:36:36.145Z",
+      "type": "packet.imported",
+      "packet": "VIRO-0012"
+    },
+    {
+      "at": "2026-08-28T04:36:36.146Z",
+      "type": "packet.imported",
+      "packet": "VIRO-0013"
+    },
+    {
+      "at": "2026-08-28T04:36:36.146Z",
+      "type": "packet.imported",
+      "packet": "VIRO-0014"
+    },
+    {
+      "at": "2026-08-28T04:36:36.146Z",
+      "type": "packet.imported",
+      "packet": "VIRO-0015"
+    },
+    {
+      "at": "2026-08-28T04:36:36.146Z",
+      "type": "packet.imported",
+      "packet": "VIRO-0016"
+    },
+    {
+      "at": "2026-08-28T04:36:36.146Z",
+      "type": "packet.imported",
+      "packet": "VIRO-0017"
+    },
+    {
+      "at": "2026-08-28T04:36:36.146Z",
+      "type": "packet.imported",
+      "packet": "VIRO-0019"
     }
   ]
 }
