@@ -12,7 +12,6 @@
  */
 import type { Canvas, CanvasKit, Paint, Path } from "canvaskit-wasm";
 import type { CharacterStyle, Rgba, Story, TextFrameProperties, TypeFrameLayer } from "../document/types";
-import { graphemeBoundaries } from "../document/text-model";
 import { fontRegistry } from "./font-registry";
 
 type Hb = typeof import("harfbuzzjs");
@@ -64,13 +63,58 @@ export interface ShapedGlyph {
   scale: number;
   /** The run's fill colour. */
   fill: Rgba;
+  /**
+   * UTF-16 offset into `story.text` where this glyph's HarfBuzz cluster starts
+   * — the character (or ligature/combining group) the glyph was shaped from.
+   * A ligature glyph carries the offset of its FIRST character; under RTL the
+   * visual order of `glyphs` is reversed relative to these offsets.
+   */
+  cluster: number;
 }
 
 /** One shaped run in font units — size-independent, therefore cacheable. */
 interface ShapedRun {
-  glyphs: { gid: number; dx: number; dy: number; adv: number }[];
+  glyphs: { gid: number; dx: number; dy: number; adv: number; cluster: number }[];
   /** Sum of advances, font units. Excludes tracking. */
   width: number;
+}
+
+/**
+ * The HarfBuzz segment properties a story (or a character range) pins for one
+ * shaping call. `null` means "let HarfBuzz guess it" — exactly what happened
+ * before stories could name them, so unspecified fields change nothing.
+ *
+ * These are the three values `hb_buffer_set_segment_properties` groups as the
+ * buffer's segment properties; harfbuzzjs exposes them as individual setters.
+ */
+interface SegProps {
+  /** `"ltr"` / `"rtl"`; `"auto"` and undefined fall through to the guesser. */
+  dir: "ltr" | "rtl" | null;
+  /** ISO 15924 tag ("Latn", "Arab", …) when the author overrides detection. */
+  script: string | null;
+  /** BCP 47 tag; `und` means deliberately unspecified, so it is dropped. */
+  lang: string | null;
+}
+
+/** Extract the story's segment properties; undefined when everything is a guess. */
+function segFor(c: CharacterStyle): SegProps | undefined {
+  const dir = c.direction === "ltr" || c.direction === "rtl" ? c.direction : null;
+  const script =
+    typeof c.script === "string" && /^[A-Za-z0-9]{4}$/.test(c.script.trim())
+      ? c.script.trim()
+      : null;
+  const lang =
+    typeof c.language === "string" && c.language.trim() && c.language.trim().toLowerCase() !== "und"
+      ? c.language.trim()
+      : null;
+  if (!dir && !script && !lang) return undefined;
+  return { dir, script, lang };
+}
+
+/** Stable identity of a SegProps for cache keys and span merging. */
+function segKeyOf(seg: SegProps | undefined): string {
+  if (!seg) return "";
+  return `${seg.dir ?? ""}\u0001${seg.script ?? ""}\u0001${seg.lang ?? ""}`;
 }
 
 export interface FacePack {
@@ -161,15 +205,23 @@ function featuresFor(face: FacePack, key: string): HbFeature[] {
 const EMPTY_RUN: ShapedRun = { glyphs: [], width: 0 };
 
 /** Shape one run of text in font units. Cached: line breaking measures the same words over and over. */
-function shapeRun(face: FacePack, text: string, key: string): ShapedRun {
+function shapeRun(face: FacePack, text: string, key: string, seg?: SegProps): ShapedRun {
   if (!text.length) return EMPTY_RUN;
-  const cacheKey = `${key}${text}`;
+  const cacheKey = `${key}\u0000${segKeyOf(seg)}\u0000${text}`;
   const hit = face.runs.get(cacheKey);
   if (hit) return hit;
 
   const features = featuresFor(face, key);
   const buffer = new face.hb.Buffer();
   buffer.addText(text);
+  // Pin what the story named BEFORE guessing: guessSegmentProperties only
+  // fills properties the buffer does not carry, so an explicit direction or
+  // script survives and everything left unset is guessed exactly as before.
+  // addText feeds the buffer as UTF-16, so cluster values come back as UTF-16
+  // offsets into `text` — the identity carets and selection map back through.
+  if (seg?.dir) buffer.setDirection(seg.dir === "rtl" ? face.hb.Direction.RTL : face.hb.Direction.LTR);
+  if (seg?.script) buffer.setScript(seg.script);
+  if (seg?.lang) buffer.setLanguage(seg.lang);
   buffer.guessSegmentProperties();
   face.hb.shape(face.unitFont, buffer, features);
   const items = buffer.getGlyphInfosAndPositions();
@@ -182,6 +234,7 @@ function shapeRun(face: FacePack, text: string, key: string): ShapedRun {
       dx: item.xOffset ?? 0,
       dy: item.yOffset ?? 0,
       adv: item.xAdvance ?? 0,
+      cluster: item.cluster,
     });
     width += item.xAdvance ?? 0;
   }
@@ -270,12 +323,17 @@ interface RunStyle {
   /** px added after every glyph. */
   track: number;
   key: string;
+  /** Story/range segment properties for the shaper; undefined = all guessed. */
+  seg?: SegProps;
+  /** `seg`'s cache identity — the merge key that keeps same-segment spans one run. */
+  segKey: string;
   fill: Rgba;
 }
 
 function styleFor(face: FacePack, c: CharacterStyle): RunStyle {
   const size = c.size > 0 ? c.size : 1;
   const tracking = Number.isFinite(c.tracking) ? c.tracking : 0;
+  const seg = segFor(c);
   return {
     face,
     size,
@@ -283,6 +341,8 @@ function styleFor(face: FacePack, c: CharacterStyle): RunStyle {
     scale: size / face.upem,
     track: (tracking / TRACKING_UNITS_PER_EM) * size,
     key: featureKey(c.otFeatures),
+    seg,
+    segKey: segKeyOf(seg),
     fill: c.fill,
   };
 }
@@ -301,6 +361,11 @@ function characterWith(story: Story, o: Partial<CharacterStyle> | undefined): Ch
     tracking: num(o.tracking, c.tracking),
     fill: o.fill ?? c.fill,
     otFeatures: o.otFeatures ?? c.otFeatures,
+    // Segment properties are character formatting too: a range may name its own
+    // language/script/direction the same way it names a face or a size.
+    language: o.language ?? c.language,
+    script: o.script ?? c.script,
+    direction: o.direction ?? c.direction,
   };
 }
 
@@ -329,6 +394,7 @@ function sameRunStyle(a: RunStyle, b: RunStyle): boolean {
     a.leading === b.leading &&
     a.track === b.track &&
     a.key === b.key &&
+    a.segKey === b.segKey &&
     a.fill === b.fill
   );
 }
@@ -423,7 +489,7 @@ function spanWidth(spans: CharSpan[], text: string, start: number, end: number):
     const s = Math.max(sp.start, start);
     const e = Math.min(sp.end, end);
     if (e <= s) continue;
-    const run = shapeRun(sp.style.face, text.slice(s, e), sp.style.key);
+    const run = shapeRun(sp.style.face, text.slice(s, e), sp.style.key, sp.style.seg);
     w += run.width * sp.style.scale + sp.style.track * run.glyphs.length;
   }
   return w;
@@ -561,7 +627,8 @@ export function composeFrame(
   const compose = (dy: number): ComposeResult => {
     const m = metricsFor(face, story);
     const glyphs: ShapedGlyph[] = [];
-    const caretStops: CaretStop[] = [];
+    /** Caret stops by UTF-16 offset; first insertion wins a duplicated boundary. */
+    const stops = new Map<number, CaretStop>();
     let y = inset.top + dy + m.ascent;
   let overflow = false;
   let lineCount = 0;
@@ -570,60 +637,132 @@ export function composeFrame(
 
   /**
    * Set one line of the paragraph-local range [start, start + line.length).
-   * `x0` is the indent, `last` suppresses justification on a paragraph's final
-   * line. Each span of the line is shaped with its own face and styled with its
-   * own size, tracking and fill; the line box takes the tallest span.
+   * `paraStart` places the line inside the story; `x0` is the indent, `last`
+   * suppresses justification on a paragraph's final line. Each span of the
+   * line is shaped with its own face and styled with its own size, tracking
+   * and fill; the line box takes the tallest span. Caret stops fall out of the
+   * same glyph walk that places the glyphs, so a caret can only ever land
+   * where shaping put a glyph edge.
    */
   const setLine = (
     spans: CharSpan[],
     para: string,
     line: string,
+    paraStart: number,
     start: number,
     x0: number,
     last: boolean,
     align: ParaStyle["align"],
   ): void => {
-    if (y > foot + 0.5) {
-      overflow = true;
-      return;
-    }
     const end = start + line.length;
-    const pieces: { style: RunStyle; run: ShapedRun }[] = [];
+    const over = y > foot + 0.5;
+    if (over) overflow = true;
+    const pieces: { style: RunStyle; run: ShapedRun; s: number; e: number }[] = [];
     let lineW = 0;
     let spaces = 0;
     for (const sp of spans) {
       const s = Math.max(sp.start, start);
       const e = Math.min(sp.end, end);
       if (e <= s) continue;
-      const run = shapeRun(sp.style.face, para.slice(s, e), sp.style.key);
+      const run = shapeRun(sp.style.face, para.slice(s, e), sp.style.key, sp.style.seg);
       lineW += run.width * sp.style.scale + sp.style.track * run.glyphs.length;
       for (const g of run.glyphs) if (g.gid === sp.style.face.spaceGid) spaces += 1;
-      pieces.push({ style: sp.style, run });
+      pieces.push({ style: sp.style, run, s, e });
     }
     const { pen: startPen, slack } = alignPen(lineW, originX + x0, x0, measure, align);
     let gap = 0;
     if (align === "justify" && !last && slack > 0 && spaces > 0) gap = slack / spaces;
     let pen = startPen;
+    const lineH = spanLeading(spans, start, end, m.leading);
+    let boundaries = 0;
+
+    /** One caret boundary at paragraph-local `offset`, first x claimed wins. */
+    const stop = (offset: number, x: number): void => {
+      boundaries += 1;
+      const at = paraStart + offset;
+      if (!stops.has(at)) stops.set(at, { offset: at, x, y, height: lineH });
+    };
 
     for (const piece of pieces) {
       const st = piece.style;
-      for (const g of piece.run.glyphs) {
-        const path = outlineOf(st.face, g.gid);
-        if (path) {
-          glyphs.push({
-            gid: g.gid,
-            x: pen + g.dx * st.scale,
-            y: y - g.dy * st.scale,
-            path,
-            face: st.face,
-            scale: st.scale,
-            fill: st.fill,
-          });
+      const gs = piece.run.glyphs;
+      // HarfBuzz returns glyphs in visual order with monotone clusters: rising
+      // for an LTR piece, falling for RTL (reversed against the logical text).
+      // Ligature members tie and carry no direction, so only a clean fall —
+      // never a rise — marks the piece right-to-left.
+      let rises = false;
+      let falls = false;
+      for (let i = 1; i < gs.length; i++) {
+        const prev = gs[i - 1]!.cluster;
+        const cur = gs[i]!.cluster;
+        if (cur > prev) rises = true;
+        else if (cur < prev) falls = true;
+      }
+      const rtl = falls && !rises;
+      // One cluster group: consecutive glyphs shaped from the same characters
+      // (a ligature, a base plus its combining marks). `left`/`right` are the
+      // pen edges of the group's box — where a caret can sit — plus the
+      // origin of its first glyph, which is where an LTR caret before the
+      // cluster belongs.
+      const groups: { c: number; left: number; right: number; origin: number }[] = [];
+      let gi = 0;
+      while (gi < gs.length) {
+        const cluster = gs[gi]!.cluster;
+        const penBefore = pen;
+        const origin = pen + gs[gi]!.dx * st.scale;
+        let j = gi;
+        while (j < gs.length && gs[j]!.cluster === cluster) {
+          const g = gs[j]!;
+          if (!over) {
+            const path = outlineOf(st.face, g.gid);
+            if (path) {
+              glyphs.push({
+                gid: g.gid,
+                x: pen + g.dx * st.scale,
+                y: y - g.dy * st.scale,
+                path,
+                face: st.face,
+                scale: st.scale,
+                fill: st.fill,
+                cluster: paraStart + piece.s + cluster,
+              });
+            }
+          }
+          pen += g.adv * st.scale + st.track;
+          if (gap && g.gid === st.face.spaceGid) pen += gap;
+          j += 1;
         }
-        pen += g.adv * st.scale + st.track;
-        if (gap && g.gid === st.face.spaceGid) pen += gap;
+        groups.push({ c: cluster, left: penBefore, right: pen, origin });
+        gi = j;
+      }
+      // LTR: a cluster's "before" caret is its left edge and its "after"
+      // caret the left edge of the next cluster. RTL mirrors: before is the
+      // right edge, after the right edge of the visually left neighbour —
+      // which is the logically NEXT text. The edges agree where boxes touch,
+      // so whichever neighbour claims a shared boundary first records the
+      // same x.
+      for (let k = 0; k < groups.length; k++) {
+        const g = groups[k]!;
+        const next = rtl ? groups[k - 1] : groups[k + 1];
+        const end = next ? next.c : piece.e - piece.s;
+        if (rtl) {
+          stop(piece.s + g.c, g.right);
+          stop(piece.s + end, g.left);
+        } else {
+          stop(piece.s + g.c, g.left);
+          stop(piece.s + end, g.right);
+        }
       }
     }
+
+    // A line that shaped to no glyphs at all (blank line) still needs a stop
+    // to put the caret in.
+    if (!boundaries) {
+      stop(start, startPen);
+      if (line.length) stop(end, pen);
+    }
+
+    if (over) return;
 
     let leading = m.leading;
     let descent = m.descent;
@@ -645,36 +784,6 @@ export function composeFrame(
   const paras = text.split("\n");
   let storyAt = 0;
 
-  const emitStops = (
-    spans: CharSpan[],
-    para: string,
-    line: string,
-    lineStartAbs: number,
-    start: number,
-    x0: number,
-    last: boolean,
-    align: ParaStyle["align"],
-    baseline: number,
-  ): void => {
-    const { pen: startPen } = alignPen(
-      spanWidth(spans, para, start, start + line.length),
-      originX + x0,
-      x0,
-      measure,
-      align,
-    );
-    const bounds = graphemeBoundaries(line);
-    for (const local of bounds) {
-      const prefix = line.slice(0, local);
-      caretStops.push({
-        offset: lineStartAbs + local,
-        x: startPen + (prefix ? spanWidth(spans, para, start, start + prefix.length) : 0),
-        y: baseline,
-        height: spanLeading(spans, start, start + line.length, m.leading),
-      });
-    }
-  };
-
   for (let p = 0; p < paras.length; p++) {
     const para = paras[p]!;
     const paraStart = storyAt;
@@ -694,8 +803,7 @@ export function composeFrame(
       const last = i === lines.length - 1;
       let lineStart = line.length ? para.indexOf(line, searchFrom) : searchFrom;
       if (lineStart < 0) lineStart = searchFrom;
-      emitStops(spans, para, line, paraStart + lineStart, lineStart, x0, last, ps.align, y);
-      setLine(spans, para, line, lineStart, x0, last, ps.align);
+      setLine(spans, para, line, paraStart, lineStart, x0, last, ps.align);
       searchFrom = lineStart + line.length;
       if (overflow) break;
     }
@@ -709,14 +817,15 @@ export function composeFrame(
     }
   }
 
-  if (!caretStops.length) {
-    caretStops.push({
+  if (!stops.size) {
+    stops.set(0, {
       offset: 0,
       x: originX + Math.max(0, Math.min(story.paragraph.firstLineIndent || 0, measure - 1)),
       y: inset.top + dy + m.ascent,
       height: m.leading,
     });
   }
+  const caretStops = Array.from(stops.values()).sort((a, b) => a.offset - b.offset);
 
   return {
     glyphs,
