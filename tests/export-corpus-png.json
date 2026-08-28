@@ -1,0 +1,47 @@
+{
+  "export/single-contour-vector": {
+    "width": 400,
+    "height": 300,
+    "sha256": "8512f183d2394d3adb3c05b0d94794ee8dbbba3e2acd6719d284c326bb2df6dd"
+  },
+  "export/compound-ring": {
+    "width": 400,
+    "height": 300,
+    "sha256": "d29f456f0da405abbbe8fd67f292daf54b839ea9fa3a9930f925c66c46bc7387"
+  },
+  "export/compound-disjoint-union": {
+    "width": 400,
+    "height": 300,
+    "sha256": "7ad6e4cd3d251964e3ca5129bd25b12aec01a0c6dd4ab45ea53cdd9f6739065d"
+  },
+  "export/compound-stroke-only": {
+    "width": 400,
+    "height": 300,
+    "sha256": "b2e7c8a71389c3180543fbd609d9b41b33495383e7cbf9716bf5fc88f046c0ea"
+  },
+  "export/compound-fill-stroke": {
+    "width": 400,
+    "height": 300,
+    "sha256": "64a8c7de180e3bf7bbf55ede07142ceb74afb7dee6a4a33e5cd137887daeee7a"
+  },
+  "export/text-layer": {
+    "width": 400,
+    "height": 300,
+    "sha256": "5bc6dac2f2e016c1180bf9439f2636e524b77f745f7cf494fe984be5dcd730fb"
+  },
+  "export/raster-layer": {
+    "width": 400,
+    "height": 300,
+    "sha256": "42a9c2e61d03d95917c62adbfc3f6440c48f8c8b7c48e47c550fb41869b44269"
+  },
+  "export/effects-layer": {
+    "width": 400,
+    "height": 300,
+    "sha256": "e0c53aa2b1fd655d78d2df2a12f3b124527056577b5e10777792d324559f97be"
+  },
+  "export/effects-control": {
+    "width": 400,
+    "height": 300,
+    "sha256": "8512f183d2394d3adb3c05b0d94794ee8dbbba3e2acd6719d284c326bb2df6dd"
+  }
+}
