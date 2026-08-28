@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 184,
-  "updated_at": "2026-08-28T10:54:11.945Z",
+  "revision": 185,
+  "updated_at": "2026-08-28T10:58:06.188Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -2294,6 +2294,11 @@
       "from": "build",
       "to": "verify",
       "by": "zcode-layers-pc1"
+    },
+    {
+      "at": "2026-08-28T10:58:06.188Z",
+      "type": "packet.reconciled_from_manifest",
+      "packet": "VIRO-0002"
     }
   ]
 }
