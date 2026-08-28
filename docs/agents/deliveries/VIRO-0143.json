@@ -1,0 +1,66 @@
+{
+  "id": "VIRO-0143",
+  "title": "Consume TextFrameProperties: insets, vertical align, auto-size in the type engine",
+  "priority": "P2",
+  "domain": "canvas-rendering",
+  "state": "ACTIVE",
+  "outcome": "Text frames honor their validated textFrame contract: insets shrink the measure, verticalAlign positions the composed block, autoSize grows the frame to fit content, and single-column zero-inset frames render pixel-identically to today.",
+  "before": "Audit confirmed on base 72b05f0 (includes VIRO-0142): every type frame carries textFrame (types.ts:172-181, defaults text-model.ts:23-32), migration stamps it, validation enforces it — but drawTypeFrame composed against raw layer w/h (type.ts:724 pre-change). inset, verticalAlign, autoSize, columns and kind point/path were validated and consumed nowhere. Defaults (zero inset, 1 column, top, none) meant consuming them moves no existing pixels.",
+  "after": "composeFrame(face, story, w, h, textFrame?) consumes insets (reduced measure + foot, pen starts at the top-left inset, carets follow) and verticalAlign (center/bottom shift the fitted block inside the content box; 'justify' documented fallback to top; overflowing frames stay top-aligned). drawTypeFrame passes layer.textFrame, so the canvas render path honors the contract. measureAutoFit provides read-only autoSize:'height' measurement (height-independent, inset-aware, unbounded-foot). The auto-fit mutation is specified as a reversible bus command but is NOT registered — the commands registry and its parity test are outside this packet's lease (see blocked_scope).",
+  "allowed_paths": [
+    "src/engine/type.ts",
+    "src/document/text-model.ts",
+    "tests/text-frame-*",
+    "docs/agents/deliveries/VIRO-0143.json"
+  ],
+  "depends_on": ["VIRO-0142"],
+  "acceptance": [
+    "Frame with inset 24 composes against the reduced measure, first baseline shifted (screenshot).",
+    "verticalAlign: 'center' centers the composed block between frame top/bottom.",
+    "autoSize: 'height' grows the frame via a NEW reversible bus command to fit composeFrame height; undo restores. (Sanctioned fallback exercised: command registry src/document/ui-commands.ts + tests/ui-commands.test.mjs are off-lease, so autoSize is delivered as read-only engine measurement + documented command spec.)",
+    "Zero-inset single-column documents render pixel-identically (regression, pixel-diff).",
+    "Gates: new tests, tsc, test:unit 316/316, build once."
+  ],
+  "evidence": [
+    "tests/text-frame-inset.test.mjs: baseline shift, rewrap (5→6 lines at measure 372), no ink inside insets, committed screenshots tests/text-frame-shots/inset-0.png + inset-24.png",
+    "tests/text-frame-valign.test.mjs: center/bottom block placement (data + ink-box pixel proof, valign-center.png/valign-bottom.png), caret stops follow the shift, overflow stays top-aligned, 'justify' fallback pinned",
+    "tests/text-frame-autosize.test.mjs: measureAutoFit null for none/width/both/absent; height fit swallows overflow at unchanged measure; height-independent; inset-aware (+/- bottom inset exact); fixed point for undo; one line box minimum for empty stories",
+    "tests/text-frame-pixel-baseline.test.mjs + tests/text-frame-pixel-baseline.json: raw-RGBA SHA-256 golden captured on the UNMODIFIED engine at base 72b05f0; post-change renders bit-identical for all 6 zero-inset cases incl. no-textFrame vs default-textFrame parity",
+    "npx tsc --noEmit exit 0; npm run test:unit 316/316; npm run build exit 0"
+  ],
+  "builder": {
+    "status": "DONE",
+    "agent": "zcode-textframe-pc2",
+    "branch": "agent/viro-0143/zcode-gov-audit-pc1",
+    "notes": "ATTEMPT 2 — REJECTION FIX (verifier zcode-verify-pc12, attempt 1): alignPen received originX+x0 where it computed room=measure-x0, so the inset origin cancelled for right-aligned lines (pen=measure-lineW; ink maxX moved -(left+right) instead of -right) and halved for centered lines (-left/2). Fix: alignPen(lineW, origin, x0, measure, align) splits pen origin from indent — room/slack reduce by the indent alone, pen starts at originX+x0 (setLine and emitStops call sites). Zero-inset arithmetic is unchanged bit-for-bit (origin===x0 when inset.left=0; golden baseline still 6/6 identical). NEW regression tests/text-frame-inset-geometry.test.mjs crosses align {left,right,center} x inset {left:30,right:10,top:20,bottom:15} asserting exact ink edges (left minX 30, right maxX 390, center 210) and exact data-level caret deltas (+30/-10/+10); it also ports the verifier probe's geometry checks (exact valign dy center/bottom, invalid-inset clamps, autoSize h==heightPx+bottom-inset exactness). Discrimination proven: on the pre-fix engine exactly the right+center crossing tests fail while left passes as control; post-fix 8/8. SEAT HANDOVER: implementation authored by zcode-textframe-pc1 (commits 1c8eea2 + 35b1670 on base 72b05f0, session lost before handoff); zcode-textframe-pc2 inherited per builder-replacement directive: rebased onto local main 5014465 (VIRO-0014 delta touches only font-import files, zero lease overlap), re-reviewed the diff, re-ran every gate. Acceptance 3 exercised the sanctioned fallback: the reversible auto-fit command cannot be registered without editing src/document/ui-commands.ts (registry) and tests/ui-commands.test.mjs (CASES parity), both off-lease. COMMAND SPEC for the follow-up packet: reversible document command (suggested id 'frame.autoFitHeight') whose apply sets layer.transform.h = measureAutoFit(face, story, layer).h (null measurement = no-op guard) and whose undo restores the previous transform.h; register CASES parity entry. Caller wiring (Type panel control) belongs to a ui-ux packet. RECORDED FOLLOW-UPS (cross-domain, out of lease): (1) src/engine/compositor.ts typeLayout (~line 744) and hitTypeOffset call composeFrame WITHOUT textFrame; (2) src/export/pdf.ts (~line 724) composes PDF glyph runs without textFrame; (3) columns > 1 and kind 'path' composition remain unconsumed (out of frozen acceptance). src/document/text-model.ts needed no changes.",
+    "proof": [
+      "ATTEMPT 2 fix: alignPen origin/indent split in src/engine/type.ts (room/slack from x0 alone; pen origin originX+x0 at both call sites)",
+      "tests/text-frame-inset-geometry.test.mjs: align x inset crossing regression — exact ink edges (left 30 / right 390 / center 210) + exact caret deltas (+30/-10/+10); pre-fix engine fails exactly right+center (left control passes), post-fix 8/8",
+      "verifier probe ported: exact center/bottom valign dy, invalid-inset entries clamp to zero, autoSize height h == heightPx + bottom inset (< 0.75px), refit without overflow",
+      "commit ef15238 (cherry-pick of pc1 1c8eea2) consume insets + verticalAlign in composeFrame; drawTypeFrame passes textFrame; measureAutoFit; golden baseline captured pre-change",
+      "commit 07408db (cherry-pick of pc1 35b1670) overflow-keeps-top-alignment fix; unbounded-foot measurement; 19 text-frame tests + 4 screenshots",
+      "branch agent/viro-0143/zcode-gov-audit-pc1 based on local main 5014465",
+      "tests/text-frame-*.test.mjs: 27/27 pass (19 attempt-1 + 8 new) via node --experimental-strip-types --import ./tests/ts-register.mjs --test tests/text-frame-inset.test.mjs tests/text-frame-valign.test.mjs tests/text-frame-autosize.test.mjs tests/text-frame-pixel-baseline.test.mjs tests/text-frame-inset-geometry.test.mjs",
+      "pixel regression: all 6 golden hashes identical pre/post change, incl. shaDefaultTextFrame === sha; regenerated screenshots byte-identical to committed PNGs (clean git status after test run, re-verified after the attempt-2 fix)",
+      "npx tsc --noEmit exit 0 re-run by pc2 after the attempt-2 fix",
+      "npm run test:unit 316/316 pass, exit 0 re-run by pc2 (ui-commands.test.mjs untouched, parity intact)",
+      "node node_modules/vite/bin/vite.js build exit 0 (vite.cmd broken from Git-Bash)"
+    ]
+  },
+  "blocked_scope": {
+    "item": "autoSize:'height' reversible bus command registration",
+    "files": ["src/document/ui-commands.ts", "tests/ui-commands.test.mjs"],
+    "reason": "Both live outside this packet's lease; the acceptance anticipated this and directed honest scoping rather than an off-lease edit or an in-engine hack. Measurement is delivered; the command spec above is ready for the Governor to route.",
+    "status": "RETURNED_TO_GOVERNOR"
+  },
+  "verifier": {
+    "status": "PENDING",
+    "notes": "Independent verification required on branch agent/viro-0143/zcode-gov-audit-pc1 (based on local main 5014465). Run: npx tsc --noEmit; node --experimental-strip-types --import ./tests/ts-register.mjs --test tests/text-frame-inset.test.mjs tests/text-frame-valign.test.mjs tests/text-frame-autosize.test.mjs tests/text-frame-pixel-baseline.test.mjs (19/19); npm run test:unit (316/316); npm run build. Screenshot evidence: tests/text-frame-shots/. To reproduce the golden baseline independently: check out base 72b05f0 (or 5014465 — neither touches the type engine), render the six BASELINE_CASES stories from tests/text-frame-harness.mjs through drawTypeFrame with no textFrame, and compare SHA-256 of raw RGBA pixels against tests/text-frame-pixel-baseline.json.",
+    "proof": []
+  },
+  "critic": {
+    "status": "PENDING",
+    "notes": "User-visible quality: insets/vertical alignment should be checked visually in the app once the caret-layout follow-up (compositor typeLayout) lands; until then editing hit-testing uses the un-inset frame while rendering honors insets on frames that carry them.",
+    "proof": []
+  }
+}
