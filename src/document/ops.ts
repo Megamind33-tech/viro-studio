@@ -411,12 +411,45 @@ export function ungroupSelected(doc: PressDocument): PressDocument {
   return next;
 }
 
+/**
+ * Every layer-id whose parent chain runs through `rootIds`, to unlimited depth.
+ *
+ * PSD imports (import/psd.ts) build group trees of arbitrary depth, so ONE
+ * level of children is not enough for delete or duplicate: delete would leave
+ * grandchildren with dangling parentIds (validateDocument then errors forever,
+ * and parentChain reads their local coords as page coords), and duplicate
+ * would shed the subtree entirely. The walk is by id with a seen-set, so an
+ * already-corrupt parentId cycle cannot loop it.
+ */
+function descendantIds(page: Page, rootIds: Iterable<string>): Set<string> {
+  const children = new Map<string, string[]>();
+  for (const layer of page.layers) {
+    if (!layer.parentId) continue;
+    const list = children.get(layer.parentId);
+    if (list) list.push(layer.id);
+    else children.set(layer.parentId, [layer.id]);
+  }
+  const out = new Set<string>();
+  const queue = [...rootIds];
+  while (queue.length) {
+    const id = queue.pop()!;
+    for (const child of children.get(id) ?? []) {
+      if (!out.has(child)) {
+        out.add(child);
+        queue.push(child);
+      }
+    }
+  }
+  return out;
+}
+
 export function deleteSelected(doc: PressDocument): PressDocument {
   const next = cloneDoc(doc);
   const page = activePage(next);
   const ids = new Set(next.activeLayerIds);
-  const extra = page.layers.filter((l) => l.parentId && ids.has(l.parentId)).map((l) => l.id);
-  for (const id of extra) ids.add(id);
+  // Close over the WHOLE subtree: removing a group of any depth must remove
+  // every descendant, or the survivors keep dangling parentIds.
+  for (const id of descendantIds(page, ids)) ids.add(id);
   page.layers = page.layers.filter((l) => !ids.has(l.id));
   next.activeLayerIds = [];
   return next;
@@ -425,24 +458,42 @@ export function deleteSelected(doc: PressDocument): PressDocument {
 export function duplicateSelected(doc: PressDocument): PressDocument {
   const next = cloneDoc(doc);
   const page = activePage(next);
+  const selected = selectedLayers(next);
+  if (!selected.length) return next;
+  const selectedIds = new Set(selected.map((l) => l.id));
+  // A selected layer that sits inside another selected layer travels with that
+  // subtree; it is not duplicated a second time as its own root.
+  const roots = selected.filter((l) => !l.parentId || !selectedIds.has(l.parentId));
   const copies: string[] = [];
-  for (const layer of selectedLayers(next)) {
-    const copy = structuredClone(layer);
-    copy.id = uid("ly");
-    copy.name = `${layer.name} copy`;
-    copy.transform.x += 16;
-    copy.transform.y += 16;
-    if (copy.kind === "type-frame") {
-      const story = next.stories.find((s) => s.id === copy.storyId);
-      if (story) {
-        const ns = structuredClone(story);
-        ns.id = uid("st");
-        next.stories.push(ns);
-        copy.storyId = ns.id;
+  for (const root of roots) {
+    // Clone the WHOLE subtree with parentIds remapped to the new ids, so a
+    // duplicated group is a complete independent copy, not a childless shell.
+    const below = descendantIds(page, [root.id]);
+    const subtree = page.layers.filter((l) => l.id === root.id || below.has(l.id));
+    const idMap = new Map(subtree.map((l) => [l.id, uid("ly")]));
+    for (const layer of subtree) {
+      const copy = structuredClone(layer);
+      copy.id = idMap.get(layer.id)!;
+      copy.parentId = layer === root ? layer.parentId : (idMap.get(layer.parentId!) ?? null);
+      if (layer === root) {
+        copy.name = `${layer.name} copy`;
+        // The duplicate delta applies at the copied ROOT only. Descendants are
+        // LOCAL to their parent, so offsetting them too would double the move.
+        copy.transform.x += 16;
+        copy.transform.y += 16;
       }
+      if (copy.kind === "type-frame") {
+        const story = next.stories.find((s) => s.id === copy.storyId);
+        if (story) {
+          const ns = structuredClone(story);
+          ns.id = uid("st");
+          next.stories.push(ns);
+          copy.storyId = ns.id;
+        }
+      }
+      page.layers.push(copy);
+      if (layer === root) copies.push(copy.id);
     }
-    page.layers.push(copy);
-    copies.push(copy.id);
   }
   next.activeLayerIds = copies;
   return next;
