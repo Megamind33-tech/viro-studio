@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 169,
-  "updated_at": "2026-08-28T10:39:09.362Z",
+  "revision": 170,
+  "updated_at": "2026-08-28T10:39:23.567Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -710,15 +710,30 @@
       ],
       "dependencies": [],
       "critic_needed": false,
-      "stage": "audit",
-      "status": "ACTIVE",
-      "assigned_agent": "zcode-gov-audit-pc1",
-      "assigned_role": "gap-auditor",
+      "stage": "build",
+      "status": "QUEUED",
+      "assigned_agent": null,
+      "assigned_role": null,
       "work_branch": "agent/viro-0019/zcode-gov-audit-pc1",
-      "heartbeat_at": "2026-08-28T10:39:09.362Z",
+      "heartbeat_at": null,
       "attempts": 0,
-      "evidence": [],
-      "last_handoff": null,
+      "evidence": [
+        {
+          "stage": "audit",
+          "by": "zcode-gov-audit-pc1",
+          "item": "before-state confirmed 2026-08-28: claim supports --machine but no session binding or duplicate-identity refusal exists in orchestrator-core; no lease-logic unit tests exist; wave-2 hold released - build-time churn cannot affect running workers since each executes its own worktree copy",
+          "at": "2026-08-28T10:39:23.547Z"
+        }
+      ],
+      "last_handoff": {
+        "from": "audit",
+        "to": "build",
+        "by": "zcode-gov-audit-pc1",
+        "at": "2026-08-28T10:39:23.566Z",
+        "evidence": [
+          "before-state confirmed 2026-08-28: claim supports --machine but no session binding or duplicate-identity refusal exists in orchestrator-core; no lease-logic unit tests exist; wave-2 hold released - build-time churn cannot affect running workers since each executes its own worktree copy"
+        ]
+      },
       "rejection": null
     },
     "VIRO-0140": {
@@ -953,12 +968,6 @@
       "machine": "pc-cloud1",
       "packet": "VIRO-0145",
       "heartbeat_at": "2026-08-28T10:34:52.384Z"
-    },
-    "zcode-gov-audit-pc1": {
-      "role": "gap-auditor",
-      "machine": "pc-cloud1",
-      "packet": "VIRO-0019",
-      "heartbeat_at": "2026-08-28T10:39:09.362Z"
     }
   },
   "leases": {
@@ -1063,8 +1072,8 @@
         "docs/agents/orchestrator-identity.md"
       ],
       "acquired_at": "2026-08-28T10:39:09.362Z",
-      "current_agent": "zcode-gov-audit-pc1",
-      "current_stage": "audit"
+      "current_agent": null,
+      "current_stage": "build"
     }
   },
   "events": [
@@ -2124,6 +2133,14 @@
       "agent": "zcode-gov-audit-pc1",
       "role": "gap-auditor",
       "machine": "pc-cloud1"
+    },
+    {
+      "at": "2026-08-28T10:39:23.567Z",
+      "type": "packet.advanced",
+      "packet": "VIRO-0019",
+      "from": "audit",
+      "to": "build",
+      "by": "zcode-gov-audit-pc1"
     }
   ]
 }
