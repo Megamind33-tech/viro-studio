@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 263,
-  "updated_at": "2026-08-28T17:19:17.104Z",
+  "revision": 264,
+  "updated_at": "2026-08-28T17:19:58.347Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -900,11 +900,11 @@
       "dependencies": [],
       "critic_needed": false,
       "stage": "build",
-      "status": "QUEUED",
-      "assigned_agent": null,
-      "assigned_role": null,
+      "status": "ACTIVE",
+      "assigned_agent": "zcode-govtool-pc2",
+      "assigned_role": "builder",
       "work_branch": "agent/viro-0019/zcode-gov-audit-pc1",
-      "heartbeat_at": null,
+      "heartbeat_at": "2026-08-28T17:19:58.347Z",
       "attempts": 0,
       "evidence": [
         {
@@ -924,7 +924,7 @@
         ]
       },
       "rejection": null,
-      "assigned_session": "sess-viro0019-zcode1-live-dryrun",
+      "assigned_session": "sess-viro0019-zcode2-live",
       "assigned_machine": "pc-cloud1"
     },
     "VIRO-0140": {
@@ -1273,6 +1273,13 @@
       "machine": "pc-cloud1",
       "packet": "VIRO-0143",
       "heartbeat_at": "2026-08-28T17:17:52.658Z"
+    },
+    "zcode-govtool-pc2": {
+      "role": "builder",
+      "machine": "pc-cloud1",
+      "session": "sess-viro0019-zcode2-live",
+      "packet": "VIRO-0019",
+      "heartbeat_at": "2026-08-28T17:19:58.347Z"
     }
   },
   "leases": {
@@ -1355,6 +1362,21 @@
       "current_agent": "zcode-polish-pc1",
       "current_stage": "build",
       "heartbeat_at": "2026-08-28T17:19:17.104Z"
+    },
+    "VIRO-0019": {
+      "packet": "VIRO-0019",
+      "scope": [
+        "scripts/lib/**",
+        "scripts/viro-orchestrator.mjs",
+        "scripts/viro-orchestrator-git.mjs",
+        "scripts/viro-release.mjs",
+        "docs/agents/deliveries/VIRO-0019.json",
+        "docs/agents/orchestrator-identity.md"
+      ],
+      "acquired_at": "2026-08-28T17:19:58.347Z",
+      "current_agent": "zcode-govtool-pc2",
+      "current_stage": "build",
+      "current_session": "sess-viro0019-zcode2-live"
     }
   },
   "events": [
@@ -3079,6 +3101,15 @@
       "type": "agent.heartbeat",
       "agent": "zcode-polish-pc1",
       "packet": "VIRO-0017"
+    },
+    {
+      "at": "2026-08-28T17:19:58.347Z",
+      "type": "packet.claimed",
+      "packet": "VIRO-0019",
+      "agent": "zcode-govtool-pc2",
+      "role": "builder",
+      "machine": "pc-cloud1",
+      "session": "sess-viro0019-zcode2-live"
     }
   ]
 }
