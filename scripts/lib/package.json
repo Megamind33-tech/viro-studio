@@ -1,0 +1,5 @@
+{
+  "name": "viro-orchestrator-lib-tests",
+  "private": true,
+  "main": "orchestrator-core.test.mjs"
+}
