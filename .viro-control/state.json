@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 177,
-  "updated_at": "2026-08-28T10:48:25.791Z",
+  "revision": 178,
+  "updated_at": "2026-08-28T10:49:33.787Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -280,12 +280,12 @@
       ],
       "dependencies": [],
       "critic_needed": false,
-      "stage": "build",
-      "status": "ACTIVE",
-      "assigned_agent": "zcode-persist-pc1",
-      "assigned_role": "builder",
+      "stage": "verify",
+      "status": "QUEUED",
+      "assigned_agent": null,
+      "assigned_role": null,
       "work_branch": "agent/viro-0010/zcode-gov-audit-pc1",
-      "heartbeat_at": "2026-08-28T10:48:25.791Z",
+      "heartbeat_at": null,
       "attempts": 0,
       "evidence": [
         {
@@ -293,15 +293,42 @@
           "by": "zcode-gov-audit-pc1",
           "item": "gap-audit before-state on main confirmed by Governor audit pass 2026-08-28; manifest before/after validated against repository; no duplicate implementation on main; see docs/agents/deliveries/VIRO-0010.json evidence basis",
           "at": "2026-08-28T10:18:43.969Z"
+        },
+        {
+          "stage": "build",
+          "by": "zcode-persist-pc1",
+          "item": "commit 00f6341 on agent/viro-0010/zcode-gov-audit-pc1 (pushed): autosave serializes at most once per tick (shared snapshot between recovery+project sinks), truthful failure status via announce() that cannot re-arm the debounce retry-storm, failed writes keep last good snapshot intact, recoverySink test seam",
+          "at": "2026-08-28T10:49:33.780Z"
+        },
+        {
+          "stage": "build",
+          "by": "zcode-persist-pc1",
+          "item": "tests/autosave-hardening.test.mjs 7/7 (node --experimental-transform-types --import ./tests/ts-register.mjs --test) + tests/autosave-failure.spec.mjs 13/13 browser E2E on real IndexedDB: quota failure keeps stored snapshot (layers+savedAt unchanged), reload/recovery-prompt/Restore returns exactly the pre-failure document, no page errors",
+          "at": "2026-08-28T10:49:33.787Z"
+        },
+        {
+          "stage": "build",
+          "by": "zcode-persist-pc1",
+          "item": "Clone-count before/after (JSON.stringify reference-count probe, stack-attributed): success tick 1->1, failing-recovery tick 2->1 (4 observed pre-fix when armed debounce re-ran both sinks), idle tick 0",
+          "at": "2026-08-28T10:49:33.787Z"
+        },
+        {
+          "stage": "build",
+          "by": "zcode-persist-pc1",
+          "item": "Regression gates: tests/recovery.spec.mjs assertions untouched 13/13, npm run test:unit 316/316, npx tsc --noEmit exit 0, npm run build exit 0, npm run test:chrome 5/5 proven on identical code pre-claim (dev server port 5175 per lease; note: shared 5173 serves another worktree's stale build and must not be used for this packet's verification)",
+          "at": "2026-08-28T10:49:33.787Z"
         }
       ],
       "last_handoff": {
-        "from": "audit",
-        "to": "build",
-        "by": "zcode-gov-audit-pc1",
-        "at": "2026-08-28T10:18:43.973Z",
+        "from": "build",
+        "to": "verify",
+        "by": "zcode-persist-pc1",
+        "at": "2026-08-28T10:49:33.787Z",
         "evidence": [
-          "gap-audit before-state on main confirmed by Governor audit pass 2026-08-28; manifest before/after validated against repository; no duplicate implementation on main; see docs/agents/deliveries/VIRO-0010.json evidence basis"
+          "commit 00f6341 on agent/viro-0010/zcode-gov-audit-pc1 (pushed): autosave serializes at most once per tick (shared snapshot between recovery+project sinks), truthful failure status via announce() that cannot re-arm the debounce retry-storm, failed writes keep last good snapshot intact, recoverySink test seam",
+          "tests/autosave-hardening.test.mjs 7/7 (node --experimental-transform-types --import ./tests/ts-register.mjs --test) + tests/autosave-failure.spec.mjs 13/13 browser E2E on real IndexedDB: quota failure keeps stored snapshot (layers+savedAt unchanged), reload/recovery-prompt/Restore returns exactly the pre-failure document, no page errors",
+          "Clone-count before/after (JSON.stringify reference-count probe, stack-attributed): success tick 1->1, failing-recovery tick 2->1 (4 observed pre-fix when armed debounce re-ran both sinks), idle tick 0",
+          "Regression gates: tests/recovery.spec.mjs assertions untouched 13/13, npm run test:unit 316/316, npx tsc --noEmit exit 0, npm run build exit 0, npm run test:chrome 5/5 proven on identical code pre-claim (dev server port 5175 per lease; note: shared 5173 serves another worktree's stale build and must not be used for this packet's verification)"
         ]
       },
       "rejection": null
@@ -945,12 +972,6 @@
       "packet": "VIRO-0016",
       "heartbeat_at": "2026-08-28T10:47:37.820Z"
     },
-    "zcode-persist-pc1": {
-      "role": "builder",
-      "machine": "pc-cloud1",
-      "packet": "VIRO-0010",
-      "heartbeat_at": "2026-08-28T10:48:25.791Z"
-    },
     "zcode-richtext-pc1": {
       "role": "builder",
       "machine": "pc-cloud1",
@@ -1070,8 +1091,8 @@
         "tests/autosave-*"
       ],
       "acquired_at": "2026-08-28T10:25:01.213Z",
-      "current_agent": "zcode-persist-pc1",
-      "current_stage": "build",
+      "current_agent": null,
+      "current_stage": "verify",
       "heartbeat_at": "2026-08-28T10:48:25.791Z"
     },
     "VIRO-0019": {
@@ -2200,6 +2221,14 @@
       "type": "agent.heartbeat",
       "agent": "zcode-persist-pc1",
       "packet": "VIRO-0010"
+    },
+    {
+      "at": "2026-08-28T10:49:33.787Z",
+      "type": "packet.advanced",
+      "packet": "VIRO-0010",
+      "from": "build",
+      "to": "verify",
+      "by": "zcode-persist-pc1"
     }
   ]
 }
