@@ -1,9 +1,15 @@
 # VIRO-0017 — UI Visual-Polish Defect Sweep (computed-style audit against the GOVERNOR.md UX token spec)
 
-- Packet: VIRO-0017 (ui-ux, P3) · Role: builder (`zcode-polish-pc1`, machine `pc-cloud1`)
-- Before-state audited: local `main` `72b05f0` (includes VIRO-0016 accessibility fixes; this packet must not regress them)
-- Scope honoured: `index.html`, `src/chrome/**` edits only. `src/styles/desk.css` is the token *source* but is **outside this packet's lease** — deviations found there are recorded, not edited (OWNERSHIP.md scope discipline).
-- Date: 2026-08-27
+- Packet: VIRO-0017 (ui-ux, P3) · Role: builder (`zcode-polish-pc2`, machine `pc-cloud1`;
+  findings enumerated by the first seat `zcode-polish-pc1`, fixes + gates completed by this seat)
+- Before-state audited: local `main` `72b05f0`; fixes and re-verification based on local `main`
+  `5014465` (the VIRO-0014 stack landed between the two and touches no chrome path — verified by
+  empty diff on `index.html`/`src/chrome`/`src/styles` between `72b05f0..5014465`). VIRO-0016's
+  accessibility fixes are in both bases and must not regress.
+- Scope honoured: `index.html`, `src/chrome/**` edits only. `src/styles/desk.css` is the token
+  *source* but is **outside this packet's lease** — deviations found there are recorded, not
+  edited (OWNERSHIP.md scope discipline).
+- Date: 2026-08-28
 
 ## Method
 
@@ -140,24 +146,48 @@ Live accent sweep at rest + driven states found accent paint on exactly these el
 
 ## E. Enforcement tests
 
-`tests/visual-polish-tokens.spec.ts` and `tests/visual-polish-chrome.spec.ts` (added with the
-fixes) turn the audit into gates: token/radius/font sweeps, "no `:hover` rule may reference the
-accent", "no non-stateful button may paint copper at rest", statefulness of the allowed accent
-sites (active tool marker + selected-row markers), Anchor default-button neutrality, recovery-bar
-neutrality, icon distinctness, and the prose removal. VIRO-0016's `a11y-keyboard.spec.ts` is
-expected green — focus indicators are deliberately untouched.
+`tests/visual-polish-tokens.spec.ts` (5 tests) and `tests/visual-polish-chrome.spec.ts` (8 tests)
+turn the audit into gates: exact token resolution + painted surfaces, a `border-radius` sweep over
+all elements, a Segoe/monospace font census over visible elements, honest empty states, "no CSS
+rule may paint the accent inside a `:hover` rule", "no `.anc-btn-default`/`.anc-mini-default` rule
+may reference the accent" + live computed borders, recovery-bar raised-button treatment (D1),
+neutral align-btn hover with 2+ layers selected (D2), accent statefulness (active-tool marker must
+move with the tool; selected-row marker stays), keyboard-focus accent retention (VIRO-0016
+boundary, mirrors the `#hex` assertion in `tests/a11y-keyboard.spec.ts`), toolbox icon
+distinctness, and the source-level prose removal (D4; HTML comments stripped — the fix leaves an
+explanatory comment, which is documentation, not painted UI).
+
+`tests/visual-polish.playwright.config.ts` is the seat-local runner that executes the identical
+suite against this worktree on the coordinator-assigned port 5184 (the canonical
+`npm run test:chrome` boots 5173 with `reuseExistingServer`, which on a shared box can silently
+reuse another worktree's server; the override fails loudly instead). It changes no product code.
+
+Gate results recorded for the candidate: `npx tsc --noEmit` clean; `test:unit` 316/316; full
+Playwright chrome suite (including VIRO-0016's `a11y-keyboard.spec.ts` and the two new suites) on
+port 5184; `node node_modules/vite/bin/vite.js build` (vite.cmd spawn is broken from Git-Bash).
+See the delivery manifest for the exact numbers of the final run.
 
 ## F. Before/after captures
 
 Per fixed item, in `node_modules/.polish-shots-before/` and `.polish-shots-after/` (uncommitted,
-0016 precedent; the committed tests are the durable re-runnable proof):
+0016 precedent; the committed tests are the durable re-runnable proof). Regenerated on this seat
+by the probe tool (`node_modules/.polish-probe.mjs`, uncommitted evidence script; same Chromium
+flags as `playwright.config.ts`) against `127.0.0.1:5184`, with the D1–D4 fix diff stashed for the
+"before" pass and applied for the "after" pass:
 
-| Item | Capture |
-| --- | --- |
-| D1 recovery primary | `recover-bar.png` |
-| D2 align-btn hover (2+ layers selected) | `align-btn-hover.png` |
-| D3 Anchor default buttons | `anchor-panel.png` |
-| Reference frames | `desk-full.png`, `projects-dialog.png` |
+| Item | Capture | Measured delta (live computed) |
+| --- | --- | --- |
+| D1 recovery primary | `recover-bar.png` | fill `rgb(224,122,47)` → `rgb(61,61,61)`; border `rgb(224,122,47)` → `rgb(26,26,26)`; text → `rgb(232,232,232)` |
+| D2 align-btn hover (2+ layers selected) | `align-btn-hover.png` | hover border `rgb(224,122,47)` → `rgb(61,61,61)` |
+| D3 Anchor default buttons | `anchor-panel.png` | `.anc-send` border `rgb(224,122,47)` → `rgb(26,26,26)` (rule-level scan covers `.anc-mini-default`, which only paints when a batch is queued) |
+| D4 Anchor prose | source check | `<p class="hint">` + governance sentence present in static markup → absent (comments stripped) |
+| Reference frames | `desk-full.png`, `projects-dialog.png` | — |
+
+The probe also swept all five driven states before and after: the accent-census diff removes
+exactly the D1/D2 hits and adds **zero** new accent hits; radius violations are 0 in every state;
+root tokens resolve to `#2b2b2b` / `#323232` / `#1f1f1f` / `#e07a2f`, radius `1px`; the font
+census finds only the Segoe stack (UI), the Anchor machine-data monospace, and the unpainted
+`#type-input` IME surface.
 
 ## Summary
 
