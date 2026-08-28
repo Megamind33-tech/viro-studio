@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 387,
-  "updated_at": "2026-08-28T21:52:55.211Z",
+  "revision": 388,
+  "updated_at": "2026-08-28T21:53:15.427Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -421,10 +421,10 @@
       "critic_needed": false,
       "stage": "release",
       "status": "RELEASE",
-      "assigned_agent": "zcode-release-pc1",
-      "assigned_role": "release-manager",
+      "assigned_agent": null,
+      "assigned_role": null,
       "work_branch": "agent/viro-0011/zcode-gov-audit-pc1",
-      "heartbeat_at": "2026-08-28T21:52:55.211Z",
+      "heartbeat_at": null,
       "attempts": 0,
       "evidence": [
         {
@@ -486,23 +486,56 @@
           "by": "zcode-verify-pc13",
           "item": "schema: DB viro-press-library v4 unchanged on base and candidate, RecoverySnapshot gain additive (optional createdAt, id widened to string), no chrome/index.html changes",
           "at": "2026-08-28T21:49:33.618Z"
+        },
+        {
+          "stage": "release",
+          "by": "zcode-release-pc1",
+          "item": "PR binds approval to head SHA 65dc905bc447b3e592065f5e78c781d01384d837",
+          "at": "2026-08-28T21:53:15.396Z"
+        },
+        {
+          "stage": "release",
+          "by": "zcode-release-pc1",
+          "item": "independent verifier zcode-verify-pc13: 23/23 own two-document probe, legacy current-record compat, additive schema, byte-unchanged recovery.spec.mjs, gates green",
+          "at": "2026-08-28T21:53:15.396Z"
+        },
+        {
+          "stage": "release",
+          "by": "zcode-release-pc1",
+          "item": "critic NOT_APPLICABLE per manifest: persistence behavior only",
+          "at": "2026-08-28T21:53:15.396Z"
         }
       ],
       "last_handoff": {
-        "from": "verify",
-        "to": "release",
-        "by": "zcode-verify-pc13",
-        "at": "2026-08-28T21:49:33.618Z",
+        "from": "release",
+        "to": "merge-gate",
+        "by": "zcode-release-pc1",
+        "at": "2026-08-28T21:53:15.396Z",
         "evidence": [
-          "scope: 65dc905 diff = exactly 5 leased files (src/app.ts, src/library/store.ts, tests/recovery-identity.spec.mjs, tests/recovery-identity.test.mjs, deliveries/VIRO-0011.json)",
-          "independent two-document probe 23/23 on own vite :5202 via real IndexedDB (dirty writeRecovery mints proj_ identity; persistCurrentProject reuses SAME id; both snapshots distinct + intact; reload head = newest B; restoreRecovery(idA) restores content + identity + createdAt; deleteProject removes project+recovery and subsequent edit mints fresh id, idA never reappears; legacy 'current' record restores under fresh proj_ id; no-arg getRecovery newest-first)",
-          "gates: recovery-identity unit 5/5, recovery-identity.spec.mjs 16/16, recovery.spec.mjs byte-unchanged vs base 13/13, projects.spec.mjs 11/11, test:chrome 16/16 (a11y 6 + chrome 5 + pdf-compound 5, external config on :5202; stock config hardcodes occupied 5173), test:unit 316/316, tsc --noEmit 0, vite build 0",
-          "schema: DB viro-press-library v4 unchanged on base and candidate, RecoverySnapshot gain additive (optional createdAt, id widened to string), no chrome/index.html changes"
+          "PR binds approval to head SHA 65dc905bc447b3e592065f5e78c781d01384d837",
+          "independent verifier zcode-verify-pc13: 23/23 own two-document probe, legacy current-record compat, additive schema, byte-unchanged recovery.spec.mjs, gates green",
+          "critic NOT_APPLICABLE per manifest: persistence behavior only"
         ]
       },
       "rejection": null,
       "assigned_machine": "pc-cloud1",
-      "assigned_session": "46fe8aa5-14ed-46b9-908f-9b66cdcb36f0"
+      "assigned_session": "46fe8aa5-14ed-46b9-908f-9b66cdcb36f0",
+      "release_approval": {
+        "status": "APPROVED",
+        "by": "zcode-release-pc1",
+        "machine": "pc-cloud1",
+        "session": "46fe8aa5-14ed-46b9-908f-9b66cdcb36f0",
+        "at": "2026-08-28T21:53:15.396Z",
+        "pr_number": 26,
+        "pr_url": "https://github.com/Megamind33-tech/viro-studio/pull/26",
+        "head_sha": "65dc905bc447b3e592065f5e78c781d01384d837",
+        "base": "main",
+        "evidence": [
+          "PR binds approval to head SHA 65dc905bc447b3e592065f5e78c781d01384d837",
+          "independent verifier zcode-verify-pc13: 23/23 own two-document probe, legacy current-record compat, additive schema, byte-unchanged recovery.spec.mjs, gates green",
+          "critic NOT_APPLICABLE per manifest: persistence behavior only"
+        ]
+      }
     },
     "VIRO-0012": {
       "id": "VIRO-0012",
@@ -1890,13 +1923,6 @@
       "session": "7d582a52-7fbe-4354-a69e-cf7f1d44abc3",
       "packet": "VIRO-0143",
       "heartbeat_at": "2026-08-28T21:52:09.946Z"
-    },
-    "zcode-release-pc1": {
-      "role": "release-manager",
-      "machine": "pc-cloud1",
-      "session": "46fe8aa5-14ed-46b9-908f-9b66cdcb36f0",
-      "packet": "VIRO-0011",
-      "heartbeat_at": "2026-08-28T21:52:55.211Z"
     }
   },
   "leases": {
@@ -1923,7 +1949,7 @@
         "tests/recovery-identity-*"
       ],
       "acquired_at": "2026-08-28T19:32:14.640Z",
-      "current_agent": "zcode-release-pc1",
+      "current_agent": null,
       "current_stage": "release",
       "current_session": "46fe8aa5-14ed-46b9-908f-9b66cdcb36f0"
     },
@@ -1957,12 +1983,6 @@
     }
   },
   "events": [
-    {
-      "at": "2026-08-28T07:51:36.431Z",
-      "type": "agent.heartbeat",
-      "agent": "zcode-perf-pc2",
-      "packet": "VIRO-0012"
-    },
     {
       "at": "2026-08-28T07:56:43.514Z",
       "type": "agent.heartbeat",
@@ -4055,6 +4075,16 @@
       "role": "release-manager",
       "machine": "pc-cloud1",
       "session": "46fe8aa5-14ed-46b9-908f-9b66cdcb36f0"
+    },
+    {
+      "at": "2026-08-28T21:53:15.427Z",
+      "type": "release.approved",
+      "packet": "VIRO-0011",
+      "by": "zcode-release-pc1",
+      "machine": "pc-cloud1",
+      "session": "46fe8aa5-14ed-46b9-908f-9b66cdcb36f0",
+      "pr": 26,
+      "head_sha": "65dc905bc447b3e592065f5e78c781d01384d837"
     }
   ]
 }
