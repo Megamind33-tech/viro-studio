@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 249,
-  "updated_at": "2026-08-28T17:13:36.275Z",
+  "revision": 250,
+  "updated_at": "2026-08-28T17:13:45.495Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -420,11 +420,11 @@
       ],
       "critic_needed": false,
       "stage": "build",
-      "status": "QUEUED",
-      "assigned_agent": null,
-      "assigned_role": null,
+      "status": "ACTIVE",
+      "assigned_agent": "zcode-identity-pc1",
+      "assigned_role": "builder",
       "work_branch": "agent/viro-0011/zcode-gov-audit-pc1",
-      "heartbeat_at": null,
+      "heartbeat_at": "2026-08-28T17:13:45.495Z",
       "attempts": 0,
       "evidence": [
         {
@@ -1243,6 +1243,12 @@
       "machine": "pc-cloud1",
       "packet": "VIRO-0014",
       "heartbeat_at": "2026-08-28T17:11:30.422Z"
+    },
+    "zcode-identity-pc1": {
+      "role": "builder",
+      "machine": "pc-cloud1",
+      "packet": "VIRO-0011",
+      "heartbeat_at": "2026-08-28T17:13:45.495Z"
     }
   },
   "leases": {
@@ -1255,7 +1261,7 @@
         "tests/recovery-identity-*"
       ],
       "acquired_at": "2026-08-28T16:58:23.286Z",
-      "current_agent": null,
+      "current_agent": "zcode-identity-pc1",
       "current_stage": "build"
     },
     "VIRO-0014": {
@@ -2954,6 +2960,14 @@
       "at": "2026-08-28T17:13:36.275Z",
       "type": "packet.reconciled_from_manifest",
       "packet": "VIRO-0002"
+    },
+    {
+      "at": "2026-08-28T17:13:45.495Z",
+      "type": "packet.claimed",
+      "packet": "VIRO-0011",
+      "agent": "zcode-identity-pc1",
+      "role": "builder",
+      "machine": "pc-cloud1"
     }
   ]
 }
