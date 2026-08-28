@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 352,
-  "updated_at": "2026-08-28T20:04:59.426Z",
+  "revision": 353,
+  "updated_at": "2026-08-28T20:05:14.879Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -838,10 +838,10 @@
       "critic_needed": false,
       "stage": "release",
       "status": "RELEASE",
-      "assigned_agent": "zcode-release-pc1",
-      "assigned_role": "release-manager",
+      "assigned_agent": null,
+      "assigned_role": null,
       "work_branch": "agent/viro-0015/zcode-gov-audit-pc1",
-      "heartbeat_at": "2026-08-28T20:04:59.426Z",
+      "heartbeat_at": null,
       "attempts": 0,
       "evidence": [
         {
@@ -939,28 +939,56 @@
           "by": "zcode-verify-pc11",
           "item": "build exit 0, dist 47M",
           "at": "2026-08-28T20:03:14.603Z"
+        },
+        {
+          "stage": "release",
+          "by": "zcode-release-pc1",
+          "item": "PR binds approval to head SHA 3cba4ab",
+          "at": "2026-08-28T20:05:14.869Z"
+        },
+        {
+          "stage": "release",
+          "by": "zcode-release-pc1",
+          "item": "independent verifier zcode-verify-pc11: zero production changes, vacuity re-proven, decode spot-checks match, 13/13 x2, chrome 16/16, build 0",
+          "at": "2026-08-28T20:05:14.869Z"
+        },
+        {
+          "stage": "release",
+          "by": "zcode-release-pc1",
+          "item": "critic NOT_APPLICABLE per manifest: QA corpus",
+          "at": "2026-08-28T20:05:14.869Z"
         }
       ],
       "last_handoff": {
-        "from": "verify",
-        "to": "release",
-        "by": "zcode-verify-pc11",
-        "at": "2026-08-28T20:03:14.603Z",
+        "from": "release",
+        "to": "merge-gate",
+        "by": "zcode-release-pc1",
+        "at": "2026-08-28T20:05:14.869Z",
         "evidence": [
-          "scope: diff 72b05f0..3cba4ab = 6 files/878 insertions, all tests/export-corpus-* + deliveries/VIRO-0015.json, ZERO src/export changes",
-          "vacuity re-proof (verifier's own mutations): PNG pin digit flip -> exactly png-arm FAIL 12/1; ring topology m:2->3 -> exactly pdf-arm ring FAIL 12/1; both restored, worktree clean",
-          "independent decode spot-checks (pdf-lib decodePDFRawStream + own census): ring m=2 h=2 f*=1 fill=0; text BT=1 Tm=1 TJ=1, stream glyphs=11 == report.glyphs=11, textRuns=1, whole-font note present; all 7 report fields asserted per row",
-          "corpus 13/13 twice (pins reproduced)",
-          "tsc exit 0",
-          "test:unit 316/316",
-          "pdf-compound 5/5 + pdf-font-embed 5/5 untouched",
-          "test:chrome 16/16 passed (exit 1 only from worker teardown hang under load, no test failure)",
-          "build exit 0, dist 47M"
+          "PR binds approval to head SHA 3cba4ab",
+          "independent verifier zcode-verify-pc11: zero production changes, vacuity re-proven, decode spot-checks match, 13/13 x2, chrome 16/16, build 0",
+          "critic NOT_APPLICABLE per manifest: QA corpus"
         ]
       },
       "rejection": null,
       "assigned_machine": "pc-cloud1",
-      "assigned_session": "5228e367-4f68-44d0-b3f1-291634577075"
+      "assigned_session": "5228e367-4f68-44d0-b3f1-291634577075",
+      "release_approval": {
+        "status": "APPROVED",
+        "by": "zcode-release-pc1",
+        "machine": "pc-cloud1",
+        "session": "5228e367-4f68-44d0-b3f1-291634577075",
+        "at": "2026-08-28T20:05:14.869Z",
+        "pr_number": 24,
+        "pr_url": "https://github.com/Megamind33-tech/viro-studio/pull/24",
+        "head_sha": "3cba4ab074b32ab8fe59cbbe230510be31a2e860",
+        "base": "main",
+        "evidence": [
+          "PR binds approval to head SHA 3cba4ab",
+          "independent verifier zcode-verify-pc11: zero production changes, vacuity re-proven, decode spot-checks match, 13/13 x2, chrome 16/16, build 0",
+          "critic NOT_APPLICABLE per manifest: QA corpus"
+        ]
+      }
     },
     "VIRO-0016": {
       "id": "VIRO-0016",
@@ -1642,13 +1670,6 @@
       "session": "09cc77df-6a55-4bec-a989-ed5242198ade",
       "packet": "VIRO-0143",
       "heartbeat_at": "2026-08-28T20:04:12.389Z"
-    },
-    "zcode-release-pc1": {
-      "role": "release-manager",
-      "machine": "pc-cloud1",
-      "session": "5228e367-4f68-44d0-b3f1-291634577075",
-      "packet": "VIRO-0015",
-      "heartbeat_at": "2026-08-28T20:04:59.426Z"
     }
   },
   "leases": {
@@ -1660,7 +1681,7 @@
         "tests/export-corpus-*"
       ],
       "acquired_at": "2026-08-28T16:58:52.208Z",
-      "current_agent": "zcode-release-pc1",
+      "current_agent": null,
       "current_stage": "release",
       "current_session": "5228e367-4f68-44d0-b3f1-291634577075"
     },
@@ -1720,12 +1741,6 @@
     }
   },
   "events": [
-    {
-      "at": "2026-08-28T05:15:55.527Z",
-      "type": "agent.heartbeat",
-      "agent": "zcode-verify-pc1",
-      "packet": "VIRO-0005"
-    },
     {
       "at": "2026-08-28T05:23:17.622Z",
       "type": "packet.reconciled_from_manifest",
@@ -3755,6 +3770,16 @@
       "role": "release-manager",
       "machine": "pc-cloud1",
       "session": "5228e367-4f68-44d0-b3f1-291634577075"
+    },
+    {
+      "at": "2026-08-28T20:05:14.879Z",
+      "type": "release.approved",
+      "packet": "VIRO-0015",
+      "by": "zcode-release-pc1",
+      "machine": "pc-cloud1",
+      "session": "5228e367-4f68-44d0-b3f1-291634577075",
+      "pr": 24,
+      "head_sha": "3cba4ab074b32ab8fe59cbbe230510be31a2e860"
     }
   ]
 }
