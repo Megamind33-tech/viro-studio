@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 222,
-  "updated_at": "2026-08-28T16:19:36.251Z",
+  "revision": 223,
+  "updated_at": "2026-08-28T16:20:05.039Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -752,7 +752,7 @@
       "dependencies": [],
       "critic_needed": true,
       "stage": "verify",
-      "status": "QUEUED",
+      "status": "BLOCKED",
       "assigned_agent": null,
       "assigned_role": null,
       "work_branch": "agent/viro-0016/zcode-gov-audit-pc1",
@@ -802,7 +802,12 @@
           "gates: npx tsc --noEmit clean, npm run test:unit 316/316, npm run build exit 0; visual drift: desk-at-rest and menu-open PNGs byte-identical pre/post, dialog-open differs only by the new visible focus indicator (542px, rows 52-240)"
         ]
       },
-      "rejection": null
+      "rejection": {
+        "by": "governor",
+        "stage": "verify",
+        "reason": "OWNER ORDER 2026-08-28: builder-complete candidate b92f1b2 (8 a11y fixes + 6 walkthrough tests) merged to LOCAL main commit abc2fa8; verification had not started (quota wall); chrome/build green on merged main; independent critic still PENDING - schedule after quota reset",
+        "at": "2026-08-28T16:20:05.037Z"
+      }
     },
     "VIRO-0017": {
       "id": "VIRO-0017",
@@ -1171,20 +1176,6 @@
     }
   },
   "leases": {
-    "VIRO-0016": {
-      "packet": "VIRO-0016",
-      "scope": [
-        "index.html",
-        "src/chrome/**",
-        "docs/reviews/0016-accessibility-audit.md",
-        "docs/agents/deliveries/VIRO-0016.json",
-        "tests/a11y-*"
-      ],
-      "acquired_at": "2026-08-28T10:21:58.084Z",
-      "current_agent": null,
-      "current_stage": "verify",
-      "heartbeat_at": "2026-08-28T11:30:31.707Z"
-    },
     "VIRO-0019": {
       "packet": "VIRO-0019",
       "scope": [
@@ -2621,6 +2612,13 @@
       "agent": "zcode-verify-pc7",
       "by": "governor",
       "reason": "verifier session died in quota wall; builder PASS candidate c93b7ac; coordinator gate-ran green (pdf-font 5/5, tsc, unit, build) + 0145x0005 combination proven green; OWNER ORDER: merged to local main commit af7519b; independent critic still PENDING"
+    },
+    {
+      "at": "2026-08-28T16:20:05.039Z",
+      "type": "packet.blocked",
+      "packet": "VIRO-0016",
+      "by": "governor",
+      "reason": "OWNER ORDER 2026-08-28: builder-complete candidate b92f1b2 (8 a11y fixes + 6 walkthrough tests) merged to LOCAL main commit abc2fa8; verification had not started (quota wall); chrome/build green on merged main; independent critic still PENDING - schedule after quota reset"
     }
   ]
 }
