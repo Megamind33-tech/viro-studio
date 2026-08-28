@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 302,
-  "updated_at": "2026-08-28T19:08:32.835Z",
+  "revision": 303,
+  "updated_at": "2026-08-28T19:10:41.361Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -704,10 +704,10 @@
       "critic_needed": false,
       "stage": "release",
       "status": "RELEASE",
-      "assigned_agent": "zcode-release-pc1",
-      "assigned_role": "release-manager",
+      "assigned_agent": null,
+      "assigned_role": null,
       "work_branch": "agent/viro-0014/zcode-gov-audit-pc1",
-      "heartbeat_at": "2026-08-28T19:08:32.835Z",
+      "heartbeat_at": null,
       "attempts": 0,
       "evidence": [
         {
@@ -763,22 +763,60 @@
           "by": "zcode-verify-pc8",
           "item": "persistence ordering proven: putUserFont called only after successful decode (2 valid imports = 2 calls, 0 hostile); corpus digests independently recomputed match manifest (9bde3d2f..., 5790b9f3...)",
           "at": "2026-08-28T17:54:18.099Z"
+        },
+        {
+          "stage": "release",
+          "by": "zcode-release-pc1",
+          "item": "PR #22 binds approval to head SHA ac2df9f844955a5519b29c85505a704c47e8f83c",
+          "at": "2026-08-28T19:10:41.313Z"
+        },
+        {
+          "stage": "release",
+          "by": "zcode-release-pc1",
+          "item": "independent verifier zcode-verify-pc8: scope clean, 20/20 hostile probes, persistence-after-decode proven, gates green",
+          "at": "2026-08-28T19:10:41.313Z"
+        },
+        {
+          "stage": "release",
+          "by": "zcode-release-pc1",
+          "item": "critic NOT_APPLICABLE per manifest: engine validation hardening",
+          "at": "2026-08-28T19:10:41.313Z"
+        },
+        {
+          "stage": "release",
+          "by": "zcode-release-pc1",
+          "item": "content ALSO merged to LOCAL main under owner order (supersedes PR after push)",
+          "at": "2026-08-28T19:10:41.313Z"
         }
       ],
       "last_handoff": {
-        "from": "verify",
-        "to": "release",
-        "by": "zcode-verify-pc8",
-        "at": "2026-08-28T17:54:18.099Z",
+        "from": "release",
+        "to": "merge-gate",
+        "by": "zcode-release-pc1",
+        "at": "2026-08-28T19:10:41.313Z",
         "evidence": [
-          "head ac2df9f verified from clean worktree viro-0014-verify-zcode1",
-          "scope: diff 72b05f0..ac2df9f touches only font-registry.ts, sniff.ts, tests/import-sanitize-{test,corpus}.mjs, deliveries/VIRO-0014.json — app.ts/store.ts zero-diff, all inside lease",
-          "gates: tsc clean, test:unit 316/316, import-sanitize 5/5 twice deterministic, playwright chrome vs vite:5198 exit 0 (13 passed 3 env-flaky on retry), build success",
-          "independent hostile probes 20/20 via instrumented putUserFont loader hook: text-as-.ttf FontImportError/bad-magic, traversal-named valid TTF imports family NotoSans separator-free, 50%-cut real TTF undecodable, text-as-.png sniff unknown + wrong-magic, GIF dims-bomb typed bad-dimensions, oversized too-large",
-          "persistence ordering proven: putUserFont called only after successful decode (2 valid imports = 2 calls, 0 hostile); corpus digests independently recomputed match manifest (9bde3d2f..., 5790b9f3...)"
+          "PR #22 binds approval to head SHA ac2df9f844955a5519b29c85505a704c47e8f83c",
+          "independent verifier zcode-verify-pc8: scope clean, 20/20 hostile probes, persistence-after-decode proven, gates green",
+          "critic NOT_APPLICABLE per manifest: engine validation hardening",
+          "content ALSO merged to LOCAL main under owner order (supersedes PR after push)"
         ]
       },
-      "rejection": null
+      "rejection": null,
+      "release_approval": {
+        "status": "APPROVED",
+        "by": "zcode-release-pc1",
+        "at": "2026-08-28T19:10:41.313Z",
+        "pr_number": 22,
+        "pr_url": "https://github.com/Megamind33-tech/viro-studio/pull/22",
+        "head_sha": "ac2df9f844955a5519b29c85505a704c47e8f83c",
+        "base": "main",
+        "evidence": [
+          "PR #22 binds approval to head SHA ac2df9f844955a5519b29c85505a704c47e8f83c",
+          "independent verifier zcode-verify-pc8: scope clean, 20/20 hostile probes, persistence-after-decode proven, gates green",
+          "critic NOT_APPLICABLE per manifest: engine validation hardening",
+          "content ALSO merged to LOCAL main under owner order (supersedes PR after push)"
+        ]
+      }
     },
     "VIRO-0015": {
       "id": "VIRO-0015",
@@ -1408,12 +1446,6 @@
       "machine": "pc-cloud1",
       "packet": "VIRO-0141",
       "heartbeat_at": "2026-08-28T17:58:14.800Z"
-    },
-    "zcode-release-pc1": {
-      "role": "release-manager",
-      "machine": "pc-cloud1",
-      "packet": "VIRO-0014",
-      "heartbeat_at": "2026-08-28T19:08:32.835Z"
     }
   },
   "leases": {
@@ -1440,7 +1472,7 @@
         "tests/import-sanitize-*"
       ],
       "acquired_at": "2026-08-28T16:58:36.785Z",
-      "current_agent": "zcode-release-pc1",
+      "current_agent": null,
       "current_stage": "release"
     },
     "VIRO-0015": {
@@ -1513,12 +1545,6 @@
     }
   },
   "events": [
-    {
-      "at": "2026-08-27T16:41:36.413Z",
-      "type": "agent.heartbeat",
-      "agent": "claude-audit-cloud1",
-      "packet": "VIRO-0002"
-    },
     {
       "at": "2026-08-27T16:47:19.204Z",
       "type": "packet.blocked",
@@ -3486,6 +3512,14 @@
       "agent": "zcode-release-pc1",
       "role": "release-manager",
       "machine": "pc-cloud1"
+    },
+    {
+      "at": "2026-08-28T19:10:41.361Z",
+      "type": "release.approved",
+      "packet": "VIRO-0014",
+      "by": "zcode-release-pc1",
+      "pr": 22,
+      "head_sha": "ac2df9f844955a5519b29c85505a704c47e8f83c"
     }
   ]
 }
