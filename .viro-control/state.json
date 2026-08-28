@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 428,
-  "updated_at": "2026-08-28T23:37:28.014Z",
+  "revision": 429,
+  "updated_at": "2026-08-28T23:37:48.013Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -1959,12 +1959,12 @@
       ],
       "dependencies": [],
       "critic_needed": true,
-      "stage": "verify",
-      "status": "VERIFY",
-      "assigned_agent": "zcode-verify-pc15",
-      "assigned_role": "verifier",
+      "stage": "critic",
+      "status": "QUEUED",
+      "assigned_agent": null,
+      "assigned_role": null,
       "work_branch": "agent/viro-0146/zcode-gov-audit-pc1",
-      "heartbeat_at": "2026-08-28T23:37:28.014Z",
+      "heartbeat_at": null,
       "attempts": 0,
       "evidence": [
         {
@@ -1996,18 +1996,49 @@
           "by": "zcode-effects-pc1",
           "item": "delivery JSON: docs/agents/deliveries/VIRO-0146.json builder PASS with full proof list",
           "at": "2026-08-28T23:11:13.890Z"
+        },
+        {
+          "stage": "verify",
+          "by": "zcode-verify-pc15",
+          "item": "Independent decode of shadowed PDF: vector body preserved (m=1 c=4 h=1 fill=1 byte-equal to control), exactly one regional underlay Do drawn before content (256x176 vs 400x300pt page, DeviceRGB + DeviceGray SMask, not full-page), text+shadow keeps BT/Tf/Tm/TJ with hex CID run — no page rasterisation",
+          "at": "2026-08-28T23:37:48.010Z"
+        },
+        {
+          "stage": "verify",
+          "by": "zcode-verify-pc15",
+          "item": "Independent pdf.js 3.11.174 parity run (own harness/math, worktree server 5209): shadow doc mean=0.00 p99=0 share>64=0.000%, band ink right 77.72/77.72% bottom 66.57/66.57% canvas-vs-pdf, agreement 0.00pts; unshadowed control 0% band ink both arms, images=0, notes=[] — falsifiable contrast reproduced",
+          "at": "2026-08-28T23:37:48.013Z"
+        },
+        {
+          "stage": "verify",
+          "by": "zcode-verify-pc15",
+          "item": "Fallback truthfulness: outer-glow/stroke/gradient-overlay each recorded in rasterFallbacks ('Rectangle (outer-glow)' etc.) + notes; mixed shadow+glow renders (images=1) AND records glow; disabled effects record nothing",
+          "at": "2026-08-28T23:37:48.013Z"
+        },
+        {
+          "stage": "verify",
+          "by": "zcode-verify-pc15",
+          "item": "Gates on clean 06015c3 worktree: tsc exit 0; test:unit 336/336; corpus 13/13 twice (VIRO_URL to own-worktree server, PNG fingerprints green); pdf-compound 5/5 + pdf-font 5/5 node; parity spec 2/2 via in-lease 5203 config; full chrome suite on external 5207 config 18/18 incl pdf-compound 5/5 + parity 2/2 + a11y 6 + chrome 5; vite build exit 0",
+          "at": "2026-08-28T23:37:48.013Z"
+        },
+        {
+          "stage": "verify",
+          "by": "zcode-verify-pc15",
+          "item": "Scope: diff 1b30734..06015c3 = 11 files, all inside lease (pdf.ts, export-corpus-*, pdf-effects-*, VIRO-0146.json); export-corpus-png.json byte-unchanged (all non-effects pins intact); vendored oracle LICENSE Apache-2.0 (Mozilla 2023, pdfjs 3.11.174) with byte-stable .gitattributes; corpus effects pin flipped from silent-drop to prove-the-fix",
+          "at": "2026-08-28T23:37:48.013Z"
         }
       ],
       "last_handoff": {
-        "from": "build",
-        "to": "verify",
-        "by": "zcode-effects-pc1",
-        "at": "2026-08-28T23:11:13.890Z",
+        "from": "verify",
+        "to": "critic",
+        "by": "zcode-verify-pc15",
+        "at": "2026-08-28T23:37:48.013Z",
         "evidence": [
-          "candidate 06015c3 on agent/viro-0146/zcode-gov-audit-pc1 (690d410 exporter+corpus flips, 4a568ed pdf.js parity suite+oracle+5203 config, 65b2b7d oracle EOL pin)",
-          "approach: Skia-rasterised shadow underlay (MakeDropShadowOnly sigma=blur/2, alpha=colour.a x opacity, 3sigma) embedded as transparent-PNG XObject beneath vector content; no-CK/oversize regions and glow/stroke/gradient-overlay recorded in rasterFallbacks+notes, never silent",
-          "corpus 13/13 incl flipped effects parity pin + unchanged PNG fingerprints; pdf.js 3.11.174 rendered-PDF vs canvas: pixel-identical (firstDiff=-1), band ink 55.44/44.38% both arms, control 0% both arms; tsc exit 0; test:unit 336/336; pdf-compound+pdf-font node 10/10; chrome suite on 5203 via in-lease config 17 passed (1 documented cold-boot retry) incl pdf-compound 5/5 + parity 2/2; vite build exit 0",
-          "delivery JSON: docs/agents/deliveries/VIRO-0146.json builder PASS with full proof list"
+          "Independent decode of shadowed PDF: vector body preserved (m=1 c=4 h=1 fill=1 byte-equal to control), exactly one regional underlay Do drawn before content (256x176 vs 400x300pt page, DeviceRGB + DeviceGray SMask, not full-page), text+shadow keeps BT/Tf/Tm/TJ with hex CID run — no page rasterisation",
+          "Independent pdf.js 3.11.174 parity run (own harness/math, worktree server 5209): shadow doc mean=0.00 p99=0 share>64=0.000%, band ink right 77.72/77.72% bottom 66.57/66.57% canvas-vs-pdf, agreement 0.00pts; unshadowed control 0% band ink both arms, images=0, notes=[] — falsifiable contrast reproduced",
+          "Fallback truthfulness: outer-glow/stroke/gradient-overlay each recorded in rasterFallbacks ('Rectangle (outer-glow)' etc.) + notes; mixed shadow+glow renders (images=1) AND records glow; disabled effects record nothing",
+          "Gates on clean 06015c3 worktree: tsc exit 0; test:unit 336/336; corpus 13/13 twice (VIRO_URL to own-worktree server, PNG fingerprints green); pdf-compound 5/5 + pdf-font 5/5 node; parity spec 2/2 via in-lease 5203 config; full chrome suite on external 5207 config 18/18 incl pdf-compound 5/5 + parity 2/2 + a11y 6 + chrome 5; vite build exit 0",
+          "Scope: diff 1b30734..06015c3 = 11 files, all inside lease (pdf.ts, export-corpus-*, pdf-effects-*, VIRO-0146.json); export-corpus-png.json byte-unchanged (all non-effects pins intact); vendored oracle LICENSE Apache-2.0 (Mozilla 2023, pdfjs 3.11.174) with byte-stable .gitattributes; corpus effects pin flipped from silent-drop to prove-the-fix"
         ]
       },
       "rejection": null,
@@ -2076,13 +2107,6 @@
       "session": "51efe904-f1a0-4f6d-9378-10f113c068fc",
       "packet": "VIRO-0144",
       "heartbeat_at": "2026-08-28T23:24:55.219Z"
-    },
-    "zcode-verify-pc15": {
-      "role": "verifier",
-      "machine": "pc-cloud1",
-      "session": "36db8411-b240-4d61-a0e6-606e9ac83db3",
-      "packet": "VIRO-0146",
-      "heartbeat_at": "2026-08-28T23:37:28.014Z"
     }
   },
   "leases": {
@@ -2110,8 +2134,8 @@
         "docs/agents/deliveries/VIRO-0146.json"
       ],
       "acquired_at": "2026-08-28T21:32:32.991Z",
-      "current_agent": "zcode-verify-pc15",
-      "current_stage": "verify",
+      "current_agent": null,
+      "current_stage": "critic",
       "current_session": "36db8411-b240-4d61-a0e6-606e9ac83db3",
       "heartbeat_at": "2026-08-28T23:37:28.014Z"
     },
@@ -2130,14 +2154,6 @@
     }
   },
   "events": [
-    {
-      "at": "2026-08-28T10:10:46.643Z",
-      "type": "packet.advanced",
-      "packet": "VIRO-0005",
-      "from": "critic",
-      "to": "release",
-      "by": "zcode-critic-pc1"
-    },
     {
       "at": "2026-08-28T10:16:53.072Z",
       "type": "packet.reconciled_from_manifest",
@@ -4308,6 +4324,16 @@
       "packet": "VIRO-0146",
       "session": "36db8411-b240-4d61-a0e6-606e9ac83db3",
       "machine": "pc-cloud1"
+    },
+    {
+      "at": "2026-08-28T23:37:48.013Z",
+      "type": "packet.advanced",
+      "packet": "VIRO-0146",
+      "from": "verify",
+      "to": "critic",
+      "by": "zcode-verify-pc15",
+      "machine": "pc-cloud1",
+      "session": "36db8411-b240-4d61-a0e6-606e9ac83db3"
     }
   ]
 }
