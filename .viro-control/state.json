@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 348,
-  "updated_at": "2026-08-28T20:03:14.603Z",
+  "revision": 349,
+  "updated_at": "2026-08-28T20:03:32.855Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -1303,12 +1303,12 @@
         "VIRO-0140"
       ],
       "critic_needed": false,
-      "stage": "verify",
-      "status": "VERIFY",
-      "assigned_agent": "zcode-verify-pc10b",
-      "assigned_role": "verifier",
+      "stage": "release",
+      "status": "QUEUED",
+      "assigned_agent": null,
+      "assigned_role": null,
       "work_branch": "agent/viro-0141/zcode-gov-audit-pc1",
-      "heartbeat_at": "2026-08-28T19:58:31.320Z",
+      "heartbeat_at": null,
       "attempts": 0,
       "evidence": [
         {
@@ -1334,17 +1334,70 @@
           "by": "zcode-vector-pc1",
           "item": "npx tsc --noEmit exit 0; npm run test:unit 336/336 (baseline 316 + 20); vite build succeeds (264 modules; npm spawn of vite.cmd blocked by local Git-Bash launcher quirk, gate run as node node_modules/vite/bin/vite.js build); delivery record docs/agents/deliveries/VIRO-0141.json",
           "at": "2026-08-28T17:53:28.194Z"
+        },
+        {
+          "stage": "verify",
+          "by": "zcode-verify-pc10b",
+          "item": "head 5b74002 (base 72b05f0) diff-stat clean: only the 7 leased files",
+          "at": "2026-08-28T20:03:32.851Z"
+        },
+        {
+          "stage": "verify",
+          "by": "zcode-verify-pc10b",
+          "item": "tsc --noEmit exit 0",
+          "at": "2026-08-28T20:03:32.854Z"
+        },
+        {
+          "stage": "verify",
+          "by": "zcode-verify-pc10b",
+          "item": "test:unit 336/336",
+          "at": "2026-08-28T20:03:32.855Z"
+        },
+        {
+          "stage": "verify",
+          "by": "zcode-verify-pc10b",
+          "item": "vector-node-commands 16/16 + vector-node-pixels 3/3 real-CanvasKit",
+          "at": "2026-08-28T20:03:32.855Z"
+        },
+        {
+          "stage": "verify",
+          "by": "zcode-verify-pc10b",
+          "item": "ui-commands 179/179",
+          "at": "2026-08-28T20:03:32.855Z"
+        },
+        {
+          "stage": "verify",
+          "by": "zcode-verify-pc10b",
+          "item": "vite build via node vite.js exit 0, dist populated",
+          "at": "2026-08-28T20:03:32.855Z"
+        },
+        {
+          "stage": "verify",
+          "by": "zcode-verify-pc10b",
+          "item": "test:chrome on 127.0.0.1:5199: all 16 specs pass (14 + 2 flaky passed-on-retry; exit 1 solely from 2 non-test ERR_ABORTED connection flaps; suspect specs rerun in isolation 11/11 exit 0)",
+          "at": "2026-08-28T20:03:32.855Z"
+        },
+        {
+          "stage": "verify",
+          "by": "zcode-verify-pc10b",
+          "item": "independent bus probe tests/vector-node-verify-probe.mjs ALL PASS: bus subtract yields 2-contour ring (nodes empty), appendNode rejected with CommandError naming path.insertNode and revision+history+doc untouched, rejected moveNode also leaves revision untouched, bus moveNode pixel-diff localises to old+new anchors with EvenOdd hole intact, bus undo/redo rasters byte-identical, JSON save/reopen structure+pixel identical with validateDocument clean at every stage, closeContour refuses opening last closed contour of filled layer",
+          "at": "2026-08-28T20:03:32.855Z"
         }
       ],
       "last_handoff": {
-        "from": "build",
-        "to": "verify",
-        "by": "zcode-vector-pc1",
-        "at": "2026-08-28T17:53:28.194Z",
+        "from": "verify",
+        "to": "release",
+        "by": "zcode-verify-pc10b",
+        "at": "2026-08-28T20:03:32.855Z",
         "evidence": [
-          "commits 3dccd28/a39c4b4/5b74002 on agent/viro-0141/zcode-gov-audit-pc1 (pushed; base 72b05f0): contour ops (move/insert/delete/setClosed) + appendPathNode contours-authoritative no-op guard in ops.ts, layerContours exported from boolean-ops.ts, path.moveNode/insertNode/deleteNode/closeContour registered with pre-apply CommandError validation + appendNode routing-guard in ui-commands.ts",
-          "tests/vector-node-commands.test.mjs 16/16 + tests/vector-node-pixels.test.mjs 3/3 (real CanvasKit rasterization: node-delta locality, sibling contour byte-identical, restore-stable) + tests/ui-commands.test.mjs 179/179 CASES parity (4 new commands x5)",
-          "npx tsc --noEmit exit 0; npm run test:unit 336/336 (baseline 316 + 20); vite build succeeds (264 modules; npm spawn of vite.cmd blocked by local Git-Bash launcher quirk, gate run as node node_modules/vite/bin/vite.js build); delivery record docs/agents/deliveries/VIRO-0141.json"
+          "head 5b74002 (base 72b05f0) diff-stat clean: only the 7 leased files",
+          "tsc --noEmit exit 0",
+          "test:unit 336/336",
+          "vector-node-commands 16/16 + vector-node-pixels 3/3 real-CanvasKit",
+          "ui-commands 179/179",
+          "vite build via node vite.js exit 0, dist populated",
+          "test:chrome on 127.0.0.1:5199: all 16 specs pass (14 + 2 flaky passed-on-retry; exit 1 solely from 2 non-test ERR_ABORTED connection flaps; suspect specs rerun in isolation 11/11 exit 0)",
+          "independent bus probe tests/vector-node-verify-probe.mjs ALL PASS: bus subtract yields 2-contour ring (nodes empty), appendNode rejected with CommandError naming path.insertNode and revision+history+doc untouched, rejected moveNode also leaves revision untouched, bus moveNode pixel-diff localises to old+new anchors with EvenOdd hole intact, bus undo/redo rasters byte-identical, JSON save/reopen structure+pixel identical with validateDocument clean at every stage, closeContour refuses opening last closed contour of filled layer"
         ]
       },
       "rejection": null
@@ -1567,12 +1620,6 @@
     }
   },
   "agents": {
-    "zcode-verify-pc10b": {
-      "role": "verifier",
-      "machine": "pc-cloud1",
-      "packet": "VIRO-0141",
-      "heartbeat_at": "2026-08-28T19:58:31.320Z"
-    },
     "zcode-identity-pc2": {
       "role": "builder",
       "machine": "pc-cloud1",
@@ -1609,8 +1656,8 @@
         "tests/vector-node-*"
       ],
       "acquired_at": "2026-08-28T19:23:54.933Z",
-      "current_agent": "zcode-verify-pc10b",
-      "current_stage": "verify",
+      "current_agent": null,
+      "current_stage": "release",
       "heartbeat_at": "2026-08-28T19:58:31.320Z"
     },
     "VIRO-0143": {
@@ -1655,12 +1702,6 @@
     }
   },
   "events": [
-    {
-      "at": "2026-08-28T04:49:16.077Z",
-      "type": "agent.heartbeat",
-      "agent": "zcode-perf-pc1",
-      "packet": "VIRO-0012"
-    },
     {
       "at": "2026-08-28T04:51:00.649Z",
       "type": "agent.heartbeat",
@@ -3682,6 +3723,14 @@
       "by": "zcode-verify-pc11",
       "machine": "pc-cloud1",
       "session": null
+    },
+    {
+      "at": "2026-08-28T20:03:32.855Z",
+      "type": "packet.advanced",
+      "packet": "VIRO-0141",
+      "from": "verify",
+      "to": "release",
+      "by": "zcode-verify-pc10b"
     }
   ]
 }
