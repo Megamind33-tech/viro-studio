@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 431,
-  "updated_at": "2026-08-28T23:38:25.632Z",
+  "revision": 432,
+  "updated_at": "2026-08-28T23:43:18.844Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -1178,8 +1178,8 @@
         "VIRO-0016"
       ],
       "critic_needed": true,
-      "stage": "release",
-      "status": "RELEASE",
+      "stage": "done",
+      "status": "RECONCILED",
       "assigned_agent": null,
       "assigned_role": null,
       "work_branch": "agent/viro-0017/zcode-gov-audit-pc1",
@@ -1251,17 +1251,21 @@
           "by": "zcode-release-pc1",
           "item": "critic zcode-critic-pc3 PASS: side-by-side base/candidate drive, hierarchy reads at a glance, D5/D6 returned unedited",
           "at": "2026-08-28T23:38:25.626Z"
+        },
+        {
+          "stage": "reconcile",
+          "by": "governor",
+          "item": "landed via LOCAL merge under owner order 2026-08-28 (candidate 3ad0bb3; verifier + critic PASS); polish suites green on merged main",
+          "at": "2026-08-28T23:43:18.830Z"
         }
       ],
       "last_handoff": {
-        "from": "release",
-        "to": "merge-gate",
-        "by": "zcode-release-pc1",
-        "at": "2026-08-28T23:38:25.626Z",
+        "from": "historical",
+        "to": "done",
+        "by": "governor",
+        "at": "2026-08-28T23:43:18.830Z",
         "evidence": [
-          "PR binds approval to head SHA 3ad0bb3",
-          "independent verifier zcode-verify-pc14: scope clean 8 files, own census zero-added, 29/29 chrome incl a11y, gates green",
-          "critic zcode-critic-pc3 PASS: side-by-side base/candidate drive, hierarchy reads at a glance, D5/D6 returned unedited"
+          "landed via LOCAL merge under owner order 2026-08-28 (candidate 3ad0bb3; verifier + critic PASS); polish suites green on merged main"
         ]
       },
       "rejection": null,
@@ -2145,20 +2149,6 @@
     }
   },
   "leases": {
-    "VIRO-0017": {
-      "packet": "VIRO-0017",
-      "scope": [
-        "index.html",
-        "src/chrome/**",
-        "docs/reviews/0017-visual-polish-sweep.md",
-        "docs/agents/deliveries/VIRO-0017.json",
-        "tests/visual-polish-*"
-      ],
-      "acquired_at": "2026-08-28T19:33:41.736Z",
-      "current_agent": null,
-      "current_stage": "release",
-      "current_session": "d01cc960-a421-4b8b-a9cc-d2b7ac42a713"
-    },
     "VIRO-0146": {
       "packet": "VIRO-0146",
       "scope": [
@@ -2188,14 +2178,6 @@
     }
   },
   "events": [
-    {
-      "at": "2026-08-28T10:17:18.637Z",
-      "type": "packet.claimed",
-      "packet": "VIRO-0005",
-      "agent": "zcode-release-pc1",
-      "role": "release-manager",
-      "machine": "pc-cloud1"
-    },
     {
       "at": "2026-08-28T10:17:42.368Z",
       "type": "release.approved",
@@ -4377,6 +4359,15 @@
       "session": "d01cc960-a421-4b8b-a9cc-d2b7ac42a713",
       "pr": 28,
       "head_sha": "3ad0bb35a8f9e838f86d84987b96d66c139c3e20"
+    },
+    {
+      "at": "2026-08-28T23:43:18.844Z",
+      "type": "packet.reconciled",
+      "packet": "VIRO-0017",
+      "by": "governor",
+      "evidence": [
+        "landed via LOCAL merge under owner order 2026-08-28 (candidate 3ad0bb3; verifier + critic PASS); polish suites green on merged main"
+      ]
     }
   ]
 }
