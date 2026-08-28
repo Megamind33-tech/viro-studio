@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 219,
-  "updated_at": "2026-08-28T16:19:03.964Z",
+  "revision": 220,
+  "updated_at": "2026-08-28T16:19:13.557Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -891,11 +891,11 @@
       "dependencies": [],
       "critic_needed": false,
       "stage": "verify",
-      "status": "VERIFY",
-      "assigned_agent": "zcode-verify-pc6",
-      "assigned_role": "verifier",
+      "status": "BLOCKED",
+      "assigned_agent": null,
+      "assigned_role": null,
       "work_branch": "agent/viro-0140/zcode-gov-audit-pc1",
-      "heartbeat_at": "2026-08-28T11:52:31.712Z",
+      "heartbeat_at": null,
       "attempts": 0,
       "evidence": [
         {
@@ -941,7 +941,12 @@
           "gates: npx tsc --noEmit exit 0; npm run test:unit 316/316 exit 0 unchanged; npm run build exit 0 (branch pushed; test:chrome left to independent verification per speed protocol)"
         ]
       },
-      "rejection": null
+      "rejection": {
+        "by": "governor",
+        "stage": "verify",
+        "reason": "verifier session died in quota wall after leaving independent regression test that caught a real co-selection defect; coordinator repaired duplicateSelected (transitive closure, commit 3507167, disclosed) - 16/16 + 159/159 green; OWNER ORDER: merged to local main commit 0e6cd19",
+        "at": "2026-08-28T16:19:13.555Z"
+      }
     },
     "VIRO-0141": {
       "id": "VIRO-0141",
@@ -1160,12 +1165,6 @@
       "heartbeat_at": "2026-08-28T11:49:44.174Z",
       "session": "sess-viro0019-zcode1-live-dryrun"
     },
-    "zcode-verify-pc6": {
-      "role": "verifier",
-      "machine": "pc-cloud1",
-      "packet": "VIRO-0140",
-      "heartbeat_at": "2026-08-28T11:52:31.712Z"
-    },
     "zcode-verify-pc7": {
       "role": "verifier",
       "machine": "pc-cloud1",
@@ -1187,19 +1186,6 @@
       "current_agent": null,
       "current_stage": "verify",
       "heartbeat_at": "2026-08-28T11:30:31.707Z"
-    },
-    "VIRO-0140": {
-      "packet": "VIRO-0140",
-      "scope": [
-        "src/document/ops.ts",
-        "src/document/factory.ts",
-        "docs/agents/deliveries/VIRO-0140.json",
-        "tests/layer-integrity-*"
-      ],
-      "acquired_at": "2026-08-28T10:22:17.465Z",
-      "current_agent": "zcode-verify-pc6",
-      "current_stage": "verify",
-      "heartbeat_at": "2026-08-28T11:52:31.712Z"
     },
     "VIRO-0142": {
       "packet": "VIRO-0142",
@@ -2639,6 +2625,14 @@
       "agent": "zcode-verify-pc4",
       "by": "governor",
       "reason": "verifier session died in provider 5h quota wall; builder PASS candidate 8cba514; coordinator re-executed gates green (tsc, fuzz 8/8 x2 determinism, unit 316/316 on merged main); OWNER ORDER: merged to local main commit 3230eb0"
+    },
+    {
+      "at": "2026-08-28T16:19:13.557Z",
+      "type": "assignment.reaped",
+      "packet": "VIRO-0140",
+      "agent": "zcode-verify-pc6",
+      "by": "governor",
+      "reason": "verifier session died in quota wall after leaving independent regression test that caught a real co-selection defect; coordinator repaired duplicateSelected (transitive closure, commit 3507167, disclosed) - 16/16 + 159/159 green; OWNER ORDER: merged to local main commit 0e6cd19"
     }
   ]
 }
