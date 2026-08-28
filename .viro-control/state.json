@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 75,
-  "updated_at": "2026-08-28T06:43:16.785Z",
+  "revision": 76,
+  "updated_at": "2026-08-28T06:43:47.797Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -255,11 +255,11 @@
       "dependencies": [],
       "critic_needed": false,
       "stage": "build",
-      "status": "QUEUED",
-      "assigned_agent": null,
-      "assigned_role": null,
+      "status": "ACTIVE",
+      "assigned_agent": "zcode-perf-pc2",
+      "assigned_role": "builder",
       "work_branch": "agent/viro-0012/zcode-gov-audit-pc1",
-      "heartbeat_at": null,
+      "heartbeat_at": "2026-08-28T06:43:47.797Z",
       "attempts": 0,
       "evidence": [
         {
@@ -592,6 +592,12 @@
       "machine": "pc-cloud1",
       "packet": "VIRO-0005",
       "heartbeat_at": "2026-08-28T06:42:55.349Z"
+    },
+    "zcode-perf-pc2": {
+      "role": "builder",
+      "machine": "pc-cloud1",
+      "packet": "VIRO-0012",
+      "heartbeat_at": "2026-08-28T06:43:47.797Z"
     }
   },
   "leases": {
@@ -605,6 +611,18 @@
       "acquired_at": "2026-08-28T06:42:55.349Z",
       "current_agent": "zcode-verify-pc2",
       "current_stage": "verify"
+    },
+    "VIRO-0012": {
+      "packet": "VIRO-0012",
+      "scope": [
+        "src/engine/compositor.ts",
+        "scripts/perf/**",
+        "docs/research/0012-frame-profiling.md",
+        "docs/agents/deliveries/VIRO-0012.json"
+      ],
+      "acquired_at": "2026-08-28T06:43:47.797Z",
+      "current_agent": "zcode-perf-pc2",
+      "current_stage": "build"
     }
   },
   "events": [
@@ -1045,6 +1063,14 @@
       "at": "2026-08-28T06:43:16.785Z",
       "type": "packet.reconciled_from_manifest",
       "packet": "VIRO-0002"
+    },
+    {
+      "at": "2026-08-28T06:43:47.797Z",
+      "type": "packet.claimed",
+      "packet": "VIRO-0012",
+      "agent": "zcode-perf-pc2",
+      "role": "builder",
+      "machine": "pc-cloud1"
     }
   ]
 }
