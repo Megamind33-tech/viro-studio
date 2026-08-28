@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 365,
-  "updated_at": "2026-08-28T21:31:56.652Z",
+  "revision": 367,
+  "updated_at": "2026-08-28T21:32:07.954Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -1724,6 +1724,31 @@
         ]
       },
       "rejection": null
+    },
+    "VIRO-0146": {
+      "id": "VIRO-0146",
+      "title": "Render layer effects (drop shadow) in vector PDF export or record them truthfully",
+      "priority": "P1",
+      "domain": "export",
+      "outcome": "A document whose layers carry a drop shadow exports to vector PDF with the shadow visibly rendered and matching the canvas within tolerance - or, if a truthful vector approximation is impossible for a given effect, the export report records a per-layer rasterFallback or note so the PDF never silently differs from the canvas. VIRO-0015's export corpus pins are updated to the new behavior and its effects parity test flips from documents-the-defect to proves-the-fix.",
+      "scope": [
+        "src/export/pdf.ts",
+        "tests/export-corpus-*",
+        "tests/pdf-effects-*",
+        "docs/agents/deliveries/VIRO-0146.json"
+      ],
+      "dependencies": [],
+      "critic_needed": true,
+      "stage": "audit",
+      "status": "QUEUED",
+      "assigned_agent": null,
+      "assigned_role": null,
+      "work_branch": null,
+      "heartbeat_at": null,
+      "attempts": 0,
+      "evidence": [],
+      "last_handoff": null,
+      "rejection": null
     }
   },
   "agents": {
@@ -1793,18 +1818,6 @@
     }
   },
   "events": [
-    {
-      "at": "2026-08-28T05:56:21.290Z",
-      "type": "agent.heartbeat",
-      "agent": "zcode-perf-pc1",
-      "packet": "VIRO-0012"
-    },
-    {
-      "at": "2026-08-28T06:12:55.289Z",
-      "type": "agent.heartbeat",
-      "agent": "zcode-perf-pc1",
-      "packet": "VIRO-0012"
-    },
     {
       "at": "2026-08-28T06:15:00.978Z",
       "type": "agent.heartbeat",
@@ -3870,6 +3883,16 @@
       "packet": "VIRO-0143",
       "session": "09cc77df-6a55-4bec-a989-ed5242198ade",
       "machine": "pc-cloud1"
+    },
+    {
+      "at": "2026-08-28T21:32:07.954Z",
+      "type": "packet.reconciled_from_manifest",
+      "packet": "VIRO-0002"
+    },
+    {
+      "at": "2026-08-28T21:32:07.954Z",
+      "type": "packet.imported",
+      "packet": "VIRO-0146"
     }
   ]
 }
