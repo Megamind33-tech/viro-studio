@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 304,
-  "updated_at": "2026-08-28T19:11:08.817Z",
+  "revision": 305,
+  "updated_at": "2026-08-28T19:13:01.500Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -1034,11 +1034,11 @@
       "dependencies": [],
       "critic_needed": false,
       "stage": "verify",
-      "status": "VERIFY",
-      "assigned_agent": "zcode-verify-pc9",
-      "assigned_role": "verifier",
+      "status": "BLOCKED",
+      "assigned_agent": null,
+      "assigned_role": null,
       "work_branch": "agent/viro-0019/zcode-gov-audit-pc1",
-      "heartbeat_at": "2026-08-28T17:52:50.200Z",
+      "heartbeat_at": null,
       "attempts": 0,
       "evidence": [
         {
@@ -1084,7 +1084,12 @@
           "transports identical: both share all identity logic via orchestrator-core; REST parses (node --check) but was not live-tested without GITHUB_TOKEN — stated honestly; git transport proven live end-to-end; candidate SHA e4cf09752e10bf59729a95bf41a3386c1fef5f31 pushed to agent/viro-0019/zcode-gov-audit-pc1"
         ]
       },
-      "rejection": null,
+      "rejection": {
+        "by": "governor",
+        "stage": "verify",
+        "reason": "session zcode-verify-pc9 garbage-collected after repeated network flaps (74m stale); work preserved in worktree per checkpoint protocol; fresh session reassigned",
+        "at": "2026-08-28T19:13:01.487Z"
+      },
       "assigned_session": "sess-verify-pc9",
       "assigned_machine": "pc-cloud1"
     },
@@ -1437,13 +1442,6 @@
       "packet": "VIRO-0143",
       "heartbeat_at": "2026-08-28T18:19:45.701Z"
     },
-    "zcode-verify-pc9": {
-      "role": "verifier",
-      "machine": "pc-cloud1",
-      "session": "sess-verify-pc9",
-      "packet": "VIRO-0019",
-      "heartbeat_at": "2026-08-28T17:52:50.200Z"
-    },
     "zcode-verify-pc10": {
       "role": "verifier",
       "machine": "pc-cloud1",
@@ -1516,32 +1514,9 @@
       "current_agent": "zcode-polish-pc1",
       "current_stage": "build",
       "heartbeat_at": "2026-08-28T17:53:22.443Z"
-    },
-    "VIRO-0019": {
-      "packet": "VIRO-0019",
-      "scope": [
-        "scripts/lib/**",
-        "scripts/viro-orchestrator.mjs",
-        "scripts/viro-orchestrator-git.mjs",
-        "scripts/viro-release.mjs",
-        "docs/agents/deliveries/VIRO-0019.json",
-        "docs/agents/orchestrator-identity.md"
-      ],
-      "acquired_at": "2026-08-28T17:19:58.347Z",
-      "current_agent": "zcode-verify-pc9",
-      "current_stage": "verify",
-      "current_session": "sess-verify-pc9",
-      "heartbeat_at": "2026-08-28T17:52:50.200Z"
     }
   },
   "events": [
-    {
-      "at": "2026-08-27T16:55:00.000Z",
-      "type": "packet.reconciled",
-      "packet": "VIRO-0002",
-      "by": "governor",
-      "detail": "Target already landed before packet activation; historical evidence accepted without fabricating Builder/Verifier PASS."
-    },
     {
       "at": "2026-08-27T16:55:00.000Z",
       "type": "packet.imported",
@@ -3512,6 +3487,14 @@
       "evidence": [
         "landed via LOCAL merge under owner order 2026-08-28 (candidate ac2df9f, verifier PASS 20/20 hostile probes); release approval recorded on PR #22; remote push deferred by owner"
       ]
+    },
+    {
+      "at": "2026-08-28T19:13:01.500Z",
+      "type": "assignment.reaped",
+      "packet": "VIRO-0019",
+      "agent": "zcode-verify-pc9",
+      "by": "governor",
+      "reason": "session zcode-verify-pc9 garbage-collected after repeated network flaps (74m stale); work preserved in worktree per checkpoint protocol; fresh session reassigned"
     }
   ]
 }
