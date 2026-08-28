@@ -32,7 +32,7 @@
   ],
   "builder": { "status": "PENDING", "notes": "Claimable after VIRO-0005 releases the tests/** lease." },
   "verifier": { "status": "PENDING", "notes": "Independent verification required." },
-  "critic": { "status": "PENDING", "notes": "User-visible chrome changes require critic review against the AAA brief with no layout invention." },
+  "critic": { "status": "PASS-WITH-NOTES", "notes": "Post-merge critic (zcode-critic-pc3, 2026-08-28): keyboard-only walkthrough PASS - menus/dialogs/layers/tools all operable, no decorative ARIA. Note: #stat-engine aria-live is inert post-boot (desk.ts:1853 clobbers it) - disclosed by builder as out of lease, registered as VIRO-0148.", "proof": ["Keyboard-only journey evidence in Temp/viro-critic-pc3/shots/ (menus, dialogs, layer selection)", "a11y suite 6/6 re-run on merged main"] },
   "delta": {
     "before": "No accessibility audit evidence; unproven keyboard reachability.",
     "after": "Committed audit, proven defects fixed, keyboard-only core journeys pass.",

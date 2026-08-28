@@ -1,0 +1,44 @@
+{
+  "id": "VIRO-0147",
+  "title": "Render per-range styled text in vector PDF export (emitType consumes CharacterRuns)",
+  "priority": "P1",
+  "domain": "export",
+  "state": "QUEUED",
+  "outcome": "A document whose text story carries CharacterRun overrides exports to vector PDF with each span painted at its own size/fill/font (per-run Tf and color operators, per-range embedded faces when fontId overrides exist), glyph positions matching the canvas compose-for-compose, and the export report telling the truth about what was emitted.",
+  "before": "Batch critic finding 2026-08-28 (post-merge review, local main 5014465+): since VIRO-0142, composeFrame positions glyphs at mixed-size per-run advances, but src/export/pdf.ts emitType still paints every glyph with the story-level size/fill and a single embedded face. Reproduction: two ranges (size 64 copper / size 34 blue) via type.characterRange -> canvas correct; exported PDF paints every glyph ~12pt black scattered across the wide advances (critic shots styledpdf-01-canvas.png vs styledpdf-03-crop.png); export report claims success with no caveat - a false success state. Severity P1: export accuracy is a core product promise; failure is silent; exposure currently bus/Anchor-only (no chrome authoring UI yet).",
+  "after": "emitType segments stories by runs exactly as the engine does, emits per-span Tf/fill (and per-range faces when required), and the PDF render matches the canvas; if any range aspect remains unexportable, the report records it explicitly.",
+  "allowed_paths": [
+    "src/export/pdf.ts",
+    "tests/export-corpus-*",
+    "tests/pdf-styled-text-*",
+    "docs/agents/deliveries/VIRO-0147.json"
+  ],
+  "depends_on": ["VIRO-0146"],
+  "acceptance": [
+    "A two-range document (different size + fill) exports to PDF whose pdf.js render shows both spans at their correct sizes/colors (rendered-pixel + text-content proof, artifact-level).",
+    "Glyph advance positions in the PDF match the canvas composition (no scatter).",
+    "Per-range fontId overrides either embed per-range faces or produce an explicit truthful report entry - never silent divergence.",
+    "VIRO-0015 corpus text pins updated to the new topology; all other pins unchanged; compound/font/effects suites stay green.",
+    "npx tsc --noEmit, corpus + new tests, npm run test:chrome and npm run build pass."
+  ],
+  "evidence": [
+    "pdf.js rendered proof: both ranges correct size/color",
+    "Advance-position match proof vs canvas",
+    "Updated corpus text pins + green suites",
+    "npx tsc --noEmit",
+    "npm run build"
+  ],
+  "builder": { "status": "PENDING", "notes": "Serialized behind VIRO-0146 (shared pdf.ts + corpus pins)." },
+  "verifier": { "status": "PENDING", "notes": "Independent verification required." },
+  "critic": { "status": "PENDING", "notes": "Exported text output user-visible; critic re-runs the styled-text reproduction." },
+  "delta": {
+    "before": "Styled ranges position correctly on canvas but export as uniform broken text with a false-success report.",
+    "after": "Per-range styles export faithfully; report truthful.",
+    "proof": [],
+    "regression_protection": [
+      "Plain single-style text export topology unchanged",
+      "VIRO-0015 corpus non-text pins unchanged"
+    ],
+    "new_debt": "app.ts exportPdf: stale 'subset Noto Sans' JSDoc + dynamic import outside try/catch (dev-server 504 makes Export click no-op silently) - app.ts off-lease, recorded for the next app-leased packet."
+  }
+}

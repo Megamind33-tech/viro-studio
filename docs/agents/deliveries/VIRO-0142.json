@@ -39,8 +39,13 @@
     "notes": "Independent verification required."
   },
   "critic": {
-    "status": "PENDING",
-    "notes": "User-visible rendering change; critic must judge run-boundary quality (kerning across style boundaries, baseline alignment)."
+    "status": "PASS-WITH-NOTES",
+    "notes": "Post-merge critic (zcode-critic-pc3, 2026-08-28): two-range canvas rendering PASS - distinct shaped runs, shared baseline, clean boundaries; undo/redo PNG-byte-identical; thumbnail reflects runs. Follow-up defect registered: PDF exporter ignores ranges (VIRO-0147) - canvas acceptance fully met, exporter was outside this lease.",
+    "proof": [
+      "Canvas two-range + closeup shots in Temp/viro-critic-pc3/",
+      "rich-text suites 12/12 re-run on merged main",
+      "undo/redo PNG-byte equality proven"
+    ]
   },
   "delta": {
     "before": "Per-range styling is stored, commanded, validated - and invisible.",

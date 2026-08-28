@@ -45,9 +45,13 @@
     "proof": []
   },
   "critic": {
-    "status": "PENDING",
-    "notes": "User-visible claim to judge: text exported to vector PDF now displays completely in third-party viewers, at the cost of larger files (report and PDF Subject disclose this).",
-    "proof": []
+    "status": "PASS",
+    "notes": "Post-merge critic (zcode-critic-pc3, 2026-08-28): real export driven, pdf.js getTextContent exact, zero font warnings, complete professionally shaped glyphs; full-font disclosure truthful in Subject + status line. P3 notes: stale JSDoc in app.ts::exportPdf (registered in VIRO-0147 new_debt).",
+    "proof": [
+      "pdf-03-render-noff.png + closeup in Temp/viro-critic-pc3/",
+      "1,215,647-byte export matches honest size disclosure",
+      "pdf-font-embed 5/5 re-run on merged main"
+    ]
   },
   "delta": {
     "before": "Vector PDF text export embedded a corrupt pdf-lib FontFile2 subset: fontkit threw on glyph outline reads, pdf.js painted fragmentary glyphs, and the exporter was unimportable under node --experimental-strip-types (parameter-property syntax), so no unit test could drive it.",

@@ -1,0 +1,42 @@
+{
+  "id": "VIRO-0148",
+  "title": "Fix inert status live-region: announcement text is overwritten post-boot",
+  "priority": "P3",
+  "domain": "ui-ux",
+  "state": "QUEUED",
+  "outcome": "The status cell's aria-live=polite region actually announces save/export/recovery messages: post-boot writes keep the live-region element stable (message text changes in place) so sighted users see 'Saved...'/'PDF exported...' and screen readers announce them, with the doc-size label moving to its own non-live element.",
+  "before": "Batch critic finding 2026-08-28 (VIRO-0016 post-merge review, F8 follow-up): #stat-engine's aria-live=polite is inert after boot because src/chrome/desk.ts:1853 overwrites the element with the doc-size label whenever engines are up, so 'Saved...'/'PDF exported...' never display for sighted or screen-reader users (probe read 'Doc: 33.2M/33.2M' immediately after Ctrl+S). The a11y builder disclosed this honestly as out of VIRO-0016's lease.",
+  "after": "Status messages render and are announced; doc-size label lives elsewhere; desk.ts:1853 no longer clobbers the live region; covered by a test asserting the live element survives a status write after boot.",
+  "allowed_paths": [
+    "index.html",
+    "src/chrome/**",
+    "tests/a11y-status-*",
+    "docs/agents/deliveries/VIRO-0148.json"
+  ],
+  "depends_on": ["VIRO-0017"],
+  "acceptance": [
+    "After engines boot, a save action renders 'Saved...' (or current truthful wording) in the status cell AND the aria-live element remains the same node announcing it (test asserts node identity + text).",
+    "Doc-size label renders in its own element; no clobbering of the live region (desk.ts:1853 path fixed).",
+    "VIRO-0016's a11y suite stays green; no visual drift beyond the corrected status content.",
+    "npx tsc --noEmit, new test, npm run test:chrome and npm run build pass."
+  ],
+  "evidence": [
+    "Live-region survival test output",
+    "Screenshot of visible status message post-save",
+    "npx tsc --noEmit",
+    "npm run build"
+  ],
+  "builder": { "status": "PENDING", "notes": "Serialized behind VIRO-0017 (shared chrome lease)." },
+  "verifier": { "status": "PENDING", "notes": "Independent verification required." },
+  "critic": { "status": "PENDING", "notes": "Small user-visible fix; critic re-checks announcement behavior." },
+  "delta": {
+    "before": "aria-live region clobbered post-boot; save/export messages invisible and unannounced.",
+    "after": "Truthful visible + announced status messages with stable live node.",
+    "proof": [],
+    "regression_protection": [
+      "VIRO-0016 a11y suite green",
+      "Existing chrome suites green"
+    ],
+    "new_debt": "none yet"
+  }
+}
