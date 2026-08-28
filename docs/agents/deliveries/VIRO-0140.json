@@ -1,0 +1,45 @@
+{
+  "id": "VIRO-0140",
+  "title": "Layer integrity: fix group duplication childless-shell and deep-delete dangling-parent corruption",
+  "priority": "P1",
+  "domain": "editor-core",
+  "state": "ACTIVE",
+  "outcome": "Duplicating a group produces a complete independent copy (children included) with exact undo/redo; deleting a group of any depth leaves zero layers with dangling parentId; a document already carrying dangling parent links is repaired on open to visually-stable page-space positions; validateDocument stays clean through all three flows.",
+  "before": "Gap audit 2026-08-27 (read-only, main 14e2812): duplicateSelected (src/document/ops.ts:425-449) clones only activeLayerIds rows, so duplicating a group (reachable via bus layer.duplicate ui-commands.ts:241, app.duplicate src/app.ts:1469, layers panel desk.ts:1528, Anchor press.duplicate anchor/tools.ts:793-803) yields a childless shell while children stay behind; no test covers group duplication (tests/ui-commands.test.mjs:93 covers only the guard). deleteSelected (ops.ts:414-423) computes descendants one level deep, so deleting an outer group from a PSD-imported tree (src/import/psd.ts:15-58 recursive walk) leaves grandchildren with dangling parentId; parentChain (src/document/transform.ts:100-110) then treats local coords as page coords (layer teleports) and validateDocument reports 'parentId points outside the page' (factory.ts:1084-1086) permanently; migrateDocument (migrate.ts:56-80) notes but never repairs dangling links.",
+  "after": "Descendant-closure logic shared by duplicate/delete makes group operations structurally complete; a repair pass heals pre-corrupted documents idempotently on open.",
+  "allowed_paths": [
+    "src/document/ops.ts",
+    "src/document/factory.ts",
+    "tests/**",
+    "docs/agents/deliveries/VIRO-0140.json"
+  ],
+  "depends_on": [],
+  "acceptance": [
+    "Duplicating a selected group yields a copy whose rendered pixels match the original offset by the duplicate delta, children included; undo/redo restore exactly.",
+    "Deleting a group of nesting depth >= 2 leaves zero layers whose parentId references a missing id; validateDocument reports no parentId errors afterwards.",
+    "A hand-crafted v6 document with dangling parentId values is repaired on open to page-space positions; reopening the repaired file is a no-op (idempotent).",
+    "PSD-imported nested trees survive duplicate/delete of outer groups.",
+    "npx tsc --noEmit, targeted new tests, npm run test:unit baseline files, npm run test:chrome and npm run build pass."
+  ],
+  "evidence": [
+    "Group duplicate pixel/structure test with undo proof",
+    "Deep delete dangling-id test (depth >= 2 tree)",
+    "Repair-on-open idempotency test",
+    "npx tsc --noEmit",
+    "npm run test:chrome",
+    "npm run build"
+  ],
+  "builder": { "status": "PENDING", "notes": "Claims after VIRO-0005 releases the tests/** lease; audit pass by Governor already queued." },
+  "verifier": { "status": "PENDING", "notes": "Independent verification required." },
+  "critic": { "status": "NOT_APPLICABLE", "notes": "Engine-only integrity fixes; rendering correctness of duplicates is asserted by tests, no aesthetic judgment." },
+  "delta": {
+    "before": "Group duplicate loses children; deep delete dangles grandchild parents permanently.",
+    "after": "Structurally complete duplicate/delete with open-time repair for already-corrupted files.",
+    "proof": [],
+    "regression_protection": [
+      "Existing ui-commands/transform/migration suites green",
+      "Single-layer duplicate/delete behavior unchanged"
+    ],
+    "new_debt": "none yet"
+  }
+}
