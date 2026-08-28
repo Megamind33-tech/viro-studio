@@ -11,10 +11,12 @@
     "src/document/ops.ts",
     "src/document/ui-commands.ts",
     "src/document/boolean-ops.ts",
-    "tests/**",
-    "docs/agents/deliveries/VIRO-0141.json"
+    "docs/agents/deliveries/VIRO-0141.json",
+    "tests/vector-node-*"
   ],
-  "depends_on": ["VIRO-0140"],
+  "depends_on": [
+    "VIRO-0140"
+  ],
   "acceptance": [
     "path.moveNode on a boolean-result contour changes canvas output by exactly the node delta (pixel-diff evidence); undo/redo restore exactly.",
     "path.insertNode and path.deleteNode preserve the remaining geometry byte-identically apart from the edited contour.",
@@ -29,9 +31,18 @@
     "npx tsc --noEmit",
     "npm run build"
   ],
-  "builder": { "status": "PENDING", "notes": "Serialized behind VIRO-0140 (shared ops.ts)." },
-  "verifier": { "status": "PENDING", "notes": "Independent verification required." },
-  "critic": { "status": "NOT_APPLICABLE", "notes": "Command/engine layer; Anchor-addressable; no chrome." },
+  "builder": {
+    "status": "PENDING",
+    "notes": "Serialized behind VIRO-0140 (shared ops.ts)."
+  },
+  "verifier": {
+    "status": "PENDING",
+    "notes": "Independent verification required."
+  },
+  "critic": {
+    "status": "NOT_APPLICABLE",
+    "notes": "Command/engine layer; Anchor-addressable; no chrome."
+  },
   "delta": {
     "before": "Boolean output geometry is immutable via commands; appendNode actively corrupts placement.",
     "after": "Contour-addressed node editing with exact inverses and a corruption guard.",

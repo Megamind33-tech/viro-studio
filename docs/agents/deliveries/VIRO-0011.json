@@ -10,10 +10,12 @@
   "allowed_paths": [
     "src/app.ts",
     "src/library/store.ts",
-    "tests/**",
-    "docs/agents/deliveries/VIRO-0011.json"
+    "docs/agents/deliveries/VIRO-0011.json",
+    "tests/recovery-identity-*"
   ],
-  "depends_on": ["VIRO-0010"],
+  "depends_on": [
+    "VIRO-0010"
+  ],
   "acceptance": [
     "Two documents edited in sequence each retain an independent recoverable snapshot.",
     "Recovery restore preserves project identity (name/id) rather than losing it.",
@@ -28,9 +30,18 @@
     "npx tsc --noEmit",
     "npm run build"
   ],
-  "builder": { "status": "PENDING", "notes": "Gated on VIRO-0010 DONE." },
-  "verifier": { "status": "PENDING", "notes": "Independent verification required." },
-  "critic": { "status": "NOT_APPLICABLE", "notes": "Persistence behavior only; no visual redesign." },
+  "builder": {
+    "status": "PENDING",
+    "notes": "Gated on VIRO-0010 DONE."
+  },
+  "verifier": {
+    "status": "PENDING",
+    "notes": "Independent verification required."
+  },
+  "critic": {
+    "status": "NOT_APPLICABLE",
+    "notes": "Persistence behavior only; no visual redesign."
+  },
   "delta": {
     "before": "One recovery slot keyed to the last session regardless of document identity.",
     "after": "Per-document recovery records with identity-preserving restore.",

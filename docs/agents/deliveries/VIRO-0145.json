@@ -9,8 +9,8 @@
   "after": "Exported text PDFs carry structurally valid embedded fonts; every glyph on the page renders in independent viewers; a unit test decodes the embedded font from the produced PDF and validates it with fontkit.",
   "allowed_paths": [
     "src/export/pdf.ts",
-    "tests/**",
-    "docs/agents/deliveries/VIRO-0145.json"
+    "docs/agents/deliveries/VIRO-0145.json",
+    "tests/pdf-font-*"
   ],
   "depends_on": [],
   "acceptance": [
@@ -27,9 +27,18 @@
     "npx tsc --noEmit",
     "npm run build"
   ],
-  "builder": { "status": "PENDING", "notes": "Claimable once audited; src/export lease was released with the VIRO-0005 recovery block." },
-  "verifier": { "status": "PENDING", "notes": "Independent verification required." },
-  "critic": { "status": "PENDING", "notes": "Exported text output is user-visible; critic re-runs the critic-visual harness on text documents." },
+  "builder": {
+    "status": "PENDING",
+    "notes": "Claimable once audited; src/export lease was released with the VIRO-0005 recovery block."
+  },
+  "verifier": {
+    "status": "PENDING",
+    "notes": "Independent verification required."
+  },
+  "critic": {
+    "status": "PENDING",
+    "notes": "Exported text output is user-visible; critic re-runs the critic-visual harness on text documents."
+  },
   "delta": {
     "before": "Embedded font subsets are corrupt; third-party viewers render fragmentary text.",
     "after": "Valid embedded fonts with complete glyph coverage, proven by independent parsers.",

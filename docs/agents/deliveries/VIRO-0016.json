@@ -10,9 +10,9 @@
   "allowed_paths": [
     "index.html",
     "src/chrome/**",
-    "tests/**",
     "docs/reviews/0016-accessibility-audit.md",
-    "docs/agents/deliveries/VIRO-0016.json"
+    "docs/agents/deliveries/VIRO-0016.json",
+    "tests/a11y-*"
   ],
   "depends_on": [],
   "acceptance": [
@@ -30,9 +30,18 @@
     "npm run test:chrome",
     "npm run build"
   ],
-  "builder": { "status": "PENDING", "notes": "Claimable after VIRO-0005 releases the tests/** lease." },
-  "verifier": { "status": "PENDING", "notes": "Independent verification required." },
-  "critic": { "status": "PENDING", "notes": "User-visible chrome changes require critic review against the AAA brief with no layout invention." },
+  "builder": {
+    "status": "PENDING",
+    "notes": "Claimable after VIRO-0005 releases the tests/** lease."
+  },
+  "verifier": {
+    "status": "PENDING",
+    "notes": "Independent verification required."
+  },
+  "critic": {
+    "status": "PENDING",
+    "notes": "User-visible chrome changes require critic review against the AAA brief with no layout invention."
+  },
   "delta": {
     "before": "No accessibility audit evidence; unproven keyboard reachability.",
     "after": "Committed audit, proven defects fixed, keyboard-only core journeys pass.",

@@ -10,8 +10,8 @@
   "allowed_paths": [
     "src/app.ts",
     "src/library/store.ts",
-    "tests/**",
-    "docs/agents/deliveries/VIRO-0010.json"
+    "docs/agents/deliveries/VIRO-0010.json",
+    "tests/autosave-*"
   ],
   "depends_on": [],
   "acceptance": [
@@ -29,9 +29,18 @@
     "npm run test:chrome",
     "npm run build"
   ],
-  "builder": { "status": "PENDING", "notes": "Claimable after VIRO-0005 releases the tests/** lease." },
-  "verifier": { "status": "PENDING", "notes": "Independent verification required." },
-  "critic": { "status": "NOT_APPLICABLE", "notes": "Engine-only persistence hardening; no aesthetic or workflow redesign. Any new user-visible status text must still be shown in verifier evidence." },
+  "builder": {
+    "status": "PENDING",
+    "notes": "Claimable after VIRO-0005 releases the tests/** lease."
+  },
+  "verifier": {
+    "status": "PENDING",
+    "notes": "Independent verification required."
+  },
+  "critic": {
+    "status": "NOT_APPLICABLE",
+    "notes": "Engine-only persistence hardening; no aesthetic or workflow redesign. Any new user-visible status text must still be shown in verifier evidence."
+  },
   "delta": {
     "before": "Autosave deep-clones the full document twice per tick and has untested quota/write-failure behavior.",
     "after": "Single serialization per tick, explicit failure handling, last-good-snapshot survival proven by test.",

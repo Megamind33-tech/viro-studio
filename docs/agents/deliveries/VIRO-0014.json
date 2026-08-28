@@ -11,10 +11,12 @@
     "src/import/**",
     "src/engine/font-registry.ts",
     "src/engine/sniff.ts",
-    "tests/**",
-    "docs/agents/deliveries/VIRO-0014.json"
+    "docs/agents/deliveries/VIRO-0014.json",
+    "tests/import-sanitize-*"
   ],
-  "depends_on": ["VIRO-0013"],
+  "depends_on": [
+    "VIRO-0013"
+  ],
   "acceptance": [
     "Malformed font files (truncated, wrong magic, hostile name tables) are rejected with typed errors, never corrupting the registry state.",
     "Malformed/lying-mime images are rejected or safely sniffed per existing sniff.ts policy.",
@@ -27,9 +29,18 @@
     "npx tsc --noEmit",
     "npm run build"
   ],
-  "builder": { "status": "PENDING", "notes": "Gated on VIRO-0013 DONE." },
-  "verifier": { "status": "PENDING", "notes": "Independent verification required." },
-  "critic": { "status": "NOT_APPLICABLE", "notes": "Engine validation hardening; no UI change." },
+  "builder": {
+    "status": "PENDING",
+    "notes": "Gated on VIRO-0013 DONE."
+  },
+  "verifier": {
+    "status": "PENDING",
+    "notes": "Independent verification required."
+  },
+  "critic": {
+    "status": "NOT_APPLICABLE",
+    "notes": "Engine validation hardening; no UI change."
+  },
   "delta": {
     "before": "Font/image validation proven only for valid inputs.",
     "after": "Negative-input regression suite with typed rejections and unchanged valid flows.",

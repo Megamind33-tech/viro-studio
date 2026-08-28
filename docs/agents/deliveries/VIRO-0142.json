@@ -11,8 +11,8 @@
     "src/engine/type.ts",
     "src/engine/font-registry.ts",
     "src/document/text-model.ts",
-    "tests/**",
-    "docs/agents/deliveries/VIRO-0142.json"
+    "docs/agents/deliveries/VIRO-0142.json",
+    "tests/rich-text-*"
   ],
   "depends_on": [],
   "acceptance": [
@@ -30,9 +30,18 @@
     "npm run test:chrome",
     "npm run build"
   ],
-  "builder": { "status": "PENDING", "notes": "Claims after VIRO-0005 releases tests/**; authoring UI stays out of scope (chrome leased); bus/Anchor drive authoring in tests." },
-  "verifier": { "status": "PENDING", "notes": "Independent verification required." },
-  "critic": { "status": "PENDING", "notes": "User-visible rendering change; critic must judge run-boundary quality (kerning across style boundaries, baseline alignment)." },
+  "builder": {
+    "status": "PENDING",
+    "notes": "Claims after VIRO-0005 releases tests/**; authoring UI stays out of scope (chrome leased); bus/Anchor drive authoring in tests."
+  },
+  "verifier": {
+    "status": "PENDING",
+    "notes": "Independent verification required."
+  },
+  "critic": {
+    "status": "PENDING",
+    "notes": "User-visible rendering change; critic must judge run-boundary quality (kerning across style boundaries, baseline alignment)."
+  },
   "delta": {
     "before": "Per-range styling is stored, commanded, validated - and invisible.",
     "after": "Per-range styling renders truthfully with stable undo/reopen and byte-identical legacy path.",

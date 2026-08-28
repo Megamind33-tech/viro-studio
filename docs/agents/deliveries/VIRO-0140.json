@@ -10,8 +10,8 @@
   "allowed_paths": [
     "src/document/ops.ts",
     "src/document/factory.ts",
-    "tests/**",
-    "docs/agents/deliveries/VIRO-0140.json"
+    "docs/agents/deliveries/VIRO-0140.json",
+    "tests/layer-integrity-*"
   ],
   "depends_on": [],
   "acceptance": [
@@ -29,9 +29,18 @@
     "npm run test:chrome",
     "npm run build"
   ],
-  "builder": { "status": "PENDING", "notes": "Claims after VIRO-0005 releases the tests/** lease; audit pass by Governor already queued." },
-  "verifier": { "status": "PENDING", "notes": "Independent verification required." },
-  "critic": { "status": "NOT_APPLICABLE", "notes": "Engine-only integrity fixes; rendering correctness of duplicates is asserted by tests, no aesthetic judgment." },
+  "builder": {
+    "status": "PENDING",
+    "notes": "Claims after VIRO-0005 releases the tests/** lease; audit pass by Governor already queued."
+  },
+  "verifier": {
+    "status": "PENDING",
+    "notes": "Independent verification required."
+  },
+  "critic": {
+    "status": "NOT_APPLICABLE",
+    "notes": "Engine-only integrity fixes; rendering correctness of duplicates is asserted by tests, no aesthetic judgment."
+  },
   "delta": {
     "before": "Group duplicate loses children; deep delete dangles grandchild parents permanently.",
     "after": "Structurally complete duplicate/delete with open-time repair for already-corrupted files.",

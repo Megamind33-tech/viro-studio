@@ -9,8 +9,9 @@
   "after": "Deterministic fuzz/negative suite under tests/ runs the real parsers against a versioned corpus of malformed inputs; every failure is a caught, typed error; corpus, runner and any minimal fixes are merged together.",
   "allowed_paths": [
     "src/import/**",
-    "tests/**",
-    "docs/agents/deliveries/VIRO-0013.json"
+    "docs/agents/deliveries/VIRO-0013.json",
+    "tests/import-*",
+    "tests/fixtures/import-corpus/**"
   ],
   "depends_on": [],
   "acceptance": [
@@ -28,9 +29,18 @@
     "npx tsc --noEmit",
     "npm run build"
   ],
-  "builder": { "status": "PENDING", "notes": "Claimable after VIRO-0005 releases the tests/** lease." },
-  "verifier": { "status": "PENDING", "notes": "Independent verification required." },
-  "critic": { "status": "NOT_APPLICABLE", "notes": "Engine/import hardening; no UI change." },
+  "builder": {
+    "status": "PENDING",
+    "notes": "Claimable after VIRO-0005 releases the tests/** lease."
+  },
+  "verifier": {
+    "status": "PENDING",
+    "notes": "Independent verification required."
+  },
+  "critic": {
+    "status": "NOT_APPLICABLE",
+    "notes": "Engine/import hardening; no UI change."
+  },
   "delta": {
     "before": "No malformed-input corpus; parser robustness unproven beyond valid files.",
     "after": "Versioned corpus + deterministic runner + typed-failure guarantee, with minimal fixes for proven defects.",

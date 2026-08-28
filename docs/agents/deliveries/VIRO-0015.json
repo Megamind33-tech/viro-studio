@@ -9,10 +9,12 @@
   "after": "One command regenerates and one command verifies the corpus; every corpus document has committed expected artifacts (operator-level for PDF, checksums for PNG); report fields (vectorPaths, rasterFallbacks, others) each have an assertion.",
   "allowed_paths": [
     "src/export/**",
-    "tests/**",
-    "docs/agents/deliveries/VIRO-0015.json"
+    "docs/agents/deliveries/VIRO-0015.json",
+    "tests/export-corpus-*"
   ],
-  "depends_on": ["VIRO-0005"],
+  "depends_on": [
+    "VIRO-0005"
+  ],
   "acceptance": [
     "Corpus includes: single-contour vector, compound boolean ring, disjoint union, stroke-only, fill+stroke, text layer, raster layer, and effects layer.",
     "Verification command fails on any operator-topology or pixel-checksum divergence.",
@@ -25,9 +27,18 @@
     "npx tsc --noEmit",
     "npm run build"
   ],
-  "builder": { "status": "PENDING", "notes": "Gated on VIRO-0005 DONE." },
-  "verifier": { "status": "PENDING", "notes": "Independent verification required." },
-  "critic": { "status": "NOT_APPLICABLE", "notes": "Test/QA corpus; no product behavior change intended." },
+  "builder": {
+    "status": "PENDING",
+    "notes": "Gated on VIRO-0005 DONE."
+  },
+  "verifier": {
+    "status": "PENDING",
+    "notes": "Independent verification required."
+  },
+  "critic": {
+    "status": "NOT_APPLICABLE",
+    "notes": "Test/QA corpus; no product behavior change intended."
+  },
   "delta": {
     "before": "Point tests for compound export; no standing corpus or report-field coverage.",
     "after": "Versioned corpus with artifact-level verification commands and full report-field assertions.",

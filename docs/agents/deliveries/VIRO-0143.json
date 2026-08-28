@@ -10,10 +10,12 @@
   "allowed_paths": [
     "src/engine/type.ts",
     "src/document/text-model.ts",
-    "tests/**",
-    "docs/agents/deliveries/VIRO-0143.json"
+    "docs/agents/deliveries/VIRO-0143.json",
+    "tests/text-frame-*"
   ],
-  "depends_on": ["VIRO-0142"],
+  "depends_on": [
+    "VIRO-0142"
+  ],
   "acceptance": [
     "A frame with inset 24 composes against the reduced measure with the first baseline shifted; screenshot evidence.",
     "verticalAlign center centers the composed block between frame top/bottom.",
@@ -28,9 +30,18 @@
     "npx tsc --noEmit",
     "npm run build"
   ],
-  "builder": { "status": "PENDING", "notes": "Serialized behind VIRO-0142 (shared type.ts)." },
-  "verifier": { "status": "PENDING", "notes": "Independent verification required." },
-  "critic": { "status": "PENDING", "notes": "User-visible layout behavior; critic judges professional semantics." },
+  "builder": {
+    "status": "PENDING",
+    "notes": "Serialized behind VIRO-0142 (shared type.ts)."
+  },
+  "verifier": {
+    "status": "PENDING",
+    "notes": "Independent verification required."
+  },
+  "critic": {
+    "status": "PENDING",
+    "notes": "User-visible layout behavior; critic judges professional semantics."
+  },
   "delta": {
     "before": "textFrame is validated metadata with zero rendering effect.",
     "after": "Insets/verticalAlign/autoSize are real, reversible, and regression-safe.",

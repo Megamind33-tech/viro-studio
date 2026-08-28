@@ -10,11 +10,13 @@
   "allowed_paths": [
     "index.html",
     "src/chrome/**",
-    "tests/**",
     "docs/reviews/0017-visual-polish-sweep.md",
-    "docs/agents/deliveries/VIRO-0017.json"
+    "docs/agents/deliveries/VIRO-0017.json",
+    "tests/visual-polish-*"
   ],
-  "depends_on": ["VIRO-0016"],
+  "depends_on": [
+    "VIRO-0016"
+  ],
   "acceptance": [
     "Enumerated deviation list committed with before/after evidence per item.",
     "Color/radius/token conformance verified against the spec values.",
@@ -28,9 +30,18 @@
     "npm run test:chrome green",
     "npm run build"
   ],
-  "builder": { "status": "PENDING", "notes": "Gated on VIRO-0016 DONE." },
-  "verifier": { "status": "PENDING", "notes": "Independent verification required." },
-  "critic": { "status": "PENDING", "notes": "Required: critic judges the polish result against the AAA brief." },
+  "builder": {
+    "status": "PENDING",
+    "notes": "Gated on VIRO-0016 DONE."
+  },
+  "verifier": {
+    "status": "PENDING",
+    "notes": "Independent verification required."
+  },
+  "critic": {
+    "status": "PENDING",
+    "notes": "Required: critic judges the polish result against the AAA brief."
+  },
   "delta": {
     "before": "Token conformance unevidenced; incidental visual drift possible.",
     "after": "Documented conformance sweep with all deviations corrected.",

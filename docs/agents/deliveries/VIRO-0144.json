@@ -9,10 +9,12 @@
   "after": "caretStops derive from glyph clusters (prefix re-shaping removed), setSegmentProperties feeds story script/direction/language, and mixed-kerning fixtures place carets within 0.5px of glyph origins with correct selection spans.",
   "allowed_paths": [
     "src/engine/type.ts",
-    "tests/**",
-    "docs/agents/deliveries/VIRO-0144.json"
+    "docs/agents/deliveries/VIRO-0144.json",
+    "tests/caret-fidelity-*"
   ],
-  "depends_on": ["VIRO-0143"],
+  "depends_on": [
+    "VIRO-0143"
+  ],
   "acceptance": [
     "For a kerning+ligature fixture, caret x from caretStops matches shaped glyph origins at every boundary (unit assert, <= 0.5px).",
     "Selection highlight covers exactly the selected glyphs (canvas screenshot).",
@@ -29,9 +31,18 @@
     "npx tsc --noEmit",
     "npm run build"
   ],
-  "builder": { "status": "PENDING", "notes": "Serialized behind VIRO-0143 (shared type.ts). app.ts Backspace edge is out of scope here (leased); flagged to Governor for the persistence/app packet." },
-  "verifier": { "status": "PENDING", "notes": "Independent verification required." },
-  "critic": { "status": "PENDING", "notes": "User-visible caret/selection correctness; light critic pass on screenshots." },
+  "builder": {
+    "status": "PENDING",
+    "notes": "Serialized behind VIRO-0143 (shared type.ts). app.ts Backspace edge is out of scope here (leased); flagged to Governor for the persistence/app packet."
+  },
+  "verifier": {
+    "status": "PENDING",
+    "notes": "Independent verification required."
+  },
+  "critic": {
+    "status": "PENDING",
+    "notes": "User-visible caret/selection correctness; light critic pass on screenshots."
+  },
   "delta": {
     "before": "Carets drift under kerning/ligatures; script fields inert; O(n) re-shapes per line.",
     "after": "Cluster-derived carets, honored direction/script, single shape per line.",
