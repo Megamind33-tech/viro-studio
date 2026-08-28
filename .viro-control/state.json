@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 308,
-  "updated_at": "2026-08-28T19:13:59.172Z",
+  "revision": 309,
+  "updated_at": "2026-08-28T19:14:16.719Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -837,11 +837,11 @@
       ],
       "critic_needed": false,
       "stage": "verify",
-      "status": "QUEUED",
-      "assigned_agent": null,
-      "assigned_role": null,
+      "status": "VERIFY",
+      "assigned_agent": "zcode-verify-pc11",
+      "assigned_role": "verifier",
       "work_branch": "agent/viro-0015/zcode-gov-audit-pc1",
-      "heartbeat_at": null,
+      "heartbeat_at": "2026-08-28T19:14:16.719Z",
       "attempts": 0,
       "evidence": [
         {
@@ -1441,6 +1441,12 @@
       "machine": "pc-cloud1",
       "packet": "VIRO-0143",
       "heartbeat_at": "2026-08-28T18:19:45.701Z"
+    },
+    "zcode-verify-pc11": {
+      "role": "verifier",
+      "machine": "pc-cloud1",
+      "packet": "VIRO-0015",
+      "heartbeat_at": "2026-08-28T19:14:16.719Z"
     }
   },
   "leases": {
@@ -1465,9 +1471,8 @@
         "tests/export-corpus-*"
       ],
       "acquired_at": "2026-08-28T16:58:52.208Z",
-      "current_agent": null,
-      "current_stage": "verify",
-      "heartbeat_at": "2026-08-28T17:58:33.390Z"
+      "current_agent": "zcode-verify-pc11",
+      "current_stage": "verify"
     },
     "VIRO-0143": {
       "packet": "VIRO-0143",
@@ -1498,12 +1503,6 @@
     }
   },
   "events": [
-    {
-      "at": "2026-08-27T17:24:17.130Z",
-      "type": "agent.heartbeat",
-      "agent": "claude-audit-cloud1",
-      "packet": "VIRO-0005"
-    },
     {
       "at": "2026-08-27T17:27:33.021Z",
       "type": "packet.advanced",
@@ -3475,6 +3474,14 @@
       "agent": "zcode-verify-pc10",
       "by": "governor",
       "reason": "session zcode-verify-pc10 garbage-collected after repeated network flaps (74m stale); work preserved in worktree per checkpoint protocol; fresh session reassigned"
+    },
+    {
+      "at": "2026-08-28T19:14:16.719Z",
+      "type": "packet.claimed",
+      "packet": "VIRO-0015",
+      "agent": "zcode-verify-pc11",
+      "role": "verifier",
+      "machine": "pc-cloud1"
     }
   ]
 }
