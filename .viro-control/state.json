@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 402,
-  "updated_at": "2026-08-28T22:35:14.047Z",
+  "revision": 403,
+  "updated_at": "2026-08-28T22:36:45.924Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -1179,11 +1179,11 @@
       ],
       "critic_needed": true,
       "stage": "critic",
-      "status": "QUEUED",
-      "assigned_agent": null,
-      "assigned_role": null,
+      "status": "CRITIC",
+      "assigned_agent": "zcode-critic-pc3",
+      "assigned_role": "critic",
       "work_branch": "agent/viro-0017/zcode-gov-audit-pc1",
-      "heartbeat_at": null,
+      "heartbeat_at": "2026-08-28T22:36:45.924Z",
       "attempts": 0,
       "evidence": [
         {
@@ -1234,7 +1234,7 @@
       },
       "rejection": null,
       "assigned_machine": "pc-cloud1",
-      "assigned_session": "3d9877d2-e1f3-4d35-b98c-28acaf6cc547"
+      "assigned_session": "69a08142-3926-4f09-afda-f139c9b80bdd"
     },
     "VIRO-0019": {
       "id": "VIRO-0019",
@@ -1984,6 +1984,13 @@
       "session": "af3421e0-3367-47c9-aed5-b0c200f48b94",
       "packet": "VIRO-0143",
       "heartbeat_at": "2026-08-28T22:26:43.029Z"
+    },
+    "zcode-critic-pc3": {
+      "role": "critic",
+      "machine": "pc-cloud1",
+      "session": "69a08142-3926-4f09-afda-f139c9b80bdd",
+      "packet": "VIRO-0017",
+      "heartbeat_at": "2026-08-28T22:36:45.924Z"
     }
   },
   "leases": {
@@ -2011,10 +2018,9 @@
         "tests/visual-polish-*"
       ],
       "acquired_at": "2026-08-28T19:33:41.736Z",
-      "current_agent": null,
+      "current_agent": "zcode-critic-pc3",
       "current_stage": "critic",
-      "current_session": "3d9877d2-e1f3-4d35-b98c-28acaf6cc547",
-      "heartbeat_at": "2026-08-28T22:29:08.421Z"
+      "current_session": "69a08142-3926-4f09-afda-f139c9b80bdd"
     },
     "VIRO-0146": {
       "packet": "VIRO-0146",
@@ -2032,12 +2038,6 @@
     }
   },
   "events": [
-    {
-      "at": "2026-08-28T08:57:46.105Z",
-      "type": "agent.heartbeat",
-      "agent": "zcode-perf-pc2",
-      "packet": "VIRO-0012"
-    },
     {
       "at": "2026-08-28T08:58:08.086Z",
       "type": "agent.heartbeat",
@@ -4164,6 +4164,15 @@
       "by": "zcode-verify-pc14",
       "machine": "pc-cloud1",
       "session": "3d9877d2-e1f3-4d35-b98c-28acaf6cc547"
+    },
+    {
+      "at": "2026-08-28T22:36:45.924Z",
+      "type": "packet.claimed",
+      "packet": "VIRO-0017",
+      "agent": "zcode-critic-pc3",
+      "role": "critic",
+      "machine": "pc-cloud1",
+      "session": "69a08142-3926-4f09-afda-f139c9b80bdd"
     }
   ]
 }
