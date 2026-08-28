@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 225,
-  "updated_at": "2026-08-28T16:20:18.879Z",
+  "revision": 226,
+  "updated_at": "2026-08-28T16:57:32.688Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -67,8 +67,8 @@
         "VIRO-0002"
       ],
       "critic_needed": true,
-      "stage": "release",
-      "status": "BLOCKED",
+      "stage": "done",
+      "status": "RECONCILED",
       "assigned_agent": null,
       "assigned_role": null,
       "work_branch": "agent/viro-0005/claude-audit-cloud1",
@@ -230,26 +230,24 @@
           "by": "zcode-release-pc1",
           "item": "diff confined to leased paths",
           "at": "2026-08-28T10:17:42.311Z"
+        },
+        {
+          "stage": "reconcile",
+          "by": "governor",
+          "item": "content landed on main via owner-ordered LOCAL merge e8d1e2e (candidate 4d2576c, builder+verifier+critic PASS); full sweep green on merged main (tsc 0, unit 316/316, chrome 16/16, slices 13/13, build 0); remote push deferred by owner",
+          "at": "2026-08-28T16:57:32.680Z"
         }
       ],
       "last_handoff": {
-        "from": "release",
-        "to": "merge-gate",
-        "by": "zcode-release-pc1",
-        "at": "2026-08-28T10:17:42.311Z",
+        "from": "historical",
+        "to": "done",
+        "by": "governor",
+        "at": "2026-08-28T16:57:32.680Z",
         "evidence": [
-          "PR #19 binds approval to head SHA 4d2576c4547871b50ef2fd7059ca9b2e4e245069",
-          "independent verifier zcode-verify-pc2: tsc 0, engines PASS, unit 316/316, pdf-compound 5/5, chrome 10/10, slices 13/13 (162 checks), build 0; operator decode ring m=2 h=2 f*=1 true hole, control m=1 c=4 h=1 f=1 unchanged",
-          "critic zcode-critic-pc1 PASS: real UI workflow Minus Front -> Export PDF; pdf.js pixel sampling shows canvas/PDF parity (ring hole white, band copper), pure vector zero image XObjects, legacy docs unchanged",
-          "diff confined to leased paths"
+          "content landed on main via owner-ordered LOCAL merge e8d1e2e (candidate 4d2576c, builder+verifier+critic PASS); full sweep green on merged main (tsc 0, unit 316/316, chrome 16/16, slices 13/13, build 0); remote push deferred by owner"
         ]
       },
-      "rejection": {
-        "by": "governor",
-        "stage": "release",
-        "reason": "OWNER ORDER 2026-08-28: content merged to LOCAL main (merge commit e8d1e2e, candidate 4d2576c) while Actions billing-locked. PR #19 is superseded once owner pushes local main - close it, do not sweep-merge. Verify+critic PASS evidence preserved in manifest.",
-        "at": "2026-08-28T16:18:41.336Z"
-      },
+      "rejection": null,
       "release_approval": {
         "status": "APPROVED",
         "by": "zcode-release-pc1",
@@ -2608,6 +2606,15 @@
       "type": "packet.unblocked",
       "packet": "VIRO-0019",
       "by": "governor"
+    },
+    {
+      "at": "2026-08-28T16:57:32.688Z",
+      "type": "packet.reconciled",
+      "packet": "VIRO-0005",
+      "by": "governor",
+      "evidence": [
+        "content landed on main via owner-ordered LOCAL merge e8d1e2e (candidate 4d2576c, builder+verifier+critic PASS); full sweep green on merged main (tsc 0, unit 316/316, chrome 16/16, slices 13/13, build 0); remote push deferred by owner"
+      ]
     }
   ]
 }
