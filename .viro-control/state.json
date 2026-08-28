@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 323,
-  "updated_at": "2026-08-28T19:25:25.162Z",
+  "revision": 324,
+  "updated_at": "2026-08-28T19:26:23.914Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -412,8 +412,8 @@
       "scope": [
         "src/app.ts",
         "src/library/store.ts",
-        "tests/**",
-        "docs/agents/deliveries/VIRO-0011.json"
+        "docs/agents/deliveries/VIRO-0011.json",
+        "tests/recovery-identity-*"
       ],
       "dependencies": [
         "VIRO-0010"
@@ -983,9 +983,9 @@
       "scope": [
         "index.html",
         "src/chrome/**",
-        "tests/**",
         "docs/reviews/0017-visual-polish-sweep.md",
-        "docs/agents/deliveries/VIRO-0017.json"
+        "docs/agents/deliveries/VIRO-0017.json",
+        "tests/visual-polish-*"
       ],
       "dependencies": [
         "VIRO-0016"
@@ -1028,8 +1028,8 @@
         "scripts/viro-orchestrator.mjs",
         "scripts/viro-orchestrator-git.mjs",
         "scripts/viro-release.mjs",
-        "docs/agents/**",
-        "docs/agents/deliveries/VIRO-0019.json"
+        "docs/agents/deliveries/VIRO-0019.json",
+        "docs/agents/orchestrator-identity.md"
       ],
       "dependencies": [],
       "critic_needed": false,
@@ -1478,11 +1478,6 @@
     }
   },
   "events": [
-    {
-      "at": "2026-08-27T22:34:28.893Z",
-      "type": "packet.reconciled_from_manifest",
-      "packet": "VIRO-0002"
-    },
     {
       "at": "2026-08-28T04:14:03.622Z",
       "type": "packet.reconciled_from_manifest",
@@ -3464,6 +3459,11 @@
     },
     {
       "at": "2026-08-28T19:25:25.162Z",
+      "type": "packet.reconciled_from_manifest",
+      "packet": "VIRO-0002"
+    },
+    {
+      "at": "2026-08-28T19:26:23.914Z",
       "type": "packet.reconciled_from_manifest",
       "packet": "VIRO-0002"
     }
