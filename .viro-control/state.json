@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 183,
-  "updated_at": "2026-08-28T10:53:51.414Z",
+  "revision": 184,
+  "updated_at": "2026-08-28T10:54:11.945Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -777,12 +777,12 @@
       ],
       "dependencies": [],
       "critic_needed": false,
-      "stage": "build",
-      "status": "ACTIVE",
-      "assigned_agent": "zcode-layers-pc1",
-      "assigned_role": "builder",
+      "stage": "verify",
+      "status": "QUEUED",
+      "assigned_agent": null,
+      "assigned_role": null,
       "work_branch": "agent/viro-0140/zcode-gov-audit-pc1",
-      "heartbeat_at": "2026-08-28T10:52:21.942Z",
+      "heartbeat_at": null,
       "attempts": 0,
       "evidence": [
         {
@@ -790,15 +790,42 @@
           "by": "zcode-gov-audit-pc1",
           "item": "gap-audit before-state confirmed on main by Governor audit pass 2026-08-28; manifest before/after validated; no duplicate implementation; evidence basis in docs/agents/deliveries/VIRO-0140.json",
           "at": "2026-08-28T10:22:24.755Z"
+        },
+        {
+          "stage": "build",
+          "by": "zcode-layers-pc1",
+          "item": "commits 76c33b1+339f23b+8c2639f+b7d6217 on agent/viro-0140/zcode-gov-audit-pc1 (HEAD b7d6217b96a520d841d3ee4e03fe7ee5412d02c7): ops.ts deleteSelected/duplicateSelected made subtree-complete via shared cycle-safe descendantIds closure, duplicate remaps parentIds + clones stories + delta at root only",
+          "at": "2026-08-28T10:54:11.942Z"
+        },
+        {
+          "stage": "build",
+          "by": "zcode-layers-pc1",
+          "item": "factory.ts exports repairDanglingParents: detaches dangling parentId to page space with transform untouched (record agrees with rendered pixels), per-page, idempotent; NOTE app.ts/migrate.ts open-path wiring is off-lease, recorded follow-up in delivery JSON new_debt",
+          "at": "2026-08-28T10:54:11.944Z"
+        },
+        {
+          "stage": "build",
+          "by": "zcode-layers-pc1",
+          "item": "tests/layer-integrity-ops.test.mjs + layer-integrity-repair.test.mjs 15/15 pass (node --experimental-strip-types --import ./tests/ts-register.mjs --test tests/layer-integrity-*.test.mjs): group dup whole subtree + worldBounds shifted +16/+16 + bus undo/redo JSON-exact + story clone; depth-3 delete zero dangling + validateDocument clean; PSD-like 4-level tree dup/delete; v6 dangling doc repaired, bounds stable, reopen no-op",
+          "at": "2026-08-28T10:54:11.944Z"
+        },
+        {
+          "stage": "build",
+          "by": "zcode-layers-pc1",
+          "item": "gates: npx tsc --noEmit exit 0; npm run test:unit 316/316 exit 0 unchanged; npm run build exit 0 (branch pushed; test:chrome left to independent verification per speed protocol)",
+          "at": "2026-08-28T10:54:11.944Z"
         }
       ],
       "last_handoff": {
-        "from": "audit",
-        "to": "build",
-        "by": "zcode-gov-audit-pc1",
-        "at": "2026-08-28T10:22:24.758Z",
+        "from": "build",
+        "to": "verify",
+        "by": "zcode-layers-pc1",
+        "at": "2026-08-28T10:54:11.944Z",
         "evidence": [
-          "gap-audit before-state confirmed on main by Governor audit pass 2026-08-28; manifest before/after validated; no duplicate implementation; evidence basis in docs/agents/deliveries/VIRO-0140.json"
+          "commits 76c33b1+339f23b+8c2639f+b7d6217 on agent/viro-0140/zcode-gov-audit-pc1 (HEAD b7d6217b96a520d841d3ee4e03fe7ee5412d02c7): ops.ts deleteSelected/duplicateSelected made subtree-complete via shared cycle-safe descendantIds closure, duplicate remaps parentIds + clones stories + delta at root only",
+          "factory.ts exports repairDanglingParents: detaches dangling parentId to page space with transform untouched (record agrees with rendered pixels), per-page, idempotent; NOTE app.ts/migrate.ts open-path wiring is off-lease, recorded follow-up in delivery JSON new_debt",
+          "tests/layer-integrity-ops.test.mjs + layer-integrity-repair.test.mjs 15/15 pass (node --experimental-strip-types --import ./tests/ts-register.mjs --test tests/layer-integrity-*.test.mjs): group dup whole subtree + worldBounds shifted +16/+16 + bus undo/redo JSON-exact + story clone; depth-3 delete zero dangling + validateDocument clean; PSD-like 4-level tree dup/delete; v6 dangling doc repaired, bounds stable, reopen no-op",
+          "gates: npx tsc --noEmit exit 0; npm run test:unit 316/316 exit 0 unchanged; npm run build exit 0 (branch pushed; test:chrome left to independent verification per speed protocol)"
         ]
       },
       "rejection": null
@@ -978,12 +1005,6 @@
       "packet": "VIRO-0142",
       "heartbeat_at": "2026-08-28T10:52:58.520Z"
     },
-    "zcode-layers-pc1": {
-      "role": "builder",
-      "machine": "pc-cloud1",
-      "packet": "VIRO-0140",
-      "heartbeat_at": "2026-08-28T10:52:21.942Z"
-    },
     "zcode-pdffont-pc1": {
       "role": "builder",
       "machine": "pc-cloud1",
@@ -1058,8 +1079,8 @@
         "tests/layer-integrity-*"
       ],
       "acquired_at": "2026-08-28T10:22:17.465Z",
-      "current_agent": "zcode-layers-pc1",
-      "current_stage": "build",
+      "current_agent": null,
+      "current_stage": "verify",
       "heartbeat_at": "2026-08-28T10:52:21.942Z"
     },
     "VIRO-0142": {
@@ -2265,6 +2286,14 @@
       "agent": "zcode-verify-pc5",
       "role": "verifier",
       "machine": "pc-cloud1"
+    },
+    {
+      "at": "2026-08-28T10:54:11.945Z",
+      "type": "packet.advanced",
+      "packet": "VIRO-0140",
+      "from": "build",
+      "to": "verify",
+      "by": "zcode-layers-pc1"
     }
   ]
 }
