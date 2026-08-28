@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 345,
-  "updated_at": "2026-08-28T19:59:45.120Z",
+  "revision": 346,
+  "updated_at": "2026-08-28T20:02:34.253Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -1033,8 +1033,8 @@
       ],
       "dependencies": [],
       "critic_needed": false,
-      "stage": "release",
-      "status": "RELEASE",
+      "stage": "done",
+      "status": "RECONCILED",
       "assigned_agent": null,
       "assigned_role": null,
       "work_branch": "agent/viro-0019/zcode-gov-audit-pc1",
@@ -1124,17 +1124,21 @@
           "by": "zcode-release-pc1",
           "item": "critic NOT_APPLICABLE per manifest: governance tooling",
           "at": "2026-08-28T19:58:23.864Z"
+        },
+        {
+          "stage": "reconcile",
+          "by": "governor",
+          "item": "landed via LOCAL merge 5ce3085 (candidate e4cf097; verifier PASS 23/23 + both-direction live compat + duplicate-refusal zero-mutation); primary repo now runs the hardened control plane live - claim/heartbeat/check re-verified post-merge",
+          "at": "2026-08-28T20:02:34.201Z"
         }
       ],
       "last_handoff": {
-        "from": "release",
-        "to": "merge-gate",
-        "by": "zcode-release-pc1",
-        "at": "2026-08-28T19:58:23.864Z",
+        "from": "historical",
+        "to": "done",
+        "by": "governor",
+        "at": "2026-08-28T20:02:34.201Z",
         "evidence": [
-          "PR binds approval to head SHA e4cf09752e10bf59729a95bf41a3386c1fef5f31",
-          "independent verifier zcode-verify-pc9b: 23/23 unit, both-direction live compat (legacy heartbeats accepted on new schema), duplicate-identity refusal zero-mutation, scope clean",
-          "critic NOT_APPLICABLE per manifest: governance tooling"
+          "landed via LOCAL merge 5ce3085 (candidate e4cf097; verifier PASS 23/23 + both-direction live compat + duplicate-refusal zero-mutation); primary repo now runs the hardened control plane live - claim/heartbeat/check re-verified post-merge"
         ]
       },
       "rejection": null,
@@ -1571,20 +1575,6 @@
       "current_stage": "verify",
       "heartbeat_at": "2026-08-28T19:39:19.193Z"
     },
-    "VIRO-0019": {
-      "packet": "VIRO-0019",
-      "scope": [
-        "scripts/lib/**",
-        "scripts/viro-orchestrator.mjs",
-        "scripts/viro-orchestrator-git.mjs",
-        "scripts/viro-release.mjs",
-        "docs/agents/deliveries/VIRO-0019.json",
-        "docs/agents/orchestrator-identity.md"
-      ],
-      "acquired_at": "2026-08-28T19:28:17.592Z",
-      "current_agent": null,
-      "current_stage": "release"
-    },
     "VIRO-0011": {
       "packet": "VIRO-0011",
       "scope": [
@@ -1614,14 +1604,6 @@
     }
   },
   "events": [
-    {
-      "at": "2026-08-28T04:46:57.281Z",
-      "type": "packet.advanced",
-      "packet": "VIRO-0012",
-      "from": "audit",
-      "to": "build",
-      "by": "zcode-gov-audit-pc1"
-    },
     {
       "at": "2026-08-28T04:48:30.795Z",
       "type": "packet.claimed",
@@ -3636,6 +3618,15 @@
       "type": "agent.heartbeat",
       "agent": "zcode-identity-pc2",
       "packet": "VIRO-0011"
+    },
+    {
+      "at": "2026-08-28T20:02:34.253Z",
+      "type": "packet.reconciled",
+      "packet": "VIRO-0019",
+      "by": "governor",
+      "evidence": [
+        "landed via LOCAL merge 5ce3085 (candidate e4cf097; verifier PASS 23/23 + both-direction live compat + duplicate-refusal zero-mutation); primary repo now runs the hardened control plane live - claim/heartbeat/check re-verified post-merge"
+      ]
     }
   ]
 }
