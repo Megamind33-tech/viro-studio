@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 205,
-  "updated_at": "2026-08-28T11:41:16.647Z",
+  "revision": 206,
+  "updated_at": "2026-08-28T11:43:16.527Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -2535,6 +2535,11 @@
       "type": "agent.heartbeat",
       "agent": "zcode-verify-pc4",
       "packet": "VIRO-0013"
+    },
+    {
+      "at": "2026-08-28T11:43:16.527Z",
+      "type": "packet.reconciled_from_manifest",
+      "packet": "VIRO-0002"
     }
   ]
 }
