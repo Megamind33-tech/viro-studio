@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 221,
-  "updated_at": "2026-08-28T16:19:27.675Z",
+  "revision": 222,
+  "updated_at": "2026-08-28T16:19:36.251Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -1089,11 +1089,11 @@
       "dependencies": [],
       "critic_needed": true,
       "stage": "verify",
-      "status": "VERIFY",
-      "assigned_agent": "zcode-verify-pc7",
-      "assigned_role": "verifier",
+      "status": "BLOCKED",
+      "assigned_agent": null,
+      "assigned_role": null,
       "work_branch": "agent/viro-0145/zcode-gov-audit-pc1",
-      "heartbeat_at": "2026-08-28T11:50:37.732Z",
+      "heartbeat_at": null,
       "attempts": 0,
       "evidence": [
         {
@@ -1153,7 +1153,12 @@
           "compound suite deferred to integration rebase onto VIRO-0005 (test absent at base 14e2812, per coordinator 2026-08-28); test:chrome deferred to independent verification per speed protocol; EmbeddedFace parameter-property rewrite noted for VIRO-0005 rebase"
         ]
       },
-      "rejection": null
+      "rejection": {
+        "by": "governor",
+        "stage": "verify",
+        "reason": "verifier session died in quota wall; builder PASS candidate c93b7ac; coordinator gate-ran green (pdf-font 5/5, tsc, unit, build) + 0145x0005 combination proven green; OWNER ORDER: merged to local main commit af7519b; independent critic still PENDING",
+        "at": "2026-08-28T16:19:36.249Z"
+      }
     }
   },
   "agents": {
@@ -1163,12 +1168,6 @@
       "packet": "VIRO-0019",
       "heartbeat_at": "2026-08-28T11:49:44.174Z",
       "session": "sess-viro0019-zcode1-live-dryrun"
-    },
-    "zcode-verify-pc7": {
-      "role": "verifier",
-      "machine": "pc-cloud1",
-      "packet": "VIRO-0145",
-      "heartbeat_at": "2026-08-28T11:50:37.732Z"
     }
   },
   "leases": {
@@ -1185,18 +1184,6 @@
       "current_agent": null,
       "current_stage": "verify",
       "heartbeat_at": "2026-08-28T11:30:31.707Z"
-    },
-    "VIRO-0145": {
-      "packet": "VIRO-0145",
-      "scope": [
-        "src/export/pdf.ts",
-        "docs/agents/deliveries/VIRO-0145.json",
-        "tests/pdf-font-*"
-      ],
-      "acquired_at": "2026-08-28T10:23:05.364Z",
-      "current_agent": "zcode-verify-pc7",
-      "current_stage": "verify",
-      "heartbeat_at": "2026-08-28T11:50:37.732Z"
     },
     "VIRO-0019": {
       "packet": "VIRO-0019",
@@ -2626,6 +2613,14 @@
       "agent": "zcode-richtext-pc1",
       "by": "governor",
       "reason": "builder died twice (network + quota wall) after committing 684b34e unpushed; coordinator gate-ran candidate green (rich-text 12/12, tsc, unit); OWNER ORDER: merged to local main commit c8d6f2e; independent critic still PENDING"
+    },
+    {
+      "at": "2026-08-28T16:19:36.251Z",
+      "type": "assignment.reaped",
+      "packet": "VIRO-0145",
+      "agent": "zcode-verify-pc7",
+      "by": "governor",
+      "reason": "verifier session died in quota wall; builder PASS candidate c93b7ac; coordinator gate-ran green (pdf-font 5/5, tsc, unit, build) + 0145x0005 combination proven green; OWNER ORDER: merged to local main commit af7519b; independent critic still PENDING"
     }
   ]
 }
