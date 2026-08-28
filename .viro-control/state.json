@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 218,
-  "updated_at": "2026-08-28T16:18:55.208Z",
+  "revision": 219,
+  "updated_at": "2026-08-28T16:19:03.964Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -604,11 +604,11 @@
       "dependencies": [],
       "critic_needed": false,
       "stage": "verify",
-      "status": "VERIFY",
-      "assigned_agent": "zcode-verify-pc4",
-      "assigned_role": "verifier",
+      "status": "BLOCKED",
+      "assigned_agent": null,
+      "assigned_role": null,
       "work_branch": "agent/viro-0013/zcode-gov-audit-pc1",
-      "heartbeat_at": "2026-08-28T11:41:16.647Z",
+      "heartbeat_at": null,
       "attempts": 0,
       "evidence": [
         {
@@ -675,7 +675,12 @@
           "minimal fixes inside src/import/** only: errors.ts typed ImportParseError + guards; psd.ts readPsd wrap + 30000px dimension validation + iterative stack walk; vdj.ts hostile-shape/dimension/count hardening; pressjson.ts guarded openJsonDocument boundary — app.ts openBytes wiring left cross-domain for VIRO-0014 (recorded as new_debt in docs/agents/deliveries/VIRO-0013.json builder/delta sections)"
         ]
       },
-      "rejection": null
+      "rejection": {
+        "by": "governor",
+        "stage": "verify",
+        "reason": "verifier session died in provider 5h quota wall; builder PASS candidate 8cba514; coordinator re-executed gates green (tsc, fuzz 8/8 x2 determinism, unit 316/316 on merged main); OWNER ORDER: merged to local main commit 3230eb0",
+        "at": "2026-08-28T16:19:03.962Z"
+      }
     },
     "VIRO-0014": {
       "id": "VIRO-0014",
@@ -1148,12 +1153,6 @@
       "packet": "VIRO-0142",
       "heartbeat_at": "2026-08-28T11:28:58.203Z"
     },
-    "zcode-verify-pc4": {
-      "role": "verifier",
-      "machine": "pc-cloud1",
-      "packet": "VIRO-0013",
-      "heartbeat_at": "2026-08-28T11:41:16.647Z"
-    },
     "zcode-govtool-pc1": {
       "role": "builder",
       "machine": "pc-cloud1",
@@ -1175,19 +1174,6 @@
     }
   },
   "leases": {
-    "VIRO-0013": {
-      "packet": "VIRO-0013",
-      "scope": [
-        "src/import/**",
-        "docs/agents/deliveries/VIRO-0013.json",
-        "tests/import-*",
-        "tests/fixtures/import-corpus/**"
-      ],
-      "acquired_at": "2026-08-28T10:21:38.619Z",
-      "current_agent": "zcode-verify-pc4",
-      "current_stage": "verify",
-      "heartbeat_at": "2026-08-28T11:41:16.647Z"
-    },
     "VIRO-0016": {
       "packet": "VIRO-0016",
       "scope": [
@@ -2645,6 +2631,14 @@
       "packet": "VIRO-0010",
       "by": "governor",
       "reason": "OWNER ORDER 2026-08-28: content merged to LOCAL main (merge commit 363c133, candidate 00f6341). PR #21 superseded after push - close it, do not sweep-merge. Independent verifier PASS preserved."
+    },
+    {
+      "at": "2026-08-28T16:19:03.964Z",
+      "type": "assignment.reaped",
+      "packet": "VIRO-0013",
+      "agent": "zcode-verify-pc4",
+      "by": "governor",
+      "reason": "verifier session died in provider 5h quota wall; builder PASS candidate 8cba514; coordinator re-executed gates green (tsc, fuzz 8/8 x2 determinism, unit 316/316 on merged main); OWNER ORDER: merged to local main commit 3230eb0"
     }
   ]
 }
