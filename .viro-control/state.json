@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 45,
-  "updated_at": "2026-08-28T04:46:24.408Z",
+  "revision": 46,
+  "updated_at": "2026-08-28T04:46:57.281Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -254,15 +254,44 @@
       ],
       "dependencies": [],
       "critic_needed": false,
-      "stage": "audit",
-      "status": "ACTIVE",
-      "assigned_agent": "zcode-gov-audit-pc1",
-      "assigned_role": "gap-auditor",
+      "stage": "build",
+      "status": "QUEUED",
+      "assigned_agent": null,
+      "assigned_role": null,
       "work_branch": "agent/viro-0012/zcode-gov-audit-pc1",
-      "heartbeat_at": "2026-08-28T04:46:24.408Z",
+      "heartbeat_at": null,
       "attempts": 0,
-      "evidence": [],
-      "last_handoff": null,
+      "evidence": [
+        {
+          "stage": "audit",
+          "by": "zcode-gov-audit-pc1",
+          "item": "scripts/perf absent on main 14e2812 - no frame-time harness exists",
+          "at": "2026-08-28T04:46:57.026Z"
+        },
+        {
+          "stage": "audit",
+          "by": "zcode-gov-audit-pc1",
+          "item": "src/engine/compositor.ts has 5 saveLayer call sites; shadow saveLayer region unbounded per sprint-critic-01.md P2",
+          "at": "2026-08-28T04:46:57.280Z"
+        },
+        {
+          "stage": "audit",
+          "by": "zcode-gov-audit-pc1",
+          "item": "no baseline frame-time numbers exist anywhere in repo",
+          "at": "2026-08-28T04:46:57.280Z"
+        }
+      ],
+      "last_handoff": {
+        "from": "audit",
+        "to": "build",
+        "by": "zcode-gov-audit-pc1",
+        "at": "2026-08-28T04:46:57.280Z",
+        "evidence": [
+          "scripts/perf absent on main 14e2812 - no frame-time harness exists",
+          "src/engine/compositor.ts has 5 saveLayer call sites; shadow saveLayer region unbounded per sprint-critic-01.md P2",
+          "no baseline frame-time numbers exist anywhere in repo"
+        ]
+      },
       "rejection": null
     },
     "VIRO-0013": {
@@ -431,12 +460,6 @@
       "machine": "pc-cloud1",
       "packet": "VIRO-0005",
       "heartbeat_at": "2026-08-28T04:39:54.628Z"
-    },
-    "zcode-gov-audit-pc1": {
-      "role": "gap-auditor",
-      "machine": "pc-cloud1",
-      "packet": "VIRO-0012",
-      "heartbeat_at": "2026-08-28T04:46:24.408Z"
     }
   },
   "leases": {
@@ -461,8 +484,8 @@
         "docs/agents/deliveries/VIRO-0012.json"
       ],
       "acquired_at": "2026-08-28T04:46:24.408Z",
-      "current_agent": "zcode-gov-audit-pc1",
-      "current_stage": "audit"
+      "current_agent": null,
+      "current_stage": "build"
     }
   },
   "events": [
@@ -723,6 +746,14 @@
       "agent": "zcode-gov-audit-pc1",
       "role": "gap-auditor",
       "machine": "pc-cloud1"
+    },
+    {
+      "at": "2026-08-28T04:46:57.281Z",
+      "type": "packet.advanced",
+      "packet": "VIRO-0012",
+      "from": "audit",
+      "to": "build",
+      "by": "zcode-gov-audit-pc1"
     }
   ]
 }
