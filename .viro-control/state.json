@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 128,
-  "updated_at": "2026-08-28T10:09:55.367Z",
+  "revision": 129,
+  "updated_at": "2026-08-28T10:10:46.643Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -67,12 +67,12 @@
         "VIRO-0002"
       ],
       "critic_needed": true,
-      "stage": "critic",
-      "status": "CRITIC",
-      "assigned_agent": "zcode-critic-pc1",
-      "assigned_role": "critic",
+      "stage": "release",
+      "status": "QUEUED",
+      "assigned_agent": null,
+      "assigned_role": null,
       "work_branch": "agent/viro-0005/claude-audit-cloud1",
-      "heartbeat_at": "2026-08-28T10:09:55.367Z",
+      "heartbeat_at": null,
       "attempts": 0,
       "evidence": [
         {
@@ -188,17 +188,35 @@
           "by": "zcode-verify-pc2",
           "item": "Single-contour control (fresh doc, plain rect, no contours field): m=1 c=4 h=1 f=1 f*=0 — topology identical to the audit's pre-change baseline; report.vectorPaths=1 rasterFallbacks=[]; exported PDF artifacts saved in temp: viro-0005-verify-ring.pdf / viro-0005-verify-control.pdf; verifier added zero src/ changes and left zero tracked diffs (temp playwright 5190 run-config removed after use)",
           "at": "2026-08-28T09:17:58.141Z"
+        },
+        {
+          "stage": "critic",
+          "by": "zcode-critic-pc1",
+          "item": "Real-workflow UI proof on 127.0.0.1:5191 at candidate 4d2576c: anchor 2 overlapping rects -> Layer>Minus Front -> File>Export PDF (captured browser download); pdf.js render of the exported ring shows a true hole visually identical to the canvas — centre pixel paper [255,255,255], band copper [224,122,47] on BOTH canvas and PDF; disjoint union both pieces match canvas positions; stroke-only compound exports purple stroke on both contours with no fill, hole stays paper; zero image XObjects in all three compound PDFs (pure vector, no raster blur); legacy single rect + placed image export unchanged and visually matching; user-visible status honest ('PDF exported — 595.2 × 841.92 pt, 1 path, 0 glyphs in 0 runs, 0 images. RGB, not PDF/X.', no raster-fallback claim); lastPdfReport.vectorPaths=1 rasterFallbacks=[]; verifier artifacts re-rendered independently and confirmed (ring hole + green control); git diff 8c6f2db^..4d2576c touches only src/export/pdf.ts + tests + delivery JSON — zero UI changes, nothing decorative introduced.",
+          "at": "2026-08-28T10:10:46.633Z"
+        },
+        {
+          "stage": "critic",
+          "by": "zcode-critic-pc1",
+          "item": "Artifacts in %TEMP%/viro-0005-critic/: canvas-ring.png pdf-render-ring.png canvas-union.png pdf-render-union.png canvas-stroke.png pdf-render-stroke-ring.png canvas-legacy.png pdf-render-legacy.png pdf-render-VERIFIER-ring.png pdf-render-VERIFIER-control.png export-ring.pdf export-union.pdf export-stroke.pdf export-legacy.pdf critic-results.json critic-visual.mjs critic-status.mjs",
+          "at": "2026-08-28T10:10:46.643Z"
+        },
+        {
+          "stage": "critic",
+          "by": "zcode-critic-pc1",
+          "item": "Judgment: PASS — exported compound geometry is visually indistinguishable from the canvas at normal zoom. NEW OUT-OF-SCOPE FINDING for Governor: pre-existing text-export defect — pdf-lib CustomFontSubsetEmbedder (faceFor seam, untouched by this diff, deps unchanged, reproduced without app code via embedFont subset:true seam test) emits a corrupt FontFile2 subset for bundled NotoSans-Regular; pdf.js draws only fragmentary glyphs ('eg' of 'VIRO critic legacy parity'); fontkit parse fails 'Offset outside bounds'. Needs its own packet; does not block VIRO-0005.",
+          "at": "2026-08-28T10:10:46.643Z"
         }
       ],
       "last_handoff": {
-        "from": "verify",
-        "to": "critic",
-        "by": "zcode-verify-pc2",
-        "at": "2026-08-28T09:17:58.141Z",
+        "from": "critic",
+        "to": "release",
+        "by": "zcode-critic-pc1",
+        "at": "2026-08-28T10:10:46.643Z",
         "evidence": [
-          "Full gates on frozen builder SHA 4d2576c: npx tsc --noEmit exit 0; npm run test:engines PASS; npm run test:unit 316/316 0 fail 0 skipped; node --experimental-strip-types --test tests/pdf-compound.test.mjs 5/5; playwright suite 10/10 passed (5 chrome + 5 pdf-compound spec) against this worktree's own vite on 127.0.0.1:5190; npm run test:slices 13/13 scripts (162 checks); npm run build exit 0",
-          "Operator-level independent proof in the live app: window.viroAnchor.applyDetailed two overlapping rects + subtractSelected -> result.contours=2 result.nodes=0; exportPagePdf with the exact src/app.ts exportPdf arguments; decoded FlateDecode stream: ring emits m=2 c=8 h=2 with f*=1 f=0 (even-odd), the single re is a re W n page clip not a fill; hole subpath bbox 496x701.6 strictly inside outer 1488x2104.8 so even-odd leaves the centre a real hole; report.vectorPaths=1 rasterFallbacks=[]",
-          "Single-contour control (fresh doc, plain rect, no contours field): m=1 c=4 h=1 f=1 f*=0 — topology identical to the audit's pre-change baseline; report.vectorPaths=1 rasterFallbacks=[]; exported PDF artifacts saved in temp: viro-0005-verify-ring.pdf / viro-0005-verify-control.pdf; verifier added zero src/ changes and left zero tracked diffs (temp playwright 5190 run-config removed after use)"
+          "Real-workflow UI proof on 127.0.0.1:5191 at candidate 4d2576c: anchor 2 overlapping rects -> Layer>Minus Front -> File>Export PDF (captured browser download); pdf.js render of the exported ring shows a true hole visually identical to the canvas — centre pixel paper [255,255,255], band copper [224,122,47] on BOTH canvas and PDF; disjoint union both pieces match canvas positions; stroke-only compound exports purple stroke on both contours with no fill, hole stays paper; zero image XObjects in all three compound PDFs (pure vector, no raster blur); legacy single rect + placed image export unchanged and visually matching; user-visible status honest ('PDF exported — 595.2 × 841.92 pt, 1 path, 0 glyphs in 0 runs, 0 images. RGB, not PDF/X.', no raster-fallback claim); lastPdfReport.vectorPaths=1 rasterFallbacks=[]; verifier artifacts re-rendered independently and confirmed (ring hole + green control); git diff 8c6f2db^..4d2576c touches only src/export/pdf.ts + tests + delivery JSON — zero UI changes, nothing decorative introduced.",
+          "Artifacts in %TEMP%/viro-0005-critic/: canvas-ring.png pdf-render-ring.png canvas-union.png pdf-render-union.png canvas-stroke.png pdf-render-stroke-ring.png canvas-legacy.png pdf-render-legacy.png pdf-render-VERIFIER-ring.png pdf-render-VERIFIER-control.png export-ring.pdf export-union.pdf export-stroke.pdf export-legacy.pdf critic-results.json critic-visual.mjs critic-status.mjs",
+          "Judgment: PASS — exported compound geometry is visually indistinguishable from the canvas at normal zoom. NEW OUT-OF-SCOPE FINDING for Governor: pre-existing text-export defect — pdf-lib CustomFontSubsetEmbedder (faceFor seam, untouched by this diff, deps unchanged, reproduced without app code via embedFont subset:true seam test) emits a corrupt FontFile2 subset for bundled NotoSans-Regular; pdf.js draws only fragmentary glyphs ('eg' of 'VIRO critic legacy parity'); fontkit parse fails 'Offset outside bounds'. Needs its own packet; does not block VIRO-0005."
         ]
       },
       "rejection": null
@@ -697,14 +715,7 @@
       "rejection": null
     }
   },
-  "agents": {
-    "zcode-critic-pc1": {
-      "role": "critic",
-      "machine": "pc-cloud1",
-      "packet": "VIRO-0005",
-      "heartbeat_at": "2026-08-28T10:09:55.367Z"
-    }
-  },
+  "agents": {},
   "leases": {
     "VIRO-0005": {
       "packet": "VIRO-0005",
@@ -714,8 +725,8 @@
         "docs/agents/deliveries/VIRO-0005.json"
       ],
       "acquired_at": "2026-08-28T06:42:55.349Z",
-      "current_agent": "zcode-critic-pc1",
-      "current_stage": "critic",
+      "current_agent": null,
+      "current_stage": "release",
       "heartbeat_at": "2026-08-28T10:09:55.367Z"
     },
     "VIRO-0012": {
@@ -1502,6 +1513,14 @@
       "type": "agent.heartbeat",
       "agent": "zcode-critic-pc1",
       "packet": "VIRO-0005"
+    },
+    {
+      "at": "2026-08-28T10:10:46.643Z",
+      "type": "packet.advanced",
+      "packet": "VIRO-0005",
+      "from": "critic",
+      "to": "release",
+      "by": "zcode-critic-pc1"
     }
   ]
 }
