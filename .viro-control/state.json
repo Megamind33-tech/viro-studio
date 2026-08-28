@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 220,
-  "updated_at": "2026-08-28T16:19:13.557Z",
+  "revision": 221,
+  "updated_at": "2026-08-28T16:19:27.675Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -992,11 +992,11 @@
       "dependencies": [],
       "critic_needed": true,
       "stage": "build",
-      "status": "ACTIVE",
-      "assigned_agent": "zcode-richtext-pc1",
-      "assigned_role": "builder",
+      "status": "BLOCKED",
+      "assigned_agent": null,
+      "assigned_role": null,
       "work_branch": "agent/viro-0142/zcode-gov-audit-pc1",
-      "heartbeat_at": "2026-08-28T11:28:58.203Z",
+      "heartbeat_at": null,
       "attempts": 0,
       "evidence": [
         {
@@ -1015,7 +1015,12 @@
           "gap-audit before-state confirmed on main by Governor audit pass 2026-08-28; manifest before/after validated; no duplicate implementation; evidence basis in docs/agents/deliveries/VIRO-0142.json"
         ]
       },
-      "rejection": null
+      "rejection": {
+        "by": "governor",
+        "stage": "build",
+        "reason": "builder died twice (network + quota wall) after committing 684b34e unpushed; coordinator gate-ran candidate green (rich-text 12/12, tsc, unit); OWNER ORDER: merged to local main commit c8d6f2e; independent critic still PENDING",
+        "at": "2026-08-28T16:19:27.673Z"
+      }
     },
     "VIRO-0143": {
       "id": "VIRO-0143",
@@ -1152,12 +1157,6 @@
     }
   },
   "agents": {
-    "zcode-richtext-pc1": {
-      "role": "builder",
-      "machine": "pc-cloud1",
-      "packet": "VIRO-0142",
-      "heartbeat_at": "2026-08-28T11:28:58.203Z"
-    },
     "zcode-govtool-pc1": {
       "role": "builder",
       "machine": "pc-cloud1",
@@ -1186,20 +1185,6 @@
       "current_agent": null,
       "current_stage": "verify",
       "heartbeat_at": "2026-08-28T11:30:31.707Z"
-    },
-    "VIRO-0142": {
-      "packet": "VIRO-0142",
-      "scope": [
-        "src/engine/type.ts",
-        "src/engine/font-registry.ts",
-        "src/document/text-model.ts",
-        "docs/agents/deliveries/VIRO-0142.json",
-        "tests/rich-text-*"
-      ],
-      "acquired_at": "2026-08-28T10:22:41.241Z",
-      "current_agent": "zcode-richtext-pc1",
-      "current_stage": "build",
-      "heartbeat_at": "2026-08-28T11:28:58.203Z"
     },
     "VIRO-0145": {
       "packet": "VIRO-0145",
@@ -2633,6 +2618,14 @@
       "agent": "zcode-verify-pc6",
       "by": "governor",
       "reason": "verifier session died in quota wall after leaving independent regression test that caught a real co-selection defect; coordinator repaired duplicateSelected (transitive closure, commit 3507167, disclosed) - 16/16 + 159/159 green; OWNER ORDER: merged to local main commit 0e6cd19"
+    },
+    {
+      "at": "2026-08-28T16:19:27.675Z",
+      "type": "assignment.reaped",
+      "packet": "VIRO-0142",
+      "agent": "zcode-richtext-pc1",
+      "by": "governor",
+      "reason": "builder died twice (network + quota wall) after committing 684b34e unpushed; coordinator gate-ran candidate green (rich-text 12/12, tsc, unit); OWNER ORDER: merged to local main commit c8d6f2e; independent critic still PENDING"
     }
   ]
 }
