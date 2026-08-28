@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 319,
-  "updated_at": "2026-08-28T19:23:37.175Z",
+  "revision": 320,
+  "updated_at": "2026-08-28T19:23:54.933Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -1176,11 +1176,11 @@
       ],
       "critic_needed": false,
       "stage": "verify",
-      "status": "QUEUED",
-      "assigned_agent": null,
-      "assigned_role": null,
+      "status": "VERIFY",
+      "assigned_agent": "zcode-verify-pc10b",
+      "assigned_role": "verifier",
       "work_branch": "agent/viro-0141/zcode-gov-audit-pc1",
-      "heartbeat_at": null,
+      "heartbeat_at": "2026-08-28T19:23:54.933Z",
       "attempts": 0,
       "evidence": [
         {
@@ -1424,6 +1424,12 @@
       "machine": "pc-cloud1",
       "packet": "VIRO-0015",
       "heartbeat_at": "2026-08-28T19:18:09.658Z"
+    },
+    "zcode-verify-pc10b": {
+      "role": "verifier",
+      "machine": "pc-cloud1",
+      "packet": "VIRO-0141",
+      "heartbeat_at": "2026-08-28T19:23:54.933Z"
     }
   },
   "leases": {
@@ -1438,15 +1444,22 @@
       "current_agent": "zcode-verify-pc11",
       "current_stage": "verify",
       "heartbeat_at": "2026-08-28T19:18:09.658Z"
+    },
+    "VIRO-0141": {
+      "packet": "VIRO-0141",
+      "scope": [
+        "src/document/ops.ts",
+        "src/document/ui-commands.ts",
+        "src/document/boolean-ops.ts",
+        "docs/agents/deliveries/VIRO-0141.json",
+        "tests/vector-node-*"
+      ],
+      "acquired_at": "2026-08-28T19:23:54.933Z",
+      "current_agent": "zcode-verify-pc10b",
+      "current_stage": "verify"
     }
   },
   "events": [
-    {
-      "at": "2026-08-27T22:08:31.870Z",
-      "type": "agent.heartbeat",
-      "agent": "claude-export-pc1",
-      "packet": "VIRO-0005"
-    },
     {
       "at": "2026-08-27T22:19:22.435Z",
       "type": "packet.reconciled_from_manifest",
@@ -3427,6 +3440,14 @@
       "at": "2026-08-28T19:23:37.175Z",
       "type": "packet.reconciled_from_manifest",
       "packet": "VIRO-0002"
+    },
+    {
+      "at": "2026-08-28T19:23:54.933Z",
+      "type": "packet.claimed",
+      "packet": "VIRO-0141",
+      "agent": "zcode-verify-pc10b",
+      "role": "verifier",
+      "machine": "pc-cloud1"
     }
   ]
 }
