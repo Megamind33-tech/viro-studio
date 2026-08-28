@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 245,
-  "updated_at": "2026-08-28T16:59:34.059Z",
+  "revision": 246,
+  "updated_at": "2026-08-28T17:01:01.773Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -894,8 +894,8 @@
         "scripts/viro-orchestrator.mjs",
         "scripts/viro-orchestrator-git.mjs",
         "scripts/viro-release.mjs",
-        "docs/agents/deliveries/VIRO-0019.json",
-        "docs/agents/orchestrator-identity.md"
+        "docs/agents/**",
+        "docs/agents/deliveries/VIRO-0019.json"
       ],
       "dependencies": [],
       "critic_needed": false,
@@ -2922,6 +2922,11 @@
       "from": "audit",
       "to": "build",
       "by": "zcode-gov-audit-pc1"
+    },
+    {
+      "at": "2026-08-28T17:01:01.773Z",
+      "type": "packet.reconciled_from_manifest",
+      "packet": "VIRO-0002"
     }
   ]
 }
