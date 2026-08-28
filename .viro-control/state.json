@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 150,
-  "updated_at": "2026-08-28T10:24:52.472Z",
+  "revision": 151,
+  "updated_at": "2026-08-28T10:25:01.213Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -281,11 +281,11 @@
       "dependencies": [],
       "critic_needed": false,
       "stage": "build",
-      "status": "QUEUED",
-      "assigned_agent": null,
-      "assigned_role": null,
+      "status": "ACTIVE",
+      "assigned_agent": "zcode-persist-pc1",
+      "assigned_role": "builder",
       "work_branch": "agent/viro-0010/zcode-gov-audit-pc1",
-      "heartbeat_at": null,
+      "heartbeat_at": "2026-08-28T10:25:01.213Z",
       "attempts": 0,
       "evidence": [
         {
@@ -881,6 +881,12 @@
       "machine": "pc-cloud1",
       "packet": "VIRO-0016",
       "heartbeat_at": "2026-08-28T10:24:52.472Z"
+    },
+    "zcode-persist-pc1": {
+      "role": "builder",
+      "machine": "pc-cloud1",
+      "packet": "VIRO-0010",
+      "heartbeat_at": "2026-08-28T10:25:01.213Z"
     }
   },
   "leases": {
@@ -955,6 +961,18 @@
       ],
       "acquired_at": "2026-08-28T10:23:05.364Z",
       "current_agent": null,
+      "current_stage": "build"
+    },
+    "VIRO-0010": {
+      "packet": "VIRO-0010",
+      "scope": [
+        "src/app.ts",
+        "src/library/store.ts",
+        "docs/agents/deliveries/VIRO-0010.json",
+        "tests/autosave-*"
+      ],
+      "acquired_at": "2026-08-28T10:25:01.213Z",
+      "current_agent": "zcode-persist-pc1",
       "current_stage": "build"
     }
   },
@@ -1890,6 +1908,14 @@
       "type": "packet.claimed",
       "packet": "VIRO-0016",
       "agent": "zcode-a11y-pc1",
+      "role": "builder",
+      "machine": "pc-cloud1"
+    },
+    {
+      "at": "2026-08-28T10:25:01.213Z",
+      "type": "packet.claimed",
+      "packet": "VIRO-0010",
+      "agent": "zcode-persist-pc1",
       "role": "builder",
       "machine": "pc-cloud1"
     }
