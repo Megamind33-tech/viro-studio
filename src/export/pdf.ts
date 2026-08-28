@@ -139,12 +139,18 @@ interface SubsetEmbedder {
 /** A face embedded once per document, addressable by HarfBuzz glyph id. */
 class EmbeddedFace {
   private readonly reverseCmap = new Map<number, number>();
+  private readonly emb: SubsetEmbedder;
+  readonly resource: PDFName;
+  readonly upem: number;
 
-  constructor(
-    private readonly emb: SubsetEmbedder,
-    readonly resource: PDFName,
-    readonly upem: number,
-  ) {
+  // Plain field assignments, not constructor parameter properties: the latter
+  // is TS-only syntax that node --experimental-strip-types (used to run
+  // tests/** without a build step) cannot strip, which made this file
+  // unimportable from any unit test.
+  constructor(emb: SubsetEmbedder, resource: PDFName, upem: number) {
+    this.emb = emb;
+    this.resource = resource;
+    this.upem = upem;
     // Priming the reverse cmap also primes fontkit's own glyph cache *with*
     // code points, which is what gives the /ToUnicode CMap something to say —
     // and /ToUnicode is what makes the text searchable rather than merely
@@ -538,7 +544,13 @@ function emitVector(
 ): void {
   const alpha = inheritedAlpha * layer.opacity;
 
-  if (layer.nodes.length < 2) {
+  // PRECEDENCE (v6): mirrors compositor.ts drawVector exactly — a non-empty
+  // `contours` list is the authoritative compound path; otherwise the legacy
+  // single `nodes`/`closed` is one contour.
+  const multi = Array.isArray(layer.contours) && layer.contours.length > 0;
+  const contours = multi ? layer.contours! : [{ nodes: layer.nodes, closed: layer.closed }];
+
+  if (!multi && layer.nodes.length < 2) {
     // Mirrors the compositor: a single pen node shows as a small copper dot.
     const n = layer.nodes[0];
     if (!n) return;
@@ -555,9 +567,22 @@ function emitVector(
     return;
   }
 
-  const doFill = !!layer.fill && layer.closed;
+  // Same drawable-contour filter as the compositor: a contour with < 2 nodes
+  // contributes nothing (no dot fallback once compound geometry is present).
+  const drawableContours = contours.filter((c) => c.nodes.length >= 2);
+  if (drawableContours.length === 0) return;
+  const anyClosed = drawableContours.some((c) => c.closed);
+
+  const doFill = !!layer.fill && anyClosed;
   const doStroke = !!layer.stroke;
   if (!doFill && !doStroke) return;
+
+  // Compound path with more than one drawable contour needs an explicit
+  // even-odd fill rule so a subtracted hole reads as a hole regardless of
+  // winding — exactly compositor.ts's `multi && drawable > 1` condition. A
+  // single contour keeps the default nonzero rule, so legacy output is
+  // byte-identical to before this change.
+  const evenOdd = multi && drawableContours.length > 1;
 
   const fillA = layer.fill ? layer.fill.a * alpha : 0;
   const strokeA = layer.stroke ? layer.stroke.color.a * alpha : 0;
@@ -571,20 +596,28 @@ function emitVector(
     ops.push(setLineWidth(round(layer.stroke.width)));
   }
 
-  // Node topology is exactly the compositor's PathBuilder walk.
-  const n0 = layer.nodes[0]!;
-  ops.push(moveTo(round(n0.x), round(n0.y)));
-  for (let i = 1; i < layer.nodes.length; i++) {
-    const a = layer.nodes[i - 1]!;
-    const b = layer.nodes[i]!;
-    ops.push(appendBezierCurve(round(a.outX), round(a.outY), round(b.inX), round(b.inY), round(b.x), round(b.y)));
+  for (const c of drawableContours) {
+    const n0 = c.nodes[0]!;
+    ops.push(moveTo(round(n0.x), round(n0.y)));
+    for (let i = 1; i < c.nodes.length; i++) {
+      const a = c.nodes[i - 1]!;
+      const b = c.nodes[i]!;
+      ops.push(appendBezierCurve(round(a.outX), round(a.outY), round(b.inX), round(b.inY), round(b.x), round(b.y)));
+    }
+    if (c.closed) {
+      const last = c.nodes[c.nodes.length - 1]!;
+      ops.push(appendBezierCurve(round(last.outX), round(last.outY), round(n0.inX), round(n0.inY), round(n0.x), round(n0.y)));
+      ops.push(closePathOp());
+    }
   }
-  if (layer.closed) {
-    const last = layer.nodes[layer.nodes.length - 1]!;
-    ops.push(appendBezierCurve(round(last.outX), round(last.outY), round(n0.inX), round(n0.inY), round(n0.x), round(n0.y)));
-    ops.push(closePathOp());
+
+  if (doFill && doStroke) {
+    ops.push(evenOdd ? PDFOperator.of(Op.FillEvenOddAndStroke) : fillAndStroke());
+  } else if (doFill) {
+    ops.push(evenOdd ? PDFOperator.of(Op.FillEvenOdd) : fillOp());
+  } else {
+    ops.push(strokeOp());
   }
-  ops.push(doFill && doStroke ? fillAndStroke() : doFill ? fillOp() : strokeOp());
   report.vectorPaths += 1;
 }
 
