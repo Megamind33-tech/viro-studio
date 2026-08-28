@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 360,
-  "updated_at": "2026-08-28T20:13:13.480Z",
+  "revision": 361,
+  "updated_at": "2026-08-28T20:16:09.603Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -420,11 +420,11 @@
       ],
       "critic_needed": false,
       "stage": "verify",
-      "status": "QUEUED",
-      "assigned_agent": null,
-      "assigned_role": null,
+      "status": "VERIFY",
+      "assigned_agent": "zcode-verify-pc13",
+      "assigned_role": "verifier",
       "work_branch": "agent/viro-0011/zcode-gov-audit-pc1",
-      "heartbeat_at": null,
+      "heartbeat_at": "2026-08-28T20:16:09.603Z",
       "attempts": 0,
       "evidence": [
         {
@@ -477,7 +477,9 @@
           "regression: tests/recovery.spec.mjs assertions byte-unchanged, 13/13 green; tests/projects.spec.mjs 11/11 green; src/chrome/desk.ts untouched (recover-bar pendingRecovery head contract preserved, zero chrome changes)"
         ]
       },
-      "rejection": null
+      "rejection": null,
+      "assigned_machine": "pc-cloud1",
+      "assigned_session": "b8bf70cd-e98b-4765-8116-fb04d0f6a0ab"
     },
     "VIRO-0012": {
       "id": "VIRO-0012",
@@ -1737,6 +1739,13 @@
       "session": "09cc77df-6a55-4bec-a989-ed5242198ade",
       "packet": "VIRO-0143",
       "heartbeat_at": "2026-08-28T20:10:52.011Z"
+    },
+    "zcode-verify-pc13": {
+      "role": "verifier",
+      "machine": "pc-cloud1",
+      "session": "b8bf70cd-e98b-4765-8116-fb04d0f6a0ab",
+      "packet": "VIRO-0011",
+      "heartbeat_at": "2026-08-28T20:16:09.603Z"
     }
   },
   "leases": {
@@ -1763,9 +1772,9 @@
         "tests/recovery-identity-*"
       ],
       "acquired_at": "2026-08-28T19:32:14.640Z",
-      "current_agent": null,
+      "current_agent": "zcode-verify-pc13",
       "current_stage": "verify",
-      "heartbeat_at": "2026-08-28T20:09:20.386Z"
+      "current_session": "b8bf70cd-e98b-4765-8116-fb04d0f6a0ab"
     },
     "VIRO-0017": {
       "packet": "VIRO-0017",
@@ -1783,11 +1792,6 @@
     }
   },
   "events": [
-    {
-      "at": "2026-08-28T05:42:24.472Z",
-      "type": "packet.imported",
-      "packet": "VIRO-0141"
-    },
     {
       "at": "2026-08-28T05:42:24.472Z",
       "type": "packet.imported",
@@ -3847,6 +3851,15 @@
       "evidence": [
         "landed via LOCAL merge under owner order 2026-08-28 (candidate 5b74002, verifier PASS 8-step bus probe); suites re-run green on merged main"
       ]
+    },
+    {
+      "at": "2026-08-28T20:16:09.603Z",
+      "type": "packet.claimed",
+      "packet": "VIRO-0011",
+      "agent": "zcode-verify-pc13",
+      "role": "verifier",
+      "machine": "pc-cloud1",
+      "session": "b8bf70cd-e98b-4765-8116-fb04d0f6a0ab"
     }
   ]
 }
