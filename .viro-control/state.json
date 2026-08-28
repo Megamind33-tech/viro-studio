@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 328,
-  "updated_at": "2026-08-28T19:30:38.984Z",
+  "revision": 329,
+  "updated_at": "2026-08-28T19:32:14.640Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -420,11 +420,11 @@
       ],
       "critic_needed": false,
       "stage": "build",
-      "status": "QUEUED",
-      "assigned_agent": null,
-      "assigned_role": null,
+      "status": "ACTIVE",
+      "assigned_agent": "zcode-identity-pc2",
+      "assigned_role": "builder",
       "work_branch": "agent/viro-0011/zcode-gov-audit-pc1",
-      "heartbeat_at": null,
+      "heartbeat_at": "2026-08-28T19:32:14.640Z",
       "attempts": 0,
       "evidence": [
         {
@@ -1443,6 +1443,12 @@
       "session": "c9d6a0ff-4064-4611-9ffd-afefc55ddcc2",
       "packet": "VIRO-0019",
       "heartbeat_at": "2026-08-28T19:30:38.984Z"
+    },
+    "zcode-identity-pc2": {
+      "role": "builder",
+      "machine": "pc-cloud1",
+      "packet": "VIRO-0011",
+      "heartbeat_at": "2026-08-28T19:32:14.640Z"
     }
   },
   "leases": {
@@ -1500,14 +1506,21 @@
       "current_stage": "verify",
       "current_session": "c9d6a0ff-4064-4611-9ffd-afefc55ddcc2",
       "heartbeat_at": "2026-08-28T19:30:38.984Z"
+    },
+    "VIRO-0011": {
+      "packet": "VIRO-0011",
+      "scope": [
+        "src/app.ts",
+        "src/library/store.ts",
+        "docs/agents/deliveries/VIRO-0011.json",
+        "tests/recovery-identity-*"
+      ],
+      "acquired_at": "2026-08-28T19:32:14.640Z",
+      "current_agent": "zcode-identity-pc2",
+      "current_stage": "build"
     }
   },
   "events": [
-    {
-      "at": "2026-08-28T04:36:36.145Z",
-      "type": "packet.imported",
-      "packet": "VIRO-0010"
-    },
     {
       "at": "2026-08-28T04:36:36.145Z",
       "type": "packet.imported",
@@ -3499,6 +3512,14 @@
       "agent": "zcode-verify-pc9b",
       "packet": "VIRO-0019",
       "session": "c9d6a0ff-4064-4611-9ffd-afefc55ddcc2",
+      "machine": "pc-cloud1"
+    },
+    {
+      "at": "2026-08-28T19:32:14.640Z",
+      "type": "packet.claimed",
+      "packet": "VIRO-0011",
+      "agent": "zcode-identity-pc2",
+      "role": "builder",
       "machine": "pc-cloud1"
     }
   ]
