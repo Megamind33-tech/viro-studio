@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 223,
-  "updated_at": "2026-08-28T16:20:05.039Z",
+  "revision": 224,
+  "updated_at": "2026-08-28T16:20:11.957Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -854,11 +854,11 @@
       "dependencies": [],
       "critic_needed": false,
       "stage": "build",
-      "status": "ACTIVE",
-      "assigned_agent": "zcode-govtool-pc1",
-      "assigned_role": "builder",
+      "status": "BLOCKED",
+      "assigned_agent": null,
+      "assigned_role": null,
       "work_branch": "agent/viro-0019/zcode-gov-audit-pc1",
-      "heartbeat_at": "2026-08-28T11:49:44.174Z",
+      "heartbeat_at": null,
       "attempts": 0,
       "evidence": [
         {
@@ -877,7 +877,12 @@
           "before-state confirmed 2026-08-28: claim supports --machine but no session binding or duplicate-identity refusal exists in orchestrator-core; no lease-logic unit tests exist; wave-2 hold released - build-time churn cannot affect running workers since each executes its own worktree copy"
         ]
       },
-      "rejection": null,
+      "rejection": {
+        "by": "governor",
+        "stage": "build",
+        "reason": "builder session died in provider 5h quota wall mid-unit-suite (implementation complete, one assertion from green); work preserved uncommitted+committed in worktree viro-0019-identity-zcode1 branch agent/viro-0019/zcode-gov-audit-pc1; NOT merged (incomplete); unblock immediately so a fresh builder resumes post-reset",
+        "at": "2026-08-28T16:20:11.955Z"
+      },
       "assigned_session": "sess-viro0019-zcode1-live-dryrun",
       "assigned_machine": "pc-cloud1"
     },
@@ -1166,33 +1171,8 @@
       }
     }
   },
-  "agents": {
-    "zcode-govtool-pc1": {
-      "role": "builder",
-      "machine": "pc-cloud1",
-      "packet": "VIRO-0019",
-      "heartbeat_at": "2026-08-28T11:49:44.174Z",
-      "session": "sess-viro0019-zcode1-live-dryrun"
-    }
-  },
-  "leases": {
-    "VIRO-0019": {
-      "packet": "VIRO-0019",
-      "scope": [
-        "scripts/lib/**",
-        "scripts/viro-orchestrator.mjs",
-        "scripts/viro-orchestrator-git.mjs",
-        "scripts/viro-release.mjs",
-        "docs/agents/deliveries/VIRO-0019.json",
-        "docs/agents/orchestrator-identity.md"
-      ],
-      "acquired_at": "2026-08-28T10:39:09.362Z",
-      "current_agent": "zcode-govtool-pc1",
-      "current_stage": "build",
-      "heartbeat_at": "2026-08-28T11:49:44.174Z",
-      "current_session": "sess-viro0019-zcode1-live-dryrun"
-    }
-  },
+  "agents": {},
+  "leases": {},
   "events": [
     {
       "at": "2026-08-27T16:16:00.000Z",
@@ -2619,6 +2599,14 @@
       "packet": "VIRO-0016",
       "by": "governor",
       "reason": "OWNER ORDER 2026-08-28: builder-complete candidate b92f1b2 (8 a11y fixes + 6 walkthrough tests) merged to LOCAL main commit abc2fa8; verification had not started (quota wall); chrome/build green on merged main; independent critic still PENDING - schedule after quota reset"
+    },
+    {
+      "at": "2026-08-28T16:20:11.957Z",
+      "type": "assignment.reaped",
+      "packet": "VIRO-0019",
+      "agent": "zcode-govtool-pc1",
+      "by": "governor",
+      "reason": "builder session died in provider 5h quota wall mid-unit-suite (implementation complete, one assertion from green); work preserved uncommitted+committed in worktree viro-0019-identity-zcode1 branch agent/viro-0019/zcode-gov-audit-pc1; NOT merged (incomplete); unblock immediately so a fresh builder resumes post-reset"
     }
   ]
 }
