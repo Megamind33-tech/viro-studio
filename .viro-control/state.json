@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 138,
-  "updated_at": "2026-08-28T10:21:19.421Z",
+  "revision": 139,
+  "updated_at": "2026-08-28T10:21:27.103Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -275,8 +275,8 @@
       "scope": [
         "src/app.ts",
         "src/library/store.ts",
-        "tests/**",
-        "docs/agents/deliveries/VIRO-0010.json"
+        "docs/agents/deliveries/VIRO-0010.json",
+        "tests/autosave-*"
       ],
       "dependencies": [],
       "critic_needed": false,
@@ -315,8 +315,8 @@
       "scope": [
         "src/app.ts",
         "src/library/store.ts",
-        "tests/**",
-        "docs/agents/deliveries/VIRO-0011.json"
+        "docs/agents/deliveries/VIRO-0011.json",
+        "tests/recovery-identity-*"
       ],
       "dependencies": [
         "VIRO-0010"
@@ -491,8 +491,9 @@
       "outcome": "The PSD, VDJ and Press JSON import paths survive arbitrary malformed input without uncaught crashes outside their documented error handling: a checked-in fuzz/negative corpus plus a deterministic runner proves typed, user-safe failure for truncated, oversized, deeply-nested, wrong-mime and hostile-declaration inputs, and any proven parser defect found is fixed with the smallest safe change.",
       "scope": [
         "src/import/**",
-        "tests/**",
-        "docs/agents/deliveries/VIRO-0013.json"
+        "docs/agents/deliveries/VIRO-0013.json",
+        "tests/import-*",
+        "tests/fixtures/import-corpus/**"
       ],
       "dependencies": [],
       "critic_needed": false,
@@ -517,8 +518,8 @@
         "src/import/**",
         "src/engine/font-registry.ts",
         "src/engine/sniff.ts",
-        "tests/**",
-        "docs/agents/deliveries/VIRO-0014.json"
+        "docs/agents/deliveries/VIRO-0014.json",
+        "tests/import-sanitize-*"
       ],
       "dependencies": [
         "VIRO-0013"
@@ -543,8 +544,8 @@
       "outcome": "A versioned export regression corpus (documents plus expected PDF operator topology and PNG pixel checksums) is checked in and runnable, so compound-path behavior proven by VIRO-0005 becomes part of the standing baseline and future exporter changes are measured against real artifacts, with the export report expanded to cover every claimed classification.",
       "scope": [
         "src/export/**",
-        "tests/**",
-        "docs/agents/deliveries/VIRO-0015.json"
+        "docs/agents/deliveries/VIRO-0015.json",
+        "tests/export-corpus-*"
       ],
       "dependencies": [
         "VIRO-0005"
@@ -570,9 +571,9 @@
       "scope": [
         "index.html",
         "src/chrome/**",
-        "tests/**",
         "docs/reviews/0016-accessibility-audit.md",
-        "docs/agents/deliveries/VIRO-0016.json"
+        "docs/agents/deliveries/VIRO-0016.json",
+        "tests/a11y-*"
       ],
       "dependencies": [],
       "critic_needed": true,
@@ -596,9 +597,9 @@
       "scope": [
         "index.html",
         "src/chrome/**",
-        "tests/**",
         "docs/reviews/0017-visual-polish-sweep.md",
-        "docs/agents/deliveries/VIRO-0017.json"
+        "docs/agents/deliveries/VIRO-0017.json",
+        "tests/visual-polish-*"
       ],
       "dependencies": [
         "VIRO-0016"
@@ -651,8 +652,8 @@
       "scope": [
         "src/document/ops.ts",
         "src/document/factory.ts",
-        "tests/**",
-        "docs/agents/deliveries/VIRO-0140.json"
+        "docs/agents/deliveries/VIRO-0140.json",
+        "tests/layer-integrity-*"
       ],
       "dependencies": [],
       "critic_needed": false,
@@ -677,8 +678,8 @@
         "src/document/ops.ts",
         "src/document/ui-commands.ts",
         "src/document/boolean-ops.ts",
-        "tests/**",
-        "docs/agents/deliveries/VIRO-0141.json"
+        "docs/agents/deliveries/VIRO-0141.json",
+        "tests/vector-node-*"
       ],
       "dependencies": [
         "VIRO-0140"
@@ -705,8 +706,8 @@
         "src/engine/type.ts",
         "src/engine/font-registry.ts",
         "src/document/text-model.ts",
-        "tests/**",
-        "docs/agents/deliveries/VIRO-0142.json"
+        "docs/agents/deliveries/VIRO-0142.json",
+        "tests/rich-text-*"
       ],
       "dependencies": [],
       "critic_needed": true,
@@ -730,8 +731,8 @@
       "scope": [
         "src/engine/type.ts",
         "src/document/text-model.ts",
-        "tests/**",
-        "docs/agents/deliveries/VIRO-0143.json"
+        "docs/agents/deliveries/VIRO-0143.json",
+        "tests/text-frame-*"
       ],
       "dependencies": [
         "VIRO-0142"
@@ -756,8 +757,8 @@
       "outcome": "Caret stops derive from HarfBuzz cluster boundaries so carets and selection highlights land correctly under kerning and ligatures; story script/direction/language feed HarfBuzz instead of guessSegmentProperties; per-line compose stops re-shaping every prefix.",
       "scope": [
         "src/engine/type.ts",
-        "tests/**",
-        "docs/agents/deliveries/VIRO-0144.json"
+        "docs/agents/deliveries/VIRO-0144.json",
+        "tests/caret-fidelity-*"
       ],
       "dependencies": [
         "VIRO-0143"
@@ -782,8 +783,8 @@
       "outcome": "Text exported to vector PDF embeds valid font subsets: third-party viewers (pdf.js, fontkit) parse the embedded FontFile2 and render every glyph used on the page completely, with the export report unchanged and compound/single-contour vector proofs from VIRO-0005 still green.",
       "scope": [
         "src/export/pdf.ts",
-        "tests/**",
-        "docs/agents/deliveries/VIRO-0145.json"
+        "docs/agents/deliveries/VIRO-0145.json",
+        "tests/pdf-font-*"
       ],
       "dependencies": [],
       "critic_needed": true,
@@ -1655,6 +1656,11 @@
       "type": "packet.unblocked",
       "packet": "VIRO-0010",
       "by": "governor"
+    },
+    {
+      "at": "2026-08-28T10:21:27.103Z",
+      "type": "packet.reconciled_from_manifest",
+      "packet": "VIRO-0002"
     }
   ]
 }
