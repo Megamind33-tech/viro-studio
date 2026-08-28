@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 206,
-  "updated_at": "2026-08-28T11:43:16.527Z",
+  "revision": 207,
+  "updated_at": "2026-08-28T11:45:31.848Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -736,12 +736,12 @@
       ],
       "dependencies": [],
       "critic_needed": true,
-      "stage": "build",
-      "status": "ACTIVE",
-      "assigned_agent": "zcode-a11y-pc1",
-      "assigned_role": "builder",
+      "stage": "verify",
+      "status": "QUEUED",
+      "assigned_agent": null,
+      "assigned_role": null,
       "work_branch": "agent/viro-0016/zcode-gov-audit-pc1",
-      "heartbeat_at": "2026-08-28T11:30:31.707Z",
+      "heartbeat_at": null,
       "attempts": 0,
       "evidence": [
         {
@@ -749,15 +749,42 @@
           "by": "zcode-gov-audit-pc1",
           "item": "gap-audit before-state confirmed on main by Governor audit pass 2026-08-28; manifest before/after validated; no duplicate implementation; evidence basis in docs/agents/deliveries/VIRO-0016.json",
           "at": "2026-08-28T10:22:09.463Z"
+        },
+        {
+          "stage": "build",
+          "by": "zcode-a11y-pc1",
+          "item": "commit b92f1b2 on agent/viro-0016/zcode-gov-audit-pc1: 8/8 audited a11y defects fixed in place (menus Escape+aria-expanded, dialog focus trap/restore/Escape incl. Projects, 9 unnamed controls labeled, toggle state via aria-pressed on tabs/channels/align/orientation/view-window/layer rows, keyboard-selectable layer name button, swatch names, aria-modal, stat-engine live region)",
+          "at": "2026-08-28T11:45:31.758Z"
+        },
+        {
+          "stage": "build",
+          "by": "zcode-a11y-pc1",
+          "item": "audit committed at docs/reviews/0016-accessibility-audit.md: per-journey findings F1-F8 with disposition + dismissed-with-reason list",
+          "at": "2026-08-28T11:45:31.848Z"
+        },
+        {
+          "stage": "build",
+          "by": "zcode-a11y-pc1",
+          "item": "keyboard walkthrough tests/a11y-keyboard.spec.ts exit 0 (5 passed, 1 SwiftShader cold-boot flake recovered by retry): new dialog focus+Enter-create+Escape+trap, Ctrl+S/Ctrl+O projects persistence, Ctrl+Z/Y/Shift+Z layer toggling, letter tools + Ctrl+1/=/-/0 zoom, menu state/Escape/focusout, layer row keyboard select (row height 38px kept)",
+          "at": "2026-08-28T11:45:31.848Z"
+        },
+        {
+          "stage": "build",
+          "by": "zcode-a11y-pc1",
+          "item": "gates: npx tsc --noEmit clean, npm run test:unit 316/316, npm run build exit 0; visual drift: desk-at-rest and menu-open PNGs byte-identical pre/post, dialog-open differs only by the new visible focus indicator (542px, rows 52-240)",
+          "at": "2026-08-28T11:45:31.848Z"
         }
       ],
       "last_handoff": {
-        "from": "audit",
-        "to": "build",
-        "by": "zcode-gov-audit-pc1",
-        "at": "2026-08-28T10:22:09.466Z",
+        "from": "build",
+        "to": "verify",
+        "by": "zcode-a11y-pc1",
+        "at": "2026-08-28T11:45:31.848Z",
         "evidence": [
-          "gap-audit before-state confirmed on main by Governor audit pass 2026-08-28; manifest before/after validated; no duplicate implementation; evidence basis in docs/agents/deliveries/VIRO-0016.json"
+          "commit b92f1b2 on agent/viro-0016/zcode-gov-audit-pc1: 8/8 audited a11y defects fixed in place (menus Escape+aria-expanded, dialog focus trap/restore/Escape incl. Projects, 9 unnamed controls labeled, toggle state via aria-pressed on tabs/channels/align/orientation/view-window/layer rows, keyboard-selectable layer name button, swatch names, aria-modal, stat-engine live region)",
+          "audit committed at docs/reviews/0016-accessibility-audit.md: per-journey findings F1-F8 with disposition + dismissed-with-reason list",
+          "keyboard walkthrough tests/a11y-keyboard.spec.ts exit 0 (5 passed, 1 SwiftShader cold-boot flake recovered by retry): new dialog focus+Enter-create+Escape+trap, Ctrl+S/Ctrl+O projects persistence, Ctrl+Z/Y/Shift+Z layer toggling, letter tools + Ctrl+1/=/-/0 zoom, menu state/Escape/focusout, layer row keyboard select (row height 38px kept)",
+          "gates: npx tsc --noEmit clean, npm run test:unit 316/316, npm run build exit 0; visual drift: desk-at-rest and menu-open PNGs byte-identical pre/post, dialog-open differs only by the new visible focus indicator (542px, rows 52-240)"
         ]
       },
       "rejection": null
@@ -1103,12 +1130,6 @@
     }
   },
   "agents": {
-    "zcode-a11y-pc1": {
-      "role": "builder",
-      "machine": "pc-cloud1",
-      "packet": "VIRO-0016",
-      "heartbeat_at": "2026-08-28T11:30:31.707Z"
-    },
     "zcode-richtext-pc1": {
       "role": "builder",
       "machine": "pc-cloud1",
@@ -1170,8 +1191,8 @@
         "tests/a11y-*"
       ],
       "acquired_at": "2026-08-28T10:21:58.084Z",
-      "current_agent": "zcode-a11y-pc1",
-      "current_stage": "build",
+      "current_agent": null,
+      "current_stage": "verify",
       "heartbeat_at": "2026-08-28T11:30:31.707Z"
     },
     "VIRO-0140": {
@@ -2540,6 +2561,14 @@
       "at": "2026-08-28T11:43:16.527Z",
       "type": "packet.reconciled_from_manifest",
       "packet": "VIRO-0002"
+    },
+    {
+      "at": "2026-08-28T11:45:31.848Z",
+      "type": "packet.advanced",
+      "packet": "VIRO-0016",
+      "from": "build",
+      "to": "verify",
+      "by": "zcode-a11y-pc1"
     }
   ]
 }
