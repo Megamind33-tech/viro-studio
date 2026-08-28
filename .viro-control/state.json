@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 153,
-  "updated_at": "2026-08-28T10:25:30.202Z",
+  "revision": 154,
+  "updated_at": "2026-08-28T10:25:46.934Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -1935,6 +1935,11 @@
     },
     {
       "at": "2026-08-28T10:25:30.202Z",
+      "type": "packet.reconciled_from_manifest",
+      "packet": "VIRO-0002"
+    },
+    {
+      "at": "2026-08-28T10:25:46.934Z",
       "type": "packet.reconciled_from_manifest",
       "packet": "VIRO-0002"
     }
