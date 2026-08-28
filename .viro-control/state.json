@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 246,
-  "updated_at": "2026-08-28T17:01:01.773Z",
+  "revision": 247,
+  "updated_at": "2026-08-28T17:01:20.442Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -703,11 +703,11 @@
       ],
       "critic_needed": false,
       "stage": "build",
-      "status": "QUEUED",
-      "assigned_agent": null,
-      "assigned_role": null,
+      "status": "ACTIVE",
+      "assigned_agent": "zcode-sanitize-pc1",
+      "assigned_role": "builder",
       "work_branch": "agent/viro-0014/zcode-gov-audit-pc1",
-      "heartbeat_at": null,
+      "heartbeat_at": "2026-08-28T17:01:20.442Z",
       "attempts": 0,
       "evidence": [
         {
@@ -1237,7 +1237,14 @@
       "rejection": null
     }
   },
-  "agents": {},
+  "agents": {
+    "zcode-sanitize-pc1": {
+      "role": "builder",
+      "machine": "pc-cloud1",
+      "packet": "VIRO-0014",
+      "heartbeat_at": "2026-08-28T17:01:20.442Z"
+    }
+  },
   "leases": {
     "VIRO-0011": {
       "packet": "VIRO-0011",
@@ -1261,7 +1268,7 @@
         "tests/import-sanitize-*"
       ],
       "acquired_at": "2026-08-28T16:58:36.785Z",
-      "current_agent": null,
+      "current_agent": "zcode-sanitize-pc1",
       "current_stage": "build"
     },
     "VIRO-0015": {
@@ -2927,6 +2934,14 @@
       "at": "2026-08-28T17:01:01.773Z",
       "type": "packet.reconciled_from_manifest",
       "packet": "VIRO-0002"
+    },
+    {
+      "at": "2026-08-28T17:01:20.442Z",
+      "type": "packet.claimed",
+      "packet": "VIRO-0014",
+      "agent": "zcode-sanitize-pc1",
+      "role": "builder",
+      "machine": "pc-cloud1"
     }
   ]
 }
