@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 426,
-  "updated_at": "2026-08-28T23:34:32.661Z",
+  "revision": 427,
+  "updated_at": "2026-08-28T23:35:36.569Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -1178,12 +1178,12 @@
         "VIRO-0016"
       ],
       "critic_needed": true,
-      "stage": "critic",
-      "status": "CRITIC",
-      "assigned_agent": "zcode-critic-pc3",
-      "assigned_role": "critic",
+      "stage": "release",
+      "status": "QUEUED",
+      "assigned_agent": null,
+      "assigned_role": null,
       "work_branch": "agent/viro-0017/zcode-gov-audit-pc1",
-      "heartbeat_at": "2026-08-28T23:34:32.661Z",
+      "heartbeat_at": null,
       "attempts": 0,
       "evidence": [
         {
@@ -1221,15 +1221,28 @@
           "by": "zcode-verify-pc14",
           "item": "candidate 3ad0bb3 (base 5014465) verified independent on clean worktree viro-0017-verify-zcode1: diff 5014465..3ad0bb3 = 8 files all in-lease (index.html, src/chrome/desk.css, src/chrome/anchor-panel.css, tests/visual-polish-*, sweep report, manifest; src/styles diff = 0 so D5/D6 genuinely unedited); gates: tsc --noEmit exit 0, test:unit 316/316, polish suites 13/13 on seat port 5184 via committed config, full chrome 29/29 on verifier port 5231 incl tests/a11y-keyboard.spec.ts 6/6 (VIRO-0016 not regressed, file untouched), vite build exit 0; own from-scratch accent census (playwright probe, 7 driven states: rest, active-tool move+marquee switch, 2-layer selection + align hover, recovery bar open, Anchor Chat mode, Projects dialog, New Document dialog): D1 .recover-primary bg rgb(61,61,61)/border rgb(26,26,26)/text rgb(232,232,232) NOT copper, D2 .align-btn hover border rgb(61,61,61) NOT copper, D3 visible .anc-send border rgb(26,26,26) NOT copper, zero new accent hits, all remaining copper maps to allowed states only (active tool ::before, is-on tabs/rows, checked boxes, textarea :focus, nav-port, doc-tab, nd selected orientation/link); D5 .btn.default Create ring measured still copper exactly as declared out-of-lease; token spot-check: --panel #2b2b2b --raised #323232 --pasteboard #1f1f1f --accent #e07a2f radius 1px, max computed radius 2px (recover-bar), body font Segoe UI; honesty: sweep report methodology + A1-A10 dismissed with stateful evidence + D5/D6 returned to Governor, D4 zero-visual-delta claim proven (mountAnchorPanel strips static H2/P, anchor-panel.ts:334); no TS suppressions, no skipped tests",
           "at": "2026-08-28T22:35:14.007Z"
+        },
+        {
+          "stage": "critic",
+          "by": "zcode-critic-pc3",
+          "item": "Drove candidate 3ad0bb3 and base 5014465 side by side (headless Chromium, real key/mouse journeys, ports 5217/5218). Recovery bar via real autosave+reload: base Restore was a solid copper pill; candidate Restore is a raised neutral #3d3d3d fill with ghost Discard - hierarchy reads at a glance, urgency carried by the copy, nothing ambiguous (polish/base-bar-crop.png vs cand-bar-crop.png). Align hover with 2 layers selected: computed border rgb(61,61,61) neutral step, visible-but-quiet at 4x (c2-align-4x.png). Projects card hover #3d3d3d. Anchor studio: Send/.anc-mini-default computed border rgb(26,26,26) neutral, raised-fill emphasis kept, no replacement ornament; empty-queue panels identical geometry both builds (base9/cand9-anchor-crop.png). D4 prose proven dead markup (mountAnchorPanel strips static H2/P at init, anchor-panel.ts:334) so zero painted delta. #3d3d3d is an existing ramp tone (styles/desk.css, anchor-panel.css), nothing invented. Remaining copper only on allowed states (checked Constrain box, canvas selection handles, focus). Workspace density unchanged (CSS declarations + one dead block only). Aesthetic verdict: de-coppered controls look RIGHT per the AAA brief. Verifier gates (tsc, unit 316/316, playwright 29/29 incl. a11y 6/6) accepted; critic drove the visual confirmation.",
+          "at": "2026-08-28T23:35:36.460Z"
+        },
+        {
+          "stage": "critic",
+          "by": "zcode-critic-pc3",
+          "item": "Critic evidence shots: Temp/viro-critic-pc3/shots/polish/ (base-02 vs cand-02 recover bars, c2-align-4x hover, base9/cand9 anchor panels, computed-style JSON in probes/polish-full.json)",
+          "at": "2026-08-28T23:35:36.569Z"
         }
       ],
       "last_handoff": {
-        "from": "verify",
-        "to": "critic",
-        "by": "zcode-verify-pc14",
-        "at": "2026-08-28T22:35:14.046Z",
+        "from": "critic",
+        "to": "release",
+        "by": "zcode-critic-pc3",
+        "at": "2026-08-28T23:35:36.569Z",
         "evidence": [
-          "candidate 3ad0bb3 (base 5014465) verified independent on clean worktree viro-0017-verify-zcode1: diff 5014465..3ad0bb3 = 8 files all in-lease (index.html, src/chrome/desk.css, src/chrome/anchor-panel.css, tests/visual-polish-*, sweep report, manifest; src/styles diff = 0 so D5/D6 genuinely unedited); gates: tsc --noEmit exit 0, test:unit 316/316, polish suites 13/13 on seat port 5184 via committed config, full chrome 29/29 on verifier port 5231 incl tests/a11y-keyboard.spec.ts 6/6 (VIRO-0016 not regressed, file untouched), vite build exit 0; own from-scratch accent census (playwright probe, 7 driven states: rest, active-tool move+marquee switch, 2-layer selection + align hover, recovery bar open, Anchor Chat mode, Projects dialog, New Document dialog): D1 .recover-primary bg rgb(61,61,61)/border rgb(26,26,26)/text rgb(232,232,232) NOT copper, D2 .align-btn hover border rgb(61,61,61) NOT copper, D3 visible .anc-send border rgb(26,26,26) NOT copper, zero new accent hits, all remaining copper maps to allowed states only (active tool ::before, is-on tabs/rows, checked boxes, textarea :focus, nav-port, doc-tab, nd selected orientation/link); D5 .btn.default Create ring measured still copper exactly as declared out-of-lease; token spot-check: --panel #2b2b2b --raised #323232 --pasteboard #1f1f1f --accent #e07a2f radius 1px, max computed radius 2px (recover-bar), body font Segoe UI; honesty: sweep report methodology + A1-A10 dismissed with stateful evidence + D5/D6 returned to Governor, D4 zero-visual-delta claim proven (mountAnchorPanel strips static H2/P, anchor-panel.ts:334); no TS suppressions, no skipped tests"
+          "Drove candidate 3ad0bb3 and base 5014465 side by side (headless Chromium, real key/mouse journeys, ports 5217/5218). Recovery bar via real autosave+reload: base Restore was a solid copper pill; candidate Restore is a raised neutral #3d3d3d fill with ghost Discard - hierarchy reads at a glance, urgency carried by the copy, nothing ambiguous (polish/base-bar-crop.png vs cand-bar-crop.png). Align hover with 2 layers selected: computed border rgb(61,61,61) neutral step, visible-but-quiet at 4x (c2-align-4x.png). Projects card hover #3d3d3d. Anchor studio: Send/.anc-mini-default computed border rgb(26,26,26) neutral, raised-fill emphasis kept, no replacement ornament; empty-queue panels identical geometry both builds (base9/cand9-anchor-crop.png). D4 prose proven dead markup (mountAnchorPanel strips static H2/P at init, anchor-panel.ts:334) so zero painted delta. #3d3d3d is an existing ramp tone (styles/desk.css, anchor-panel.css), nothing invented. Remaining copper only on allowed states (checked Constrain box, canvas selection handles, focus). Workspace density unchanged (CSS declarations + one dead block only). Aesthetic verdict: de-coppered controls look RIGHT per the AAA brief. Verifier gates (tsc, unit 316/316, playwright 29/29 incl. a11y 6/6) accepted; critic drove the visual confirmation.",
+          "Critic evidence shots: Temp/viro-critic-pc3/shots/polish/ (base-02 vs cand-02 recover bars, c2-align-4x hover, base9/cand9 anchor panels, computed-style JSON in probes/polish-full.json)"
         ]
       },
       "rejection": null,
@@ -2057,13 +2070,6 @@
     }
   },
   "agents": {
-    "zcode-critic-pc3": {
-      "role": "critic",
-      "machine": "pc-cloud1",
-      "session": "69a08142-3926-4f09-afda-f139c9b80bdd",
-      "packet": "VIRO-0017",
-      "heartbeat_at": "2026-08-28T23:34:32.661Z"
-    },
     "zcode-caret-pc1": {
       "role": "builder",
       "machine": "pc-cloud1",
@@ -2090,8 +2096,8 @@
         "tests/visual-polish-*"
       ],
       "acquired_at": "2026-08-28T19:33:41.736Z",
-      "current_agent": "zcode-critic-pc3",
-      "current_stage": "critic",
+      "current_agent": null,
+      "current_stage": "release",
       "current_session": "69a08142-3926-4f09-afda-f139c9b80bdd",
       "heartbeat_at": "2026-08-28T23:34:32.661Z"
     },
@@ -2124,12 +2130,6 @@
     }
   },
   "events": [
-    {
-      "at": "2026-08-28T10:07:33.810Z",
-      "type": "agent.heartbeat",
-      "agent": "zcode-critic-pc1",
-      "packet": "VIRO-0005"
-    },
     {
       "at": "2026-08-28T10:09:55.367Z",
       "type": "agent.heartbeat",
@@ -4296,6 +4296,16 @@
       "packet": "VIRO-0017",
       "session": "69a08142-3926-4f09-afda-f139c9b80bdd",
       "machine": "pc-cloud1"
+    },
+    {
+      "at": "2026-08-28T23:35:36.569Z",
+      "type": "packet.advanced",
+      "packet": "VIRO-0017",
+      "from": "critic",
+      "to": "release",
+      "by": "zcode-critic-pc3",
+      "machine": "pc-cloud1",
+      "session": "69a08142-3926-4f09-afda-f139c9b80bdd"
     }
   ]
 }
