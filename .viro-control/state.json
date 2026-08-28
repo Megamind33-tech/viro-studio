@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 195,
-  "updated_at": "2026-08-28T11:27:24.254Z",
+  "revision": 196,
+  "updated_at": "2026-08-28T11:27:54.034Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -280,12 +280,12 @@
       ],
       "dependencies": [],
       "critic_needed": false,
-      "stage": "verify",
-      "status": "VERIFY",
-      "assigned_agent": "zcode-verify-pc5",
-      "assigned_role": "verifier",
+      "stage": "release",
+      "status": "QUEUED",
+      "assigned_agent": null,
+      "assigned_role": null,
       "work_branch": "agent/viro-0010/zcode-gov-audit-pc1",
-      "heartbeat_at": "2026-08-28T11:21:57.900Z",
+      "heartbeat_at": null,
       "attempts": 0,
       "evidence": [
         {
@@ -317,18 +317,49 @@
           "by": "zcode-persist-pc1",
           "item": "Regression gates: tests/recovery.spec.mjs assertions untouched 13/13, npm run test:unit 316/316, npx tsc --noEmit exit 0, npm run build exit 0, npm run test:chrome 5/5 proven on identical code pre-claim (dev server port 5175 per lease; note: shared 5173 serves another worktree's stale build and must not be used for this packet's verification)",
           "at": "2026-08-28T10:49:33.787Z"
+        },
+        {
+          "stage": "verify",
+          "by": "zcode-verify-pc5",
+          "item": "commit 00f6341 verified in clean detached worktree (pc-cloud1, not builder's)",
+          "at": "2026-08-28T11:27:54.027Z"
+        },
+        {
+          "stage": "verify",
+          "by": "zcode-verify-pc5",
+          "item": "scope audit vs 14e2812: only src/app.ts + tests/autosave-hardening.test.mjs + tests/autosave-failure.spec.mjs + docs/agents/deliveries/VIRO-0010.json; tests/recovery.spec.mjs diff is 0 bytes",
+          "at": "2026-08-28T11:27:54.033Z"
+        },
+        {
+          "stage": "verify",
+          "by": "zcode-verify-pc5",
+          "item": "gates: tsc --noEmit exit 0; npm run test:unit 316/316; autosave-hardening 7/7 (node --experimental-transform-types per in-file header, strip-only cannot load pre-existing compositor.ts parameter properties); autosave-failure.spec 13/13 against own vite 127.0.0.1:5195 (real IndexedDB quota injection via recoverySink seam); recovery.spec 13/13 unmodified; chrome 5/5 against own web-mode vite 127.0.0.1:5196 (stale foreign 5173 server never used); npm run build ok",
+          "at": "2026-08-28T11:27:54.033Z"
+        },
+        {
+          "stage": "verify",
+          "by": "zcode-verify-pc5",
+          "item": "quota reproduction: good snapshot persisted (2 layers, savedAt T), sink then rejects -> stored record still layers=2 savedAt=T, status = 'Autosave failed (simulated quota exceeded)...' with no fake success wording, dirty stays set, autosaveTimer not re-armed (announce bypasses trackRevision), reload detects LAST GOOD snapshot and Restore returns exactly the pre-failure document, zero page errors",
+          "at": "2026-08-28T11:27:54.033Z"
+        },
+        {
+          "stage": "verify",
+          "by": "zcode-verify-pc5",
+          "item": "clone-count: structural + measured — autosaveTick serializes once when dirty and passes the shared plain snapshot to both sinks (preSerialized ?? fallback), failing browser tick measured clones=1, idle tick 0",
+          "at": "2026-08-28T11:27:54.033Z"
         }
       ],
       "last_handoff": {
-        "from": "build",
-        "to": "verify",
-        "by": "zcode-persist-pc1",
-        "at": "2026-08-28T10:49:33.787Z",
+        "from": "verify",
+        "to": "release",
+        "by": "zcode-verify-pc5",
+        "at": "2026-08-28T11:27:54.033Z",
         "evidence": [
-          "commit 00f6341 on agent/viro-0010/zcode-gov-audit-pc1 (pushed): autosave serializes at most once per tick (shared snapshot between recovery+project sinks), truthful failure status via announce() that cannot re-arm the debounce retry-storm, failed writes keep last good snapshot intact, recoverySink test seam",
-          "tests/autosave-hardening.test.mjs 7/7 (node --experimental-transform-types --import ./tests/ts-register.mjs --test) + tests/autosave-failure.spec.mjs 13/13 browser E2E on real IndexedDB: quota failure keeps stored snapshot (layers+savedAt unchanged), reload/recovery-prompt/Restore returns exactly the pre-failure document, no page errors",
-          "Clone-count before/after (JSON.stringify reference-count probe, stack-attributed): success tick 1->1, failing-recovery tick 2->1 (4 observed pre-fix when armed debounce re-ran both sinks), idle tick 0",
-          "Regression gates: tests/recovery.spec.mjs assertions untouched 13/13, npm run test:unit 316/316, npx tsc --noEmit exit 0, npm run build exit 0, npm run test:chrome 5/5 proven on identical code pre-claim (dev server port 5175 per lease; note: shared 5173 serves another worktree's stale build and must not be used for this packet's verification)"
+          "commit 00f6341 verified in clean detached worktree (pc-cloud1, not builder's)",
+          "scope audit vs 14e2812: only src/app.ts + tests/autosave-hardening.test.mjs + tests/autosave-failure.spec.mjs + docs/agents/deliveries/VIRO-0010.json; tests/recovery.spec.mjs diff is 0 bytes",
+          "gates: tsc --noEmit exit 0; npm run test:unit 316/316; autosave-hardening 7/7 (node --experimental-transform-types per in-file header, strip-only cannot load pre-existing compositor.ts parameter properties); autosave-failure.spec 13/13 against own vite 127.0.0.1:5195 (real IndexedDB quota injection via recoverySink seam); recovery.spec 13/13 unmodified; chrome 5/5 against own web-mode vite 127.0.0.1:5196 (stale foreign 5173 server never used); npm run build ok",
+          "quota reproduction: good snapshot persisted (2 layers, savedAt T), sink then rejects -> stored record still layers=2 savedAt=T, status = 'Autosave failed (simulated quota exceeded)...' with no fake success wording, dirty stays set, autosaveTimer not re-armed (announce bypasses trackRevision), reload detects LAST GOOD snapshot and Restore returns exactly the pre-failure document, zero page errors",
+          "clone-count: structural + measured — autosaveTick serializes once when dirty and passes the shared plain snapshot to both sinks (preSerialized ?? fallback), failing browser tick measured clones=1, idle tick 0"
         ]
       },
       "rejection": null
@@ -1023,12 +1054,6 @@
       "packet": "VIRO-0019",
       "heartbeat_at": "2026-08-28T10:42:55.931Z"
     },
-    "zcode-verify-pc5": {
-      "role": "verifier",
-      "machine": "pc-cloud1",
-      "packet": "VIRO-0010",
-      "heartbeat_at": "2026-08-28T11:21:57.900Z"
-    },
     "zcode-verify-pc6": {
       "role": "verifier",
       "machine": "pc-cloud1",
@@ -1124,8 +1149,8 @@
         "tests/autosave-*"
       ],
       "acquired_at": "2026-08-28T10:25:01.213Z",
-      "current_agent": "zcode-verify-pc5",
-      "current_stage": "verify",
+      "current_agent": null,
+      "current_stage": "release",
       "heartbeat_at": "2026-08-28T11:21:57.900Z"
     },
     "VIRO-0019": {
@@ -2367,6 +2392,14 @@
       "at": "2026-08-28T11:27:24.254Z",
       "type": "packet.reconciled_from_manifest",
       "packet": "VIRO-0002"
+    },
+    {
+      "at": "2026-08-28T11:27:54.034Z",
+      "type": "packet.advanced",
+      "packet": "VIRO-0010",
+      "from": "verify",
+      "to": "release",
+      "by": "zcode-verify-pc5"
     }
   ]
 }
