@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 109,
-  "updated_at": "2026-08-28T09:13:58.831Z",
+  "revision": 110,
+  "updated_at": "2026-08-28T09:15:31.872Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -254,12 +254,12 @@
       ],
       "dependencies": [],
       "critic_needed": false,
-      "stage": "build",
-      "status": "ACTIVE",
-      "assigned_agent": "zcode-perf-pc2",
-      "assigned_role": "builder",
+      "stage": "verify",
+      "status": "QUEUED",
+      "assigned_agent": null,
+      "assigned_role": null,
       "work_branch": "agent/viro-0012/zcode-gov-audit-pc1",
-      "heartbeat_at": "2026-08-28T09:13:58.831Z",
+      "heartbeat_at": null,
       "attempts": 0,
       "evidence": [
         {
@@ -279,17 +279,42 @@
           "by": "zcode-gov-audit-pc1",
           "item": "no baseline frame-time numbers exist anywhere in repo",
           "at": "2026-08-28T04:46:57.280Z"
+        },
+        {
+          "stage": "build",
+          "by": "zcode-perf-pc2",
+          "item": "Harness scripts/perf (run.mjs 13 scenarios idle+move/resize/pan/zoom x starter/plain30/shadow30; capture.mjs raw-RGBA sha-256 pixel proof); baseline committed at f973318 BEFORE any prod change: idle/shadow30 115482.4ms median vs plain30 165.8ms (~700x, geometry identical)",
+          "at": "2026-08-28T09:15:31.859Z"
+        },
+        {
+          "stage": "build",
+          "by": "zcode-perf-pc2",
+          "item": "Single compositor fix f5baa1a: withDropShadow saveLayer bounded to layerBounds + 3sigma + |offset| + nested glow/stroke dilation + vector stroke half + 2px; pixel-identical proof capture compare before after = PIXEL-IDENTICAL sha 0fa979a3fc68810c0e8b8801690bf2281220d171023d9aa54546ba0622b4b44c (2480x3508)",
+          "at": "2026-08-28T09:15:31.871Z"
+        },
+        {
+          "stage": "build",
+          "by": "zcode-perf-pc2",
+          "item": "Measured after: idle/shadow30 908.9ms median (127x), shadow gesture drawMs p95 95562-131008ms -> 984-1203ms, starter/plain30 within noise; report docs/research/0012-frame-profiling.md",
+          "at": "2026-08-28T09:15:31.871Z"
+        },
+        {
+          "stage": "build",
+          "by": "zcode-perf-pc2",
+          "item": "Gates: npx tsc --noEmit clean; npm run test:unit 316/316; npm run build exit 0; node tests/effects.spec.mjs 15/15; branch agent/viro-0012/zcode-gov-audit-pc1 pushed, head f5baa1a",
+          "at": "2026-08-28T09:15:31.871Z"
         }
       ],
       "last_handoff": {
-        "from": "audit",
-        "to": "build",
-        "by": "zcode-gov-audit-pc1",
-        "at": "2026-08-28T04:46:57.280Z",
+        "from": "build",
+        "to": "verify",
+        "by": "zcode-perf-pc2",
+        "at": "2026-08-28T09:15:31.871Z",
         "evidence": [
-          "scripts/perf absent on main 14e2812 - no frame-time harness exists",
-          "src/engine/compositor.ts has 5 saveLayer call sites; shadow saveLayer region unbounded per sprint-critic-01.md P2",
-          "no baseline frame-time numbers exist anywhere in repo"
+          "Harness scripts/perf (run.mjs 13 scenarios idle+move/resize/pan/zoom x starter/plain30/shadow30; capture.mjs raw-RGBA sha-256 pixel proof); baseline committed at f973318 BEFORE any prod change: idle/shadow30 115482.4ms median vs plain30 165.8ms (~700x, geometry identical)",
+          "Single compositor fix f5baa1a: withDropShadow saveLayer bounded to layerBounds + 3sigma + |offset| + nested glow/stroke dilation + vector stroke half + 2px; pixel-identical proof capture compare before after = PIXEL-IDENTICAL sha 0fa979a3fc68810c0e8b8801690bf2281220d171023d9aa54546ba0622b4b44c (2480x3508)",
+          "Measured after: idle/shadow30 908.9ms median (127x), shadow gesture drawMs p95 95562-131008ms -> 984-1203ms, starter/plain30 within noise; report docs/research/0012-frame-profiling.md",
+          "Gates: npx tsc --noEmit clean; npm run test:unit 316/316; npm run build exit 0; node tests/effects.spec.mjs 15/15; branch agent/viro-0012/zcode-gov-audit-pc1 pushed, head f5baa1a"
         ]
       },
       "rejection": null
@@ -592,12 +617,6 @@
       "machine": "pc-cloud1",
       "packet": "VIRO-0005",
       "heartbeat_at": "2026-08-28T09:11:58.139Z"
-    },
-    "zcode-perf-pc2": {
-      "role": "builder",
-      "machine": "pc-cloud1",
-      "packet": "VIRO-0012",
-      "heartbeat_at": "2026-08-28T09:13:58.831Z"
     }
   },
   "leases": {
@@ -622,8 +641,8 @@
         "docs/agents/deliveries/VIRO-0012.json"
       ],
       "acquired_at": "2026-08-28T06:43:47.797Z",
-      "current_agent": "zcode-perf-pc2",
-      "current_stage": "build",
+      "current_agent": null,
+      "current_stage": "verify",
       "heartbeat_at": "2026-08-28T09:13:58.831Z"
     }
   },
@@ -1271,6 +1290,14 @@
       "type": "agent.heartbeat",
       "agent": "zcode-perf-pc2",
       "packet": "VIRO-0012"
+    },
+    {
+      "at": "2026-08-28T09:15:31.872Z",
+      "type": "packet.advanced",
+      "packet": "VIRO-0012",
+      "from": "build",
+      "to": "verify",
+      "by": "zcode-perf-pc2"
     }
   ]
 }
