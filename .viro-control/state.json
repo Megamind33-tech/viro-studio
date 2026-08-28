@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 322,
-  "updated_at": "2026-08-28T19:25:06.822Z",
+  "revision": 323,
+  "updated_at": "2026-08-28T19:25:25.162Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -1478,11 +1478,6 @@
     }
   },
   "events": [
-    {
-      "at": "2026-08-27T22:22:19.455Z",
-      "type": "packet.reconciled_from_manifest",
-      "packet": "VIRO-0002"
-    },
     {
       "at": "2026-08-27T22:34:28.893Z",
       "type": "packet.reconciled_from_manifest",
@@ -3466,6 +3461,11 @@
       "agent": "zcode-textframe-pc2",
       "role": "builder",
       "machine": "pc-cloud1"
+    },
+    {
+      "at": "2026-08-28T19:25:25.162Z",
+      "type": "packet.reconciled_from_manifest",
+      "packet": "VIRO-0002"
     }
   ]
 }
