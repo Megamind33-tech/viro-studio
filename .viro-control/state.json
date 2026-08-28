@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 173,
-  "updated_at": "2026-08-28T10:41:47.870Z",
+  "revision": 174,
+  "updated_at": "2026-08-28T10:42:55.931Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -711,11 +711,11 @@
       "dependencies": [],
       "critic_needed": false,
       "stage": "build",
-      "status": "QUEUED",
-      "assigned_agent": null,
-      "assigned_role": null,
+      "status": "ACTIVE",
+      "assigned_agent": "zcode-govtool-pc1",
+      "assigned_role": "builder",
       "work_branch": "agent/viro-0019/zcode-gov-audit-pc1",
-      "heartbeat_at": null,
+      "heartbeat_at": "2026-08-28T10:42:55.931Z",
       "attempts": 0,
       "evidence": [
         {
@@ -974,6 +974,12 @@
       "machine": "pc-cloud1",
       "packet": "VIRO-0013",
       "heartbeat_at": "2026-08-28T10:41:28.158Z"
+    },
+    "zcode-govtool-pc1": {
+      "role": "builder",
+      "machine": "pc-cloud1",
+      "packet": "VIRO-0019",
+      "heartbeat_at": "2026-08-28T10:42:55.931Z"
     }
   },
   "leases": {
@@ -1079,7 +1085,7 @@
         "docs/agents/orchestrator-identity.md"
       ],
       "acquired_at": "2026-08-28T10:39:09.362Z",
-      "current_agent": null,
+      "current_agent": "zcode-govtool-pc1",
       "current_stage": "build"
     }
   },
@@ -2168,6 +2174,14 @@
       "type": "agent.heartbeat",
       "agent": "zcode-layers-pc1",
       "packet": "VIRO-0140"
+    },
+    {
+      "at": "2026-08-28T10:42:55.931Z",
+      "type": "packet.claimed",
+      "packet": "VIRO-0019",
+      "agent": "zcode-govtool-pc1",
+      "role": "builder",
+      "machine": "pc-cloud1"
     }
   ]
 }
