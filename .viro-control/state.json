@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 368,
-  "updated_at": "2026-08-28T21:32:32.991Z",
+  "revision": 369,
+  "updated_at": "2026-08-28T21:32:43.482Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -1739,15 +1739,30 @@
       ],
       "dependencies": [],
       "critic_needed": true,
-      "stage": "audit",
-      "status": "ACTIVE",
-      "assigned_agent": "zcode-gov-audit-pc1",
-      "assigned_role": "gap-auditor",
+      "stage": "build",
+      "status": "QUEUED",
+      "assigned_agent": null,
+      "assigned_role": null,
       "work_branch": "agent/viro-0146/zcode-gov-audit-pc1",
-      "heartbeat_at": "2026-08-28T21:32:32.991Z",
+      "heartbeat_at": null,
       "attempts": 0,
-      "evidence": [],
-      "last_handoff": null,
+      "evidence": [
+        {
+          "stage": "audit",
+          "by": "zcode-gov-audit-pc1",
+          "item": "before-state confirmed 2026-08-28: VIRO-0015 corpus pins effects-layer PDF byte-identical to unshadowed control while compositor fingerprint differs; grep src/export has zero effects handling; types.ts exporter claim false; src/export lease free (0015 reconciled)",
+          "at": "2026-08-28T21:32:43.477Z"
+        }
+      ],
+      "last_handoff": {
+        "from": "audit",
+        "to": "build",
+        "by": "zcode-gov-audit-pc1",
+        "at": "2026-08-28T21:32:43.480Z",
+        "evidence": [
+          "before-state confirmed 2026-08-28: VIRO-0015 corpus pins effects-layer PDF byte-identical to unshadowed control while compositor fingerprint differs; grep src/export has zero effects handling; types.ts exporter claim false; src/export lease free (0015 reconciled)"
+        ]
+      },
       "rejection": null,
       "assigned_machine": "pc-cloud1",
       "assigned_session": "d6e0a68f-cf20-48a4-8ee3-89a668f1d053"
@@ -1773,13 +1788,6 @@
       "session": "b8bf70cd-e98b-4765-8116-fb04d0f6a0ab",
       "packet": "VIRO-0011",
       "heartbeat_at": "2026-08-28T21:30:53.235Z"
-    },
-    "zcode-gov-audit-pc1": {
-      "role": "gap-auditor",
-      "machine": "pc-cloud1",
-      "session": "d6e0a68f-cf20-48a4-8ee3-89a668f1d053",
-      "packet": "VIRO-0146",
-      "heartbeat_at": "2026-08-28T21:32:32.991Z"
     }
   },
   "leases": {
@@ -1834,18 +1842,12 @@
         "docs/agents/deliveries/VIRO-0146.json"
       ],
       "acquired_at": "2026-08-28T21:32:32.991Z",
-      "current_agent": "zcode-gov-audit-pc1",
-      "current_stage": "audit",
+      "current_agent": null,
+      "current_stage": "build",
       "current_session": "d6e0a68f-cf20-48a4-8ee3-89a668f1d053"
     }
   },
   "events": [
-    {
-      "at": "2026-08-28T06:22:53.334Z",
-      "type": "agent.heartbeat",
-      "agent": "zcode-perf-pc1",
-      "packet": "VIRO-0012"
-    },
     {
       "at": "2026-08-28T06:40:50.230Z",
       "type": "assignment.reaped",
@@ -3916,6 +3918,16 @@
       "packet": "VIRO-0146",
       "agent": "zcode-gov-audit-pc1",
       "role": "gap-auditor",
+      "machine": "pc-cloud1",
+      "session": "d6e0a68f-cf20-48a4-8ee3-89a668f1d053"
+    },
+    {
+      "at": "2026-08-28T21:32:43.482Z",
+      "type": "packet.advanced",
+      "packet": "VIRO-0146",
+      "from": "audit",
+      "to": "build",
+      "by": "zcode-gov-audit-pc1",
       "machine": "pc-cloud1",
       "session": "d6e0a68f-cf20-48a4-8ee3-89a668f1d053"
     }
