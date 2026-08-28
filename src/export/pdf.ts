@@ -5,7 +5,8 @@
  * emitted as PDF content-stream operators:
  *
  *   vector   → path operators (`m`/`c`/`h`) with `f` / `S` / `B`
- *   type     → `Tf` + `TJ` against an embedded, subset TrueType face
+ *   type     → `Tf` + `TJ` against an embedded full TrueType face
+ *              (not a subset — see the note at `faceFor`)
  *   image    → an `/XObject Do` (raster is correct here; pixels are pixels)
  *   group    → nested `q … Q` with the group's alpha folded into its children
  *
@@ -136,7 +137,14 @@ interface SubsetEmbedder {
   glyphCache?: { invalidate(): void };
 }
 
-/** A face embedded once per document, addressable by HarfBuzz glyph id. */
+/**
+ * A face embedded once per document, addressable by HarfBuzz glyph id.
+ *
+ * Written without TypeScript parameter properties on purpose: parameter
+ * properties are non-erasable syntax, and `node --experimental-strip-types`
+ * (which the unit-test gate runs under) refuses to load any module that uses
+ * them. The same constraint applies to every class in this file.
+ */
 class EmbeddedFace {
   private readonly reverseCmap = new Map<number, number>();
   private readonly emb: SubsetEmbedder;
@@ -339,8 +347,17 @@ export async function exportPagePdf(
     };
     const kit = typeof mod.create === "function" ? mod : mod.default;
     pdf.registerFontkit(kit as Parameters<PDFDocument["registerFontkit"]>[0]);
+    // subset:false is deliberate. pdf-lib's subsetter (the fontkit fork it
+    // bundles) emits a TrueType subset whose glyf/loca drift — e.g. for Noto
+    // Sans Regular the saved FontFile2 is 1313 bytes against a last loca
+    // offset of 1312 with individual glyph outlines reading out of bounds.
+    // pdf.js then paints only fragmentary glyphs and fontkit throws
+    // "Offset is outside the bounds of the DataView" on glyph 4. A full-font
+    // embed keeps the face byte-identical, so Identity-H CIDs stay equal to
+    // the HarfBuzz glyph ids this file writes, and every viewer sees the
+    // whole face. The cost is file size, carried honestly in report.notes.
     const pdfFont = await pdf.embedFont(new Uint8Array(pack.bytes.slice(0)), {
-      subset: true,
+      subset: false,
       customName: pack.name.replace(/\s+/g, ""),
     });
     const emb = (pdfFont as unknown as { embedder: SubsetEmbedder }).embedder;
@@ -508,7 +525,14 @@ export async function exportPagePdf(
     `${report.textRuns} text run(s) / ${report.glyphs} glyph(s)`,
     `${report.images} embedded raster(s)`,
   ];
-  if (face && report.glyphs > 0) parts.push(`${face.name} embedded as a TrueType subset`);
+  if (face && report.glyphs > 0) {
+    parts.push(`${face.name} embedded as a full TrueType font`);
+    report.notes.push(
+      "Faces are embedded whole, not subset: pdf-lib's font subsetter produces TrueType " +
+        "output that third-party parsers reject (glyph offsets outside the glyf table), so " +
+        "the file carries every glyph of each face it sets and is larger as a result.",
+    );
+  }
   const caveats = report.notes.join(" ");
 
   pdf.setTitle(doc.name);
