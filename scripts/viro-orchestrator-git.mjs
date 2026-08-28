@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import fs from "node:fs/promises";
 import path from "node:path";
+import { randomUUID } from "node:crypto";
 import {
   importManifest,
   claimPacket,
@@ -50,6 +51,12 @@ function requireFlag(flags, key) {
 function splitEvidence(value) {
   if (!value || value === true) return [];
   return String(value).split("||").map((item) => item.trim()).filter(Boolean);
+}
+
+// VIRO-0019: session tokens bind a claim to one live worker session. An explicit
+// --session flag resumes/verifies an existing session; claims without one mint a fresh token.
+function sessionFlag(flags) {
+  return flags.session && flags.session !== true ? String(flags.session) : null;
 }
 
 async function readJson(file) {
@@ -112,7 +119,7 @@ function validateState(state) {
 }
 
 function help() {
-  console.log(`VIRO resident orchestrator — git transport\n\nUse this when the environment can git fetch/push but blocks direct api.github.com access.\nIt writes the exact same shared state on the viro-agent-control branch and uses git --force-with-lease as the concurrency guard.\n\nCommands:\n  sync\n  status\n  check\n  claim --agent ID --role ROLE [--packet VIRO-0005] [--machine NAME]\n  brief --agent ID\n  heartbeat --agent ID\n  advance --agent ID --packet VIRO-0005 --evidence "proof one||proof two"\n  reject --agent ID --packet VIRO-0005 --reason "specific failure"\n  block --packet VIRO-0005 --reason "external blocker"\n  unblock --packet VIRO-0005\n  reconcile --packet VIRO-0002 --evidence "commit proof||test proof" [--by governor]\n  reap --packet VIRO-0005 --reason "agent disappeared"\n\nNo GITHUB_TOKEN or direct REST egress is required. Normal authenticated git fetch/push permission is required.`);
+  console.log(`VIRO resident orchestrator — git transport\n\nUse this when the environment can git fetch/push but blocks direct api.github.com access.\nIt writes the exact same shared state on the viro-agent-control branch and uses git --force-with-lease as the concurrency guard.\n\nIdentity (VIRO-0019): claim mints a session token and binds it to the worker ID; pass the same token back\nwith --session on heartbeat/advance/reject (and on re-claim to resume). A second live session under the same\nworker ID is refused until the heartbeat expires and the Governor reaps the assignment. Omitting --session\nkeeps legacy behavior.\n\nCommands:\n  sync\n  status\n  check\n  claim --agent ID --role ROLE [--packet VIRO-0005] [--machine NAME] [--session TOKEN]\n  brief --agent ID\n  heartbeat --agent ID [--session TOKEN]\n  advance --agent ID --packet VIRO-0005 --evidence "proof one||proof two" [--session TOKEN]\n  reject --agent ID --packet VIRO-0005 --reason "specific failure" [--session TOKEN]\n  block --packet VIRO-0005 --reason "external blocker"\n  unblock --packet VIRO-0005\n  reconcile --packet VIRO-0002 --evidence "commit proof||test proof" [--by governor]\n  reap --packet VIRO-0005 --reason "agent disappeared"\n\nNo GITHUB_TOKEN or direct REST egress is required. Normal authenticated git fetch/push permission is required.`);
 }
 
 async function main() {
@@ -155,10 +162,12 @@ async function main() {
     const role = requireFlag(flags, "role");
     const preferredId = flags.packet ? String(flags.packet) : null;
     const machine = flags.machine ? String(flags.machine) : process.env.HOSTNAME ?? null;
+    const session = sessionFlag(flags) ?? randomUUID();
+    const ttlMinutes = Number(config.lease_ttl_minutes) || 30;
     const { result } = await store.mutate(`claim ${preferredId ?? "next"} for ${agentId}`, (draft) =>
-      claimPacket(draft, { agentId, role, preferredId, machine }),
+      claimPacket(draft, { agentId, role, preferredId, machine, session, ttlMinutes }),
     );
-    console.log(JSON.stringify({ packet: result.id, stage: result.stage, branch: result.work_branch, scope: result.scope }, null, 2));
+    console.log(JSON.stringify({ packet: result.id, stage: result.stage, branch: result.work_branch, scope: result.scope, machine, session }, null, 2));
     return;
   }
 
@@ -171,7 +180,7 @@ async function main() {
 
   if (command === "heartbeat") {
     const agentId = requireFlag(flags, "agent");
-    const { result } = await store.mutate(`heartbeat ${agentId}`, (draft) => heartbeat(draft, agentId));
+    const { result } = await store.mutate(`heartbeat ${agentId}`, (draft) => heartbeat(draft, agentId, { session: sessionFlag(flags) }));
     console.log(`${result.id}: heartbeat recorded.`);
     return;
   }
@@ -181,7 +190,7 @@ async function main() {
     const packetId = requireFlag(flags, "packet");
     const evidence = splitEvidence(flags.evidence);
     const { result } = await store.mutate(`advance ${packetId}`, (draft) =>
-      advancePacket(draft, { agentId, packetId, evidence }),
+      advancePacket(draft, { agentId, packetId, evidence, session: sessionFlag(flags) }),
     );
     console.log(`${packetId}: moved to ${result.stage}; next role is ${requiredRole(result) ?? "none"}.`);
     return;
@@ -191,7 +200,8 @@ async function main() {
     const agentId = requireFlag(flags, "agent");
     const packetId = requireFlag(flags, "packet");
     const reason = requireFlag(flags, "reason");
-    const { result } = await store.mutate(`reject ${packetId}`, (draft) => rejectPacket(draft, { agentId, packetId, reason }));
+    const { result } = await store.mutate(`reject ${packetId}`, (draft) =>
+      rejectPacket(draft, { agentId, packetId, reason, session: sessionFlag(flags) }));
     console.log(`${packetId}: rejected to build attempt ${result.attempts}.`);
     return;
   }
