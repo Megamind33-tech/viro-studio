@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 299,
-  "updated_at": "2026-08-28T17:58:33.390Z",
+  "revision": 300,
+  "updated_at": "2026-08-28T17:58:41.786Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -795,12 +795,12 @@
         "VIRO-0005"
       ],
       "critic_needed": false,
-      "stage": "build",
-      "status": "ACTIVE",
-      "assigned_agent": "zcode-exportqa-pc1",
-      "assigned_role": "builder",
+      "stage": "verify",
+      "status": "QUEUED",
+      "assigned_agent": null,
+      "assigned_role": null,
       "work_branch": "agent/viro-0015/zcode-gov-audit-pc1",
-      "heartbeat_at": "2026-08-28T17:58:33.390Z",
+      "heartbeat_at": null,
       "attempts": 0,
       "evidence": [
         {
@@ -808,15 +808,56 @@
           "by": "zcode-gov-audit-pc1",
           "item": "before-state confirmed on local main post-wave-merge 2026-08-28; manifest basis valid; builder drafts banked where applicable; unlocked by reconciliation of merged dependency",
           "at": "2026-08-28T16:58:58.419Z"
+        },
+        {
+          "stage": "build",
+          "by": "zcode-exportqa-pc1",
+          "item": "candidate 3cba4ab on agent/viro-0015/zcode-gov-audit-pc1 (base 72b05f0)",
+          "at": "2026-08-28T17:58:41.784Z"
+        },
+        {
+          "stage": "build",
+          "by": "zcode-exportqa-pc1",
+          "item": "corpus suite tests/export-corpus.test.mjs 13/13: 9 docs (single-contour, compound ring, disjoint union, stroke-only S+w, fill+stroke B*, text, raster, effects+control), per-doc PDF operator topology + all 7 PdfExportReport fields, PNG decoded-IDAT sha256 pins via playwright/Skia compositor harness",
+          "at": "2026-08-28T17:58:41.786Z"
+        },
+        {
+          "stage": "build",
+          "by": "zcode-exportqa-pc1",
+          "item": "compound DEFERRED cases ACTIVATED post-0005-rebase: ring+union emit m:2 h:2 f*:1 fill:0 as expected, no exporter defect",
+          "at": "2026-08-28T17:58:41.786Z"
+        },
+        {
+          "stage": "build",
+          "by": "zcode-exportqa-pc1",
+          "item": "vacuity: mutationSelfChecks rejects content-hash/topology/pixel mutations AND one corrupted committed PNG pin made the suite fail end-to-end (restored); pins reproduced across 2 independent runs",
+          "at": "2026-08-28T17:58:41.786Z"
+        },
+        {
+          "stage": "build",
+          "by": "zcode-exportqa-pc1",
+          "item": "effects finding pinned CURRENT behaviour: PDF census+report identical to control while canvas fingerprint differs — shadow dropped silently in PDF, no report note; reported not fixed",
+          "at": "2026-08-28T17:58:41.786Z"
+        },
+        {
+          "stage": "build",
+          "by": "zcode-exportqa-pc1",
+          "item": "gates: tsc exit 0, test:unit 316/316, pdf-compound 5/5 + pdf-font 5/5 re-run untouched, npm run build exit 0",
+          "at": "2026-08-28T17:58:41.786Z"
         }
       ],
       "last_handoff": {
-        "from": "audit",
-        "to": "build",
-        "by": "zcode-gov-audit-pc1",
-        "at": "2026-08-28T16:58:58.421Z",
+        "from": "build",
+        "to": "verify",
+        "by": "zcode-exportqa-pc1",
+        "at": "2026-08-28T17:58:41.786Z",
         "evidence": [
-          "before-state confirmed on local main post-wave-merge 2026-08-28; manifest basis valid; builder drafts banked where applicable; unlocked by reconciliation of merged dependency"
+          "candidate 3cba4ab on agent/viro-0015/zcode-gov-audit-pc1 (base 72b05f0)",
+          "corpus suite tests/export-corpus.test.mjs 13/13: 9 docs (single-contour, compound ring, disjoint union, stroke-only S+w, fill+stroke B*, text, raster, effects+control), per-doc PDF operator topology + all 7 PdfExportReport fields, PNG decoded-IDAT sha256 pins via playwright/Skia compositor harness",
+          "compound DEFERRED cases ACTIVATED post-0005-rebase: ring+union emit m:2 h:2 f*:1 fill:0 as expected, no exporter defect",
+          "vacuity: mutationSelfChecks rejects content-hash/topology/pixel mutations AND one corrupted committed PNG pin made the suite fail end-to-end (restored); pins reproduced across 2 independent runs",
+          "effects finding pinned CURRENT behaviour: PDF census+report identical to control while canvas fingerprint differs — shadow dropped silently in PDF, no report note; reported not fixed",
+          "gates: tsc exit 0, test:unit 316/316, pdf-compound 5/5 + pdf-font 5/5 re-run untouched, npm run build exit 0"
         ]
       },
       "rejection": null
@@ -1343,12 +1384,6 @@
       "packet": "VIRO-0011",
       "heartbeat_at": "2026-08-28T17:54:36.500Z"
     },
-    "zcode-exportqa-pc1": {
-      "role": "builder",
-      "machine": "pc-cloud1",
-      "packet": "VIRO-0015",
-      "heartbeat_at": "2026-08-28T17:58:33.390Z"
-    },
     "zcode-polish-pc1": {
       "role": "builder",
       "machine": "pc-cloud1",
@@ -1411,8 +1446,8 @@
         "tests/export-corpus-*"
       ],
       "acquired_at": "2026-08-28T16:58:52.208Z",
-      "current_agent": "zcode-exportqa-pc1",
-      "current_stage": "build",
+      "current_agent": null,
+      "current_stage": "verify",
       "heartbeat_at": "2026-08-28T17:58:33.390Z"
     },
     "VIRO-0141": {
@@ -3438,6 +3473,14 @@
       "type": "agent.heartbeat",
       "agent": "zcode-exportqa-pc1",
       "packet": "VIRO-0015"
+    },
+    {
+      "at": "2026-08-28T17:58:41.786Z",
+      "type": "packet.advanced",
+      "packet": "VIRO-0015",
+      "from": "build",
+      "to": "verify",
+      "by": "zcode-exportqa-pc1"
     }
   ]
 }
