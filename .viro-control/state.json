@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 253,
-  "updated_at": "2026-08-28T17:14:25.483Z",
+  "revision": 254,
+  "updated_at": "2026-08-28T17:14:40.171Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -744,11 +744,11 @@
       ],
       "critic_needed": false,
       "stage": "build",
-      "status": "QUEUED",
-      "assigned_agent": null,
-      "assigned_role": null,
+      "status": "ACTIVE",
+      "assigned_agent": "zcode-exportqa-pc1",
+      "assigned_role": "builder",
       "work_branch": "agent/viro-0015/zcode-gov-audit-pc1",
-      "heartbeat_at": null,
+      "heartbeat_at": "2026-08-28T17:14:40.171Z",
       "attempts": 0,
       "evidence": [
         {
@@ -1249,6 +1249,12 @@
       "machine": "pc-cloud1",
       "packet": "VIRO-0011",
       "heartbeat_at": "2026-08-28T17:14:25.483Z"
+    },
+    "zcode-exportqa-pc1": {
+      "role": "builder",
+      "machine": "pc-cloud1",
+      "packet": "VIRO-0015",
+      "heartbeat_at": "2026-08-28T17:14:40.171Z"
     }
   },
   "leases": {
@@ -1287,7 +1293,7 @@
         "tests/export-corpus-*"
       ],
       "acquired_at": "2026-08-28T16:58:52.208Z",
-      "current_agent": null,
+      "current_agent": "zcode-exportqa-pc1",
       "current_stage": "build"
     },
     "VIRO-0141": {
@@ -2985,6 +2991,14 @@
       "type": "agent.heartbeat",
       "agent": "zcode-identity-pc1",
       "packet": "VIRO-0011"
+    },
+    {
+      "at": "2026-08-28T17:14:40.171Z",
+      "type": "packet.claimed",
+      "packet": "VIRO-0015",
+      "agent": "zcode-exportqa-pc1",
+      "role": "builder",
+      "machine": "pc-cloud1"
     }
   ]
 }
