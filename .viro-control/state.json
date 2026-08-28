@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 342,
-  "updated_at": "2026-08-28T19:56:51.129Z",
+  "revision": 343,
+  "updated_at": "2026-08-28T19:58:23.898Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -1035,10 +1035,10 @@
       "critic_needed": false,
       "stage": "release",
       "status": "RELEASE",
-      "assigned_agent": "zcode-release-pc1",
-      "assigned_role": "release-manager",
+      "assigned_agent": null,
+      "assigned_role": null,
       "work_branch": "agent/viro-0019/zcode-gov-audit-pc1",
-      "heartbeat_at": "2026-08-28T19:56:51.129Z",
+      "heartbeat_at": null,
       "attempts": 0,
       "evidence": [
         {
@@ -1106,25 +1106,54 @@
           "by": "zcode-verify-pc9b",
           "item": "node --check OK on viro-orchestrator.mjs, viro-release.mjs, viro-orchestrator-git.mjs, orchestrator-core.mjs; identity fields verified in live events/brief/board; advance itself exercises new session-bound advance path",
           "at": "2026-08-28T19:45:56.795Z"
+        },
+        {
+          "stage": "release",
+          "by": "zcode-release-pc1",
+          "item": "PR binds approval to head SHA e4cf09752e10bf59729a95bf41a3386c1fef5f31",
+          "at": "2026-08-28T19:58:23.864Z"
+        },
+        {
+          "stage": "release",
+          "by": "zcode-release-pc1",
+          "item": "independent verifier zcode-verify-pc9b: 23/23 unit, both-direction live compat (legacy heartbeats accepted on new schema), duplicate-identity refusal zero-mutation, scope clean",
+          "at": "2026-08-28T19:58:23.864Z"
+        },
+        {
+          "stage": "release",
+          "by": "zcode-release-pc1",
+          "item": "critic NOT_APPLICABLE per manifest: governance tooling",
+          "at": "2026-08-28T19:58:23.864Z"
         }
       ],
       "last_handoff": {
-        "from": "verify",
-        "to": "release",
-        "by": "zcode-verify-pc9b",
-        "at": "2026-08-28T19:45:56.795Z",
+        "from": "release",
+        "to": "merge-gate",
+        "by": "zcode-release-pc1",
+        "at": "2026-08-28T19:58:23.864Z",
         "evidence": [
-          "scope clean: git diff c659a6a..e4cf097 = 8 files 727+/31-, all inside leased paths",
-          "unit 23/23 pass 0 fail via node --test scripts/lib/; scripts/lib/package.json shim benign (private:true, no deps, main=test entry)",
-          "new-code live: claim/heartbeat/brief on real viro-agent-control with session c9d6a0ff and machine pc-cloud1; check conflict-free pre and post",
-          "old-code live: primary repo @5014465 (pre-merge, no candidate in history) check+status read new-schema state clean; legacy-shape heartbeats zcode-textframe-pc2@19:29:19Z zcode-verify-pc10b@19:29:50Z zcode-verify-pc11@19:18:09Z (session null) accepted on new state",
-          "duplicate refusal: re-claim same agent + decoy session 11111111 exited 1 'duplicate live identity refused ... unexpired heartbeat (2026-08-28T19:30:38.984Z, TTL 30m)'; revision 331->333 fully attributed to other workers' heartbeat commits, decoy token absent from state, VIRO-0019 assignment byte-identical = zero mutation",
-          "node --check OK on viro-orchestrator.mjs, viro-release.mjs, viro-orchestrator-git.mjs, orchestrator-core.mjs; identity fields verified in live events/brief/board; advance itself exercises new session-bound advance path"
+          "PR binds approval to head SHA e4cf09752e10bf59729a95bf41a3386c1fef5f31",
+          "independent verifier zcode-verify-pc9b: 23/23 unit, both-direction live compat (legacy heartbeats accepted on new schema), duplicate-identity refusal zero-mutation, scope clean",
+          "critic NOT_APPLICABLE per manifest: governance tooling"
         ]
       },
       "rejection": null,
       "assigned_session": "c9d6a0ff-4064-4611-9ffd-afefc55ddcc2",
-      "assigned_machine": "pc-cloud1"
+      "assigned_machine": "pc-cloud1",
+      "release_approval": {
+        "status": "APPROVED",
+        "by": "zcode-release-pc1",
+        "at": "2026-08-28T19:58:23.864Z",
+        "pr_number": 23,
+        "pr_url": "https://github.com/Megamind33-tech/viro-studio/pull/23",
+        "head_sha": "e4cf09752e10bf59729a95bf41a3386c1fef5f31",
+        "base": "main",
+        "evidence": [
+          "PR binds approval to head SHA e4cf09752e10bf59729a95bf41a3386c1fef5f31",
+          "independent verifier zcode-verify-pc9b: 23/23 unit, both-direction live compat (legacy heartbeats accepted on new schema), duplicate-identity refusal zero-mutation, scope clean",
+          "critic NOT_APPLICABLE per manifest: governance tooling"
+        ]
+      }
     },
     "VIRO-0140": {
       "id": "VIRO-0140",
@@ -1500,12 +1529,6 @@
       "machine": "pc-cloud1",
       "packet": "VIRO-0017",
       "heartbeat_at": "2026-08-28T19:38:57.536Z"
-    },
-    "zcode-release-pc1": {
-      "role": "release-manager",
-      "machine": "pc-cloud1",
-      "packet": "VIRO-0019",
-      "heartbeat_at": "2026-08-28T19:56:51.129Z"
     }
   },
   "leases": {
@@ -1559,7 +1582,7 @@
         "docs/agents/orchestrator-identity.md"
       ],
       "acquired_at": "2026-08-28T19:28:17.592Z",
-      "current_agent": "zcode-release-pc1",
+      "current_agent": null,
       "current_stage": "release"
     },
     "VIRO-0011": {
@@ -1591,12 +1614,6 @@
     }
   },
   "events": [
-    {
-      "at": "2026-08-28T04:39:54.628Z",
-      "type": "agent.heartbeat",
-      "agent": "zcode-verify-pc1",
-      "packet": "VIRO-0005"
-    },
     {
       "at": "2026-08-28T04:41:32.086Z",
       "type": "packet.reconciled_from_manifest",
@@ -3612,6 +3629,14 @@
       "agent": "zcode-release-pc1",
       "role": "release-manager",
       "machine": "pc-cloud1"
+    },
+    {
+      "at": "2026-08-28T19:58:23.898Z",
+      "type": "release.approved",
+      "packet": "VIRO-0019",
+      "by": "zcode-release-pc1",
+      "pr": 23,
+      "head_sha": "e4cf09752e10bf59729a95bf41a3386c1fef5f31"
     }
   ]
 }
