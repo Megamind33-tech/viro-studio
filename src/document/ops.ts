@@ -8,6 +8,7 @@ import type {
   Layer,
   OuterGlowEffect,
   Page,
+  PathNode,
   PressDocument,
   Rgba,
   StrokeEffect,
@@ -18,6 +19,7 @@ import type {
 import { replaceStoryRange } from "./text-model";
 import { applyPt, decompose, localMatrix, mul, worldBounds } from "./transform";
 import { activePage, cloneDoc, cloneStroke, findLayer, selectedLayers, uid } from "./factory";
+import { layerContours } from "./boolean-ops";
 
 export function setActiveLayers(doc: PressDocument, ids: string[]): PressDocument {
   const next = cloneDoc(doc);
@@ -561,6 +563,12 @@ export function appendPathNode(doc: PressDocument, layerId: string, pageX: numbe
   const next = cloneDoc(doc);
   const layer = findLayer(activePage(next), layerId);
   if (!layer || layer.kind !== "vector" || layer.locked) return next;
+  // CORRUPTION GUARD: on a contours-authoritative layer (a boolean result)
+  // `nodes` is EMPTY — the geometry lives in `contours`. Falling through would
+  // push into that inert list, recompute bounds from it (Infinity), and
+  // teleport the layer while the renderer keeps drawing untouched contours.
+  // The bus command refuses this with a routing hint; here it stays a no-op.
+  if (layer.contours && layer.contours.length) return next;
   const lx = pageX - layer.transform.x;
   const ly = pageY - layer.transform.y;
   layer.nodes.push({ x: lx, y: ly, inX: lx, inY: ly, outX: lx, outY: ly });
@@ -593,6 +601,126 @@ export function closePath(doc: PressDocument, layerId: string): PressDocument {
   const next = cloneDoc(doc);
   const layer = findLayer(activePage(next), layerId);
   if (layer && layer.kind === "vector") layer.closed = true;
+  return next;
+}
+
+// ── contour-addressed node editing (VIRO-0141) ───────────────────────────────
+//
+// Boolean results are contours-authoritative: their `contours` list is the
+// geometry the compositor draws and the legacy `nodes` list is empty, so the
+// pen-tool append/rewrite path must never touch them. These ops resolve their
+// target through `layerContours` — the SAME precedence the compositor draws —
+// so a legacy vector's single contour is addressed as index 0 (its
+// {nodes, closed} record) and a boolean result's subpath i as contours[i].
+//
+// Coordinates are LAYER-LOCAL, the space nodes are stored in; page-space
+// conversion belongs to the caller (the phase-2 anchor overlay), not the op.
+//
+// Like every op here they are silent no-ops on a missing/locked layer or an
+// out-of-range address; the bus commands in ui-commands.ts validate precisely
+// before applying and turn those cases into named CommandErrors.
+
+/**
+ * Move one node of the addressed contour. The anchor goes to (x, y) and BOTH
+ * its handles translate by the same delta, so the adjacent segment tangents —
+ * the shape's visual language — ride along instead of being re-derived. The
+ * layer transform is never rewritten: moving a node moves the drawn geometry,
+ * not the selection box.
+ */
+export function moveContourNode(
+  doc: PressDocument,
+  layerId: string,
+  contourIndex: number,
+  nodeIndex: number,
+  x: number,
+  y: number,
+): PressDocument {
+  const next = cloneDoc(doc);
+  const layer = findLayer(activePage(next), layerId);
+  if (!layer || layer.kind !== "vector" || layer.locked) return next;
+  const contour = layerContours(layer)[contourIndex];
+  const node = contour?.nodes[nodeIndex];
+  if (!node) return next;
+  const dx = x - node.x;
+  const dy = y - node.y;
+  node.x = x;
+  node.y = y;
+  node.inX += dx;
+  node.inY += dy;
+  node.outX += dx;
+  node.outY += dy;
+  return next;
+}
+
+/**
+ * Insert a node into the addressed contour AFTER `afterNodeIndex` (0-based).
+ * 0..n-1 splices between existing nodes on any contour; n appends, which only
+ * means something on a CLOSED contour — there the new node becomes the tail of
+ * the closing segment. An open contour has no segment past its last node, so
+ * appending to one would dangle a node no segment draws.
+ */
+export function insertContourNode(
+  doc: PressDocument,
+  layerId: string,
+  contourIndex: number,
+  afterNodeIndex: number,
+  node: PathNode,
+): PressDocument {
+  const next = cloneDoc(doc);
+  const layer = findLayer(activePage(next), layerId);
+  if (!layer || layer.kind !== "vector" || layer.locked) return next;
+  const contour = layerContours(layer)[contourIndex];
+  if (!contour) return next;
+  const max = contour.closed ? contour.nodes.length : contour.nodes.length - 1;
+  if (afterNodeIndex < 0 || afterNodeIndex > max) return next;
+  const at = Math.min(afterNodeIndex + 1, contour.nodes.length);
+  contour.nodes.splice(at, 0, { ...node });
+  return next;
+}
+
+/**
+ * Delete the addressed node. Refuses when the contour is already down to its
+ * minimum: `validateContours` (and the compositor) treat a contour below 2
+ * nodes as undrawable, so deleting into that state would silently deform the
+ * path into a non-shape instead of corrupting nothing.
+ */
+export function deleteContourNode(
+  doc: PressDocument,
+  layerId: string,
+  contourIndex: number,
+  nodeIndex: number,
+): PressDocument {
+  const next = cloneDoc(doc);
+  const layer = findLayer(activePage(next), layerId);
+  if (!layer || layer.kind !== "vector" || layer.locked) return next;
+  const contour = layerContours(layer)[contourIndex];
+  if (!contour || !contour.nodes[nodeIndex]) return next;
+  if (contour.nodes.length <= 2) return next;
+  contour.nodes.splice(nodeIndex, 1);
+  return next;
+}
+
+/**
+ * Open or close the addressed contour. On a contours-authoritative layer this
+ * is `contours[i].closed`. Index 0 on a legacy single-contour vector IS the
+ * {nodes, closed} record, so it edits `layer.closed` — a generalisation of
+ * `closePath`, which stays unchanged for compatibility.
+ */
+export function setContourClosed(
+  doc: PressDocument,
+  layerId: string,
+  contourIndex: number,
+  closed: boolean,
+): PressDocument {
+  const next = cloneDoc(doc);
+  const layer = findLayer(activePage(next), layerId);
+  if (!layer || layer.kind !== "vector" || layer.locked) return next;
+  if (layer.contours && layer.contours.length) {
+    const contour = layer.contours[contourIndex];
+    if (contour) contour.closed = closed;
+    return next;
+  }
+  if (contourIndex === 0) layer.closed = closed;
   return next;
 }
 
