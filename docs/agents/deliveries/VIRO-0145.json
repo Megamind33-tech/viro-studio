@@ -1,0 +1,43 @@
+{
+  "id": "VIRO-0145",
+  "title": "Fix corrupt embedded FontFile2 subsets in vector PDF text export",
+  "priority": "P1",
+  "domain": "export",
+  "state": "ACTIVE",
+  "outcome": "Text exported to vector PDF embeds valid font subsets: third-party viewers (pdf.js, fontkit) parse the embedded FontFile2 and render every glyph used on the page completely, with the export report unchanged and compound/single-contour vector proofs from VIRO-0005 still green.",
+  "before": "Critic finding 2026-08-28 (during VIRO-0005 critic review, frozen candidate 4d2576c): the embedded FontFile2 subset produced by the PDF text export path is corrupt - pdf.js draws only fragmentary glyphs (e.g. 'eg' of a longer string) and fontkit fails with 'Offset outside bounds'. Reproduced WITHOUT app code via the isolated seam (pdf-lib embedFont(subset:true) with the bundled NotoSans-Regular.ttf), proving the defect is in the subset-embedding seam, not the caller. Pre-existing: the VIRO-0005 diff touches only emitVector plus a semantics-preserving constructor rewrite, not the font path.",
+  "after": "Exported text PDFs carry structurally valid embedded fonts; every glyph on the page renders in independent viewers; a unit test decodes the embedded font from the produced PDF and validates it with fontkit.",
+  "allowed_paths": [
+    "src/export/pdf.ts",
+    "tests/**",
+    "docs/agents/deliveries/VIRO-0145.json"
+  ],
+  "depends_on": [],
+  "acceptance": [
+    "An exported PDF containing a text layer renders ALL its glyphs in pdf.js (pixel/text-content assertion, not just successful serialization).",
+    "fontkit parses the embedded FontFile2 without error and reports the expected glyph coverage.",
+    "If valid subsetting is not achievable with pdf-lib, a truthful alternative (full-font embed with measured size impact, documented in the manifest) is acceptable - no false claims.",
+    "Compound-vector proofs from VIRO-0005 (tests/pdf-compound.*) remain green; legacy single-contour operator topology unchanged.",
+    "npx tsc --noEmit, targeted new tests, npm run test:chrome and npm run build pass."
+  ],
+  "evidence": [
+    "pdf.js render assertion showing complete glyph coverage",
+    "fontkit parse + glyph coverage proof",
+    "Compound + legacy non-regression proofs",
+    "npx tsc --noEmit",
+    "npm run build"
+  ],
+  "builder": { "status": "PENDING", "notes": "Claimable once audited; src/export lease was released with the VIRO-0005 recovery block." },
+  "verifier": { "status": "PENDING", "notes": "Independent verification required." },
+  "critic": { "status": "PENDING", "notes": "Exported text output is user-visible; critic re-runs the critic-visual harness on text documents." },
+  "delta": {
+    "before": "Embedded font subsets are corrupt; third-party viewers render fragmentary text.",
+    "after": "Valid embedded fonts with complete glyph coverage, proven by independent parsers.",
+    "proof": [],
+    "regression_protection": [
+      "tests/pdf-compound.* green",
+      "Legacy text export operator counts unchanged apart from font program"
+    ],
+    "new_debt": "none yet"
+  }
+}
