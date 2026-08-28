@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 234,
-  "updated_at": "2026-08-28T16:58:23.286Z",
+  "revision": 235,
+  "updated_at": "2026-08-28T16:58:29.793Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -419,15 +419,30 @@
         "VIRO-0010"
       ],
       "critic_needed": false,
-      "stage": "audit",
-      "status": "ACTIVE",
-      "assigned_agent": "zcode-gov-audit-pc1",
-      "assigned_role": "gap-auditor",
+      "stage": "build",
+      "status": "QUEUED",
+      "assigned_agent": null,
+      "assigned_role": null,
       "work_branch": "agent/viro-0011/zcode-gov-audit-pc1",
-      "heartbeat_at": "2026-08-28T16:58:23.286Z",
+      "heartbeat_at": null,
       "attempts": 0,
-      "evidence": [],
-      "last_handoff": null,
+      "evidence": [
+        {
+          "stage": "audit",
+          "by": "zcode-gov-audit-pc1",
+          "item": "before-state confirmed on local main post-wave-merge 2026-08-28; manifest basis valid; builder drafts banked where applicable; unlocked by reconciliation of merged dependency",
+          "at": "2026-08-28T16:58:29.791Z"
+        }
+      ],
+      "last_handoff": {
+        "from": "audit",
+        "to": "build",
+        "by": "zcode-gov-audit-pc1",
+        "at": "2026-08-28T16:58:29.792Z",
+        "evidence": [
+          "before-state confirmed on local main post-wave-merge 2026-08-28; manifest basis valid; builder drafts banked where applicable; unlocked by reconciliation of merged dependency"
+        ]
+      },
       "rejection": null
     },
     "VIRO-0012": {
@@ -1147,14 +1162,7 @@
       "rejection": null
     }
   },
-  "agents": {
-    "zcode-gov-audit-pc1": {
-      "role": "gap-auditor",
-      "machine": "pc-cloud1",
-      "packet": "VIRO-0011",
-      "heartbeat_at": "2026-08-28T16:58:23.286Z"
-    }
-  },
+  "agents": {},
   "leases": {
     "VIRO-0011": {
       "packet": "VIRO-0011",
@@ -1165,8 +1173,8 @@
         "tests/recovery-identity-*"
       ],
       "acquired_at": "2026-08-28T16:58:23.286Z",
-      "current_agent": "zcode-gov-audit-pc1",
-      "current_stage": "audit"
+      "current_agent": null,
+      "current_stage": "build"
     }
   },
   "events": [
@@ -2689,6 +2697,14 @@
       "agent": "zcode-gov-audit-pc1",
       "role": "gap-auditor",
       "machine": "pc-cloud1"
+    },
+    {
+      "at": "2026-08-28T16:58:29.793Z",
+      "type": "packet.advanced",
+      "packet": "VIRO-0011",
+      "from": "audit",
+      "to": "build",
+      "by": "zcode-gov-audit-pc1"
     }
   ]
 }
