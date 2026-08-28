@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 212,
-  "updated_at": "2026-08-28T11:48:57.041Z",
+  "revision": 213,
+  "updated_at": "2026-08-28T11:49:44.174Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -838,7 +838,7 @@
       "assigned_agent": "zcode-govtool-pc1",
       "assigned_role": "builder",
       "work_branch": "agent/viro-0019/zcode-gov-audit-pc1",
-      "heartbeat_at": "2026-08-28T11:48:45.685Z",
+      "heartbeat_at": "2026-08-28T11:49:44.174Z",
       "attempts": 0,
       "evidence": [
         {
@@ -1148,7 +1148,7 @@
       "role": "builder",
       "machine": "pc-cloud1",
       "packet": "VIRO-0019",
-      "heartbeat_at": "2026-08-28T11:48:45.685Z",
+      "heartbeat_at": "2026-08-28T11:49:44.174Z",
       "session": "sess-viro0019-zcode1-live-dryrun"
     },
     "zcode-verify-pc6": {
@@ -1267,7 +1267,7 @@
       "acquired_at": "2026-08-28T10:39:09.362Z",
       "current_agent": "zcode-govtool-pc1",
       "current_stage": "build",
-      "heartbeat_at": "2026-08-28T11:48:45.685Z",
+      "heartbeat_at": "2026-08-28T11:49:44.174Z",
       "current_session": "sess-viro0019-zcode1-live-dryrun"
     }
   },
@@ -2616,6 +2616,15 @@
       "agent": "zcode-verify-pc7",
       "role": "verifier",
       "machine": "pc-cloud1"
+    },
+    {
+      "at": "2026-08-28T11:49:44.174Z",
+      "type": "agent.session_resumed",
+      "packet": "VIRO-0019",
+      "agent": "zcode-govtool-pc1",
+      "role": "builder",
+      "machine": "pc-cloud1",
+      "session": "sess-viro0019-zcode1-live-dryrun"
     }
   ]
 }
