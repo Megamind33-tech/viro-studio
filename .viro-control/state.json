@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 306,
-  "updated_at": "2026-08-28T19:13:19.365Z",
+  "revision": 307,
+  "updated_at": "2026-08-28T19:13:34.463Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -1028,8 +1028,8 @@
         "scripts/viro-orchestrator.mjs",
         "scripts/viro-orchestrator-git.mjs",
         "scripts/viro-release.mjs",
-        "docs/agents/deliveries/VIRO-0019.json",
-        "docs/agents/orchestrator-identity.md"
+        "docs/agents/**",
+        "docs/agents/deliveries/VIRO-0019.json"
       ],
       "dependencies": [],
       "critic_needed": false,
@@ -1512,11 +1512,6 @@
     }
   },
   "events": [
-    {
-      "at": "2026-08-27T17:19:44.200Z",
-      "type": "packet.reconciled_from_manifest",
-      "packet": "VIRO-0002"
-    },
     {
       "at": "2026-08-27T17:19:55.733Z",
       "type": "packet.claimed",
@@ -3489,6 +3484,11 @@
       "type": "packet.unblocked",
       "packet": "VIRO-0019",
       "by": "governor"
+    },
+    {
+      "at": "2026-08-28T19:13:34.463Z",
+      "type": "packet.reconciled_from_manifest",
+      "packet": "VIRO-0002"
     }
   ]
 }
