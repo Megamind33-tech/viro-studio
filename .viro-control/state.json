@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 168,
-  "updated_at": "2026-08-28T10:38:51.820Z",
+  "revision": 169,
+  "updated_at": "2026-08-28T10:39:09.362Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -711,11 +711,11 @@
       "dependencies": [],
       "critic_needed": false,
       "stage": "audit",
-      "status": "QUEUED",
-      "assigned_agent": null,
-      "assigned_role": null,
-      "work_branch": null,
-      "heartbeat_at": null,
+      "status": "ACTIVE",
+      "assigned_agent": "zcode-gov-audit-pc1",
+      "assigned_role": "gap-auditor",
+      "work_branch": "agent/viro-0019/zcode-gov-audit-pc1",
+      "heartbeat_at": "2026-08-28T10:39:09.362Z",
       "attempts": 0,
       "evidence": [],
       "last_handoff": null,
@@ -953,6 +953,12 @@
       "machine": "pc-cloud1",
       "packet": "VIRO-0145",
       "heartbeat_at": "2026-08-28T10:34:52.384Z"
+    },
+    "zcode-gov-audit-pc1": {
+      "role": "gap-auditor",
+      "machine": "pc-cloud1",
+      "packet": "VIRO-0019",
+      "heartbeat_at": "2026-08-28T10:39:09.362Z"
     }
   },
   "leases": {
@@ -1045,6 +1051,20 @@
       "current_agent": "zcode-persist-pc1",
       "current_stage": "build",
       "heartbeat_at": "2026-08-28T10:27:23.057Z"
+    },
+    "VIRO-0019": {
+      "packet": "VIRO-0019",
+      "scope": [
+        "scripts/lib/**",
+        "scripts/viro-orchestrator.mjs",
+        "scripts/viro-orchestrator-git.mjs",
+        "scripts/viro-release.mjs",
+        "docs/agents/deliveries/VIRO-0019.json",
+        "docs/agents/orchestrator-identity.md"
+      ],
+      "acquired_at": "2026-08-28T10:39:09.362Z",
+      "current_agent": "zcode-gov-audit-pc1",
+      "current_stage": "audit"
     }
   },
   "events": [
@@ -2096,6 +2116,14 @@
       "at": "2026-08-28T10:38:51.820Z",
       "type": "packet.reconciled_from_manifest",
       "packet": "VIRO-0002"
+    },
+    {
+      "at": "2026-08-28T10:39:09.362Z",
+      "type": "packet.claimed",
+      "packet": "VIRO-0019",
+      "agent": "zcode-gov-audit-pc1",
+      "role": "gap-auditor",
+      "machine": "pc-cloud1"
     }
   ]
 }
