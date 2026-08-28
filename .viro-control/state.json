@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 70,
-  "updated_at": "2026-08-28T06:40:50.230Z",
+  "revision": 71,
+  "updated_at": "2026-08-28T06:41:05.935Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -68,7 +68,7 @@
       ],
       "critic_needed": true,
       "stage": "verify",
-      "status": "BLOCKED",
+      "status": "QUEUED",
       "assigned_agent": null,
       "assigned_role": null,
       "work_branch": "agent/viro-0005/claude-audit-cloud1",
@@ -186,12 +186,7 @@
           "real PDFs generated for subtract-ring/disjoint-union/legacy-single-contour with report.vectorPaths=1 and rasterFallbacks=[] for both compound cases"
         ]
       },
-      "rejection": {
-        "by": "governor",
-        "stage": "verify",
-        "reason": "verifier session zcode-verify-pc1 confirmed DEAD (agent process failed: ENOTFOUND zcode.z.ai provider API) mid-verification ~115min; never will heartbeat again; evidence preserved in worktree viro-0005-verify-zcode1/test-results-5190; reassignment follows immediately - Governor recovery per mandate section 13",
-        "at": "2026-08-28T06:40:50.217Z"
-      }
+      "rejection": null
     },
     "VIRO-0010": {
       "id": "VIRO-0010",
@@ -1019,6 +1014,12 @@
       "agent": "zcode-verify-pc1",
       "by": "governor",
       "reason": "verifier session zcode-verify-pc1 confirmed DEAD (agent process failed: ENOTFOUND zcode.z.ai provider API) mid-verification ~115min; never will heartbeat again; evidence preserved in worktree viro-0005-verify-zcode1/test-results-5190; reassignment follows immediately - Governor recovery per mandate section 13"
+    },
+    {
+      "at": "2026-08-28T06:41:05.935Z",
+      "type": "packet.unblocked",
+      "packet": "VIRO-0005",
+      "by": "governor"
     }
   ]
 }
