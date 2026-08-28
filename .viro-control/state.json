@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 355,
-  "updated_at": "2026-08-28T20:09:57.697Z",
+  "revision": 356,
+  "updated_at": "2026-08-28T20:10:21.077Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -419,12 +419,12 @@
         "VIRO-0010"
       ],
       "critic_needed": false,
-      "stage": "build",
-      "status": "ACTIVE",
-      "assigned_agent": "zcode-identity-pc2",
-      "assigned_role": "builder",
+      "stage": "verify",
+      "status": "QUEUED",
+      "assigned_agent": null,
+      "assigned_role": null,
       "work_branch": "agent/viro-0011/zcode-gov-audit-pc1",
-      "heartbeat_at": "2026-08-28T20:09:20.386Z",
+      "heartbeat_at": null,
       "attempts": 0,
       "evidence": [
         {
@@ -432,15 +432,49 @@
           "by": "zcode-gov-audit-pc1",
           "item": "before-state confirmed on local main post-wave-merge 2026-08-28; manifest basis valid; builder drafts banked where applicable; unlocked by reconciliation of merged dependency",
           "at": "2026-08-28T16:58:29.791Z"
+        },
+        {
+          "stage": "build",
+          "by": "zcode-identity-pc2",
+          "item": "candidate 65dc905bc447b3e592065f5e78c781d01384d837 on agent/viro-0011/zcode-gov-audit-pc1 (based on main 50144659); commits e60a206 impl, 1866158 tests, 65dc905 manifest; scope strictly src/app.ts + src/library/store.ts + tests/recovery-identity-* + deliveries/VIRO-0011.json",
+          "at": "2026-08-28T20:10:21.077Z"
+        },
+        {
+          "stage": "build",
+          "by": "zcode-identity-pc2",
+          "item": "before-state RED proof: tests/recovery-identity.test.mjs 0/5 on unmodified main (src drafts stashed); with implementation 5/5 green",
+          "at": "2026-08-28T20:10:21.077Z"
+        },
+        {
+          "stage": "build",
+          "by": "zcode-identity-pc2",
+          "item": "browser E2E VIRO_URL=http://127.0.0.1:5178 node tests/recovery-identity.spec.mjs: 16/16 checks, zero page errors (real IndexedDB: two docs independent snapshots, boot lists both pending newest-first, restoreRecovery(idA) restores content+identity+createdAt, deleteProject removes project+recovery and deleted identity never reused)",
+          "at": "2026-08-28T20:10:21.077Z"
+        },
+        {
+          "stage": "build",
+          "by": "zcode-identity-pc2",
+          "item": "npx tsc --noEmit exit 0; npm run test:unit 316/316; npm run build exit 0",
+          "at": "2026-08-28T20:10:21.077Z"
+        },
+        {
+          "stage": "build",
+          "by": "zcode-identity-pc2",
+          "item": "regression: tests/recovery.spec.mjs assertions byte-unchanged, 13/13 green; tests/projects.spec.mjs 11/11 green; src/chrome/desk.ts untouched (recover-bar pendingRecovery head contract preserved, zero chrome changes)",
+          "at": "2026-08-28T20:10:21.077Z"
         }
       ],
       "last_handoff": {
-        "from": "audit",
-        "to": "build",
-        "by": "zcode-gov-audit-pc1",
-        "at": "2026-08-28T16:58:29.792Z",
+        "from": "build",
+        "to": "verify",
+        "by": "zcode-identity-pc2",
+        "at": "2026-08-28T20:10:21.077Z",
         "evidence": [
-          "before-state confirmed on local main post-wave-merge 2026-08-28; manifest basis valid; builder drafts banked where applicable; unlocked by reconciliation of merged dependency"
+          "candidate 65dc905bc447b3e592065f5e78c781d01384d837 on agent/viro-0011/zcode-gov-audit-pc1 (based on main 50144659); commits e60a206 impl, 1866158 tests, 65dc905 manifest; scope strictly src/app.ts + src/library/store.ts + tests/recovery-identity-* + deliveries/VIRO-0011.json",
+          "before-state RED proof: tests/recovery-identity.test.mjs 0/5 on unmodified main (src drafts stashed); with implementation 5/5 green",
+          "browser E2E VIRO_URL=http://127.0.0.1:5178 node tests/recovery-identity.spec.mjs: 16/16 checks, zero page errors (real IndexedDB: two docs independent snapshots, boot lists both pending newest-first, restoreRecovery(idA) restores content+identity+createdAt, deleteProject removes project+recovery and deleted identity never reused)",
+          "npx tsc --noEmit exit 0; npm run test:unit 316/316; npm run build exit 0",
+          "regression: tests/recovery.spec.mjs assertions byte-unchanged, 13/13 green; tests/projects.spec.mjs 11/11 green; src/chrome/desk.ts untouched (recover-bar pendingRecovery head contract preserved, zero chrome changes)"
         ]
       },
       "rejection": null
@@ -1656,12 +1690,6 @@
     }
   },
   "agents": {
-    "zcode-identity-pc2": {
-      "role": "builder",
-      "machine": "pc-cloud1",
-      "packet": "VIRO-0011",
-      "heartbeat_at": "2026-08-28T20:09:20.386Z"
-    },
     "zcode-polish-pc2": {
       "role": "builder",
       "machine": "pc-cloud1",
@@ -1713,8 +1741,8 @@
         "tests/recovery-identity-*"
       ],
       "acquired_at": "2026-08-28T19:32:14.640Z",
-      "current_agent": "zcode-identity-pc2",
-      "current_stage": "build",
+      "current_agent": null,
+      "current_stage": "verify",
       "heartbeat_at": "2026-08-28T20:09:20.386Z"
     },
     "VIRO-0017": {
@@ -1733,12 +1761,6 @@
     }
   },
   "events": [
-    {
-      "at": "2026-08-28T05:31:43.661Z",
-      "type": "agent.heartbeat",
-      "agent": "zcode-verify-pc1",
-      "packet": "VIRO-0005"
-    },
     {
       "at": "2026-08-28T05:37:09.603Z",
       "type": "agent.heartbeat",
@@ -3779,6 +3801,16 @@
       "evidence": [
         "landed via LOCAL merge under owner order 2026-08-28 (candidate 3cba4ab, verifier PASS incl. own-mutation vacuity proof); corpus 13/13 re-run on merged main; approval on PR"
       ]
+    },
+    {
+      "at": "2026-08-28T20:10:21.077Z",
+      "type": "packet.advanced",
+      "packet": "VIRO-0011",
+      "from": "build",
+      "to": "verify",
+      "by": "zcode-identity-pc2",
+      "machine": "pc-cloud1",
+      "session": null
     }
   ]
 }
