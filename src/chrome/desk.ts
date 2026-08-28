@@ -137,6 +137,22 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
   buildPresetList();
 
   let lastDialog: PressApp["dialog"] = null;
+  // VIRO-0016: modal dialogs own focus while open. The trigger is captured at
+  // open and restored at close so keyboard users are never dropped.
+  let dialogReturnFocus: HTMLElement | null = null;
+  const DIALOG_ELEMENT: Record<Exclude<PressApp["dialog"], null>, string> = {
+    "image-size": "dlg-image",
+    new: "dlg-new",
+    brightness: "dlg-bc",
+  };
+
+  /** Hand focus back to what opened the dialog; only a vanished trigger
+   *  (e.g. a menu item whose flyout closed) lets it fall back to body. */
+  function restoreDialogFocus(): void {
+    const back = dialogReturnFocus;
+    dialogReturnFocus = null;
+    if (back && back.isConnected && back.offsetParent !== null) back.focus();
+  }
 
   bindMenus();
   bindTools();
@@ -347,12 +363,15 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
   }
 
   function openProjects(): void {
+    dialogReturnFocus = activeOrNull();
     el("dlg-projects").hidden = false;
+    focusFirstIn(el("dlg-projects"));
     void renderProjects();
   }
 
   function closeProjects(): void {
     el("dlg-projects").hidden = true;
+    restoreDialogFocus();
   }
 
   async function renderProjects(): Promise<void> {
@@ -716,7 +735,8 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
   }
 
   function bindMenus(): void {
-    document.getElementById("menubar")!.addEventListener("click", (e) => {
+    const menubar = document.getElementById("menubar")!;
+    menubar.addEventListener("click", (e) => {
       const t = e.target as HTMLElement;
       const btn = t.closest<HTMLElement>("[data-menu]");
       if (btn) {
@@ -725,6 +745,7 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
         closeMenus();
         if (open) {
           btn.classList.add("open");
+          btn.setAttribute("aria-expanded", "true");
           const fly = document.querySelector<HTMLElement>(`[data-flyout="${id}"]`);
           if (fly) fly.hidden = false;
         }
@@ -739,10 +760,26 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
     document.addEventListener("pointerdown", (e) => {
       if (!(e.target as HTMLElement).closest(".menubar")) closeMenus();
     });
+    // Keyboard parity (VIRO-0016): Escape dismisses the open flyout back to
+    // its trigger, and Tabbing out of the menubar never strands a flyout open.
+    menubar.addEventListener("keydown", (e) => {
+      if (e.key !== "Escape") return;
+      const open = menubar.querySelector<HTMLElement>(".menu-btn.open");
+      if (!open) return;
+      e.stopPropagation();
+      closeMenus();
+      open.focus();
+    });
+    menubar.addEventListener("focusout", (e) => {
+      if (!menubar.contains(e.relatedTarget as Node | null)) closeMenus();
+    });
   }
 
   function closeMenus(): void {
-    document.querySelectorAll(".menu-btn.open").forEach((b) => b.classList.remove("open"));
+    document.querySelectorAll(".menu-btn.open").forEach((b) => {
+      b.classList.remove("open");
+      b.setAttribute("aria-expanded", "false");
+    });
     document.querySelectorAll<HTMLElement>("[data-flyout]").forEach((f) => {
       f.hidden = true;
     });
@@ -909,12 +946,20 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
   }
 
   function bindStudios(): void {
+    // VIRO-0016: a studio tab is a real toggle — expose which pane is showing.
+    document.querySelectorAll<HTMLElement>(".tabs [data-tab]").forEach((b) => {
+      b.setAttribute("aria-pressed", String(b.classList.contains("is-on")));
+    });
     el("studios").addEventListener("click", (e) => {
       const t = e.target as HTMLElement;
       const tab = t.closest<HTMLElement>("[data-tab]");
       if (tab?.dataset.tab) {
         const group = tab.closest(".group")!;
-        group.querySelectorAll("[data-tab]").forEach((b) => b.classList.toggle("is-on", b === tab));
+        group.querySelectorAll<HTMLElement>("[data-tab]").forEach((b) => {
+          const on = b === tab;
+          b.classList.toggle("is-on", on);
+          b.setAttribute("aria-pressed", String(on));
+        });
         group.querySelectorAll<HTMLElement>("[data-pane]").forEach((p) => {
           p.hidden = p.dataset.pane !== tab.dataset.tab;
         });
@@ -1075,6 +1120,13 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
     bindFilePicker(app, "file-place");
     bindFilePicker(app, "file-font");
     bindNewDialog();
+    // VIRO-0016: dialogs are modal — Escape closes from anywhere inside them
+    // (the global typing guard otherwise swallows it in text fields) and Tab
+    // cycles within the dialog instead of reaching the covered desk.
+    bindDialogChrome(el("dlg-image"), () => app.closeDialog());
+    bindDialogChrome(el("dlg-new"), () => app.closeDialog());
+    bindDialogChrome(el("dlg-bc"), () => app.closeDialog());
+    bindDialogChrome(el("dlg-projects"), () => closeProjects());
     document.querySelectorAll("[data-dlg]").forEach((b) => {
       b.addEventListener("click", () => {
         const n = (b as HTMLElement).dataset.dlg;
@@ -1350,6 +1402,8 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
     const landscape = nd.width > nd.height;
     el("nd-portrait").classList.toggle("is-on", !landscape);
     el("nd-landscape").classList.toggle("is-on", landscape);
+    el("nd-portrait").setAttribute("aria-pressed", String(!landscape));
+    el("nd-landscape").setAttribute("aria-pressed", String(landscape));
     el("nd-link").setAttribute("aria-pressed", String(nd.marginLinked));
     // On facing pages the binding edge is `left` (see Preset.margin).
     el("nd-ml-lbl").textContent = nd.facing ? "I" : "L";
@@ -1583,12 +1637,21 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
       state.bg = v.bg;
     }
 
-    if (app.dialog === "image-size" && lastDialog !== "image-size") fillImageSizeFields();
-    if (app.dialog === "new" && lastDialog !== "new") renderNewDialog();
+    const prevDialog = lastDialog;
+    if (app.dialog === "image-size" && prevDialog !== "image-size") fillImageSizeFields();
+    if (app.dialog === "new" && prevDialog !== "new") renderNewDialog();
     lastDialog = app.dialog;
     el("dlg-image").hidden = app.dialog !== "image-size";
     el("dlg-new").hidden = app.dialog !== "new";
     el("dlg-bc").hidden = app.dialog !== "brightness";
+    // VIRO-0016: on open, carry focus into the dialog; on close, give it back
+    // to the trigger. Keyboard users must never straddle an invisible modal.
+    if (app.dialog && app.dialog !== prevDialog) {
+      dialogReturnFocus = activeOrNull();
+      focusFirstIn(el(DIALOG_ELEMENT[app.dialog]));
+    } else if (!app.dialog && prevDialog) {
+      restoreDialogFocus();
+    }
     const recoverBar = document.getElementById("recover-bar");
     if (recoverBar) {
       const snap = app.pendingRecovery;
@@ -1640,7 +1703,9 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
     fillIfIdle("para-after", story ? fmt(story.paragraph.spaceAfter, 1) : "");
     fillIfIdle("ch-story", story ? story.text : "");
     document.querySelectorAll<HTMLElement>("#para-align [data-align]").forEach((b) => {
-      b.classList.toggle("is-on", story?.paragraph.align === b.dataset.align);
+      const on = story?.paragraph.align === b.dataset.align;
+      b.classList.toggle("is-on", on);
+      b.setAttribute("aria-pressed", String(on));
     });
 
     setDisabled(TRANSFORM_FIELDS, !sel);
@@ -1745,7 +1810,8 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
     el("swatch-list").innerHTML = app.doc.swatches
       .map((s) => {
         const c = s.rgb ?? { r: 0, g: 0, b: 0, a: 1 };
-        return `<button type="button" data-hex="${rgbaToHex(c)}" title="${esc(s.name)}" style="background:${rgbaCss(c)}"></button>`;
+        // Colour-only buttons carry their name in an attribute, not a tooltip.
+        return `<button type="button" data-hex="${rgbaToHex(c)}" title="${esc(s.name)}" aria-label="${esc(s.name)}" style="background:${rgbaCss(c)}"></button>`;
       })
       .join("");
 
@@ -1759,7 +1825,9 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
     void renderLibrary();
 
     document.querySelectorAll<HTMLElement>("[data-ch]").forEach((b) => {
-      b.classList.toggle("is-on", b.dataset.ch === state.channel);
+      const on = b.dataset.ch === state.channel;
+      b.classList.toggle("is-on", on);
+      b.setAttribute("aria-pressed", String(on));
     });
     const thumbs = app.channelThumbs;
     const thumb = el<HTMLImageElement>("ch-thumb");
@@ -1801,8 +1869,12 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
       "g-library": !el("g-library").hidden,
       "g-anchor": !el("g-anchor").hidden,
     };
+    // The visible ✓ is decorative (aria-hidden in markup); the button itself
+    // carries the toggle state for assistive technology.
     document.querySelectorAll<HTMLElement>("[data-check]").forEach((n) => {
-      n.textContent = checks[n.dataset.check!] ? "✓" : "";
+      const on = checks[n.dataset.check!];
+      n.textContent = on ? "✓" : "";
+      n.closest<HTMLElement>("button")?.setAttribute("aria-pressed", String(on));
     });
   }
 
@@ -1874,10 +1946,10 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
           : `<span class="thumb is-empty">${layerKindMark(layer.kind)}</span>`;
         rows.push(
           `<div class="ly${on ? " is-on" : ""}${depth ? " child" : ""}${layer.kind === "group" ? " group-row" : ""}" data-id="${layer.id}" style="--depth:${depth}">
-            <button type="button" class="eye${layer.visible ? " is-on" : ""}" data-act="vis" title="Visibility" aria-label="Visibility"></button>
-            <button type="button" class="lk" data-act="lock" title="Lock">${layer.locked ? "L" : ""}</button>
+            <button type="button" class="eye${layer.visible ? " is-on" : ""}" data-act="vis" title="Visibility" aria-label="Visibility" aria-pressed="${layer.visible}"></button>
+            <button type="button" class="lk" data-act="lock" title="Lock" aria-label="Lock layer" aria-pressed="${layer.locked}">${layer.locked ? "L" : ""}</button>
             ${cell}
-            <span class="nm">${esc(layer.name)}</span>
+            <button type="button" class="nm" aria-pressed="${on}">${esc(layer.name)}</button>
             <span class="fx">${fx}</span>
           </div>`,
         );
@@ -1968,6 +2040,57 @@ function el<T extends HTMLElement = HTMLElement>(id: string): T {
   const node = document.getElementById(id);
   if (!node) throw new Error(`Missing #${id}`);
   return node as T;
+}
+
+/* ── Dialog focus management (VIRO-0016) ─────────────────────────────────── */
+
+function activeOrNull(): HTMLElement | null {
+  return document.activeElement instanceof HTMLElement ? document.activeElement : null;
+}
+
+/** Focusable controls that are actually rendered — hidden panes and disabled
+ *  controls are skipped, fixed-position roots count as visible. */
+function visibleFocusablesIn(root: HTMLElement): HTMLElement[] {
+  return [...root.querySelectorAll<HTMLElement>(
+    "button, input, select, textarea, a[href], [tabindex]:not([tabindex='-1'])",
+  )].filter((node) => {
+    if (node.hasAttribute("disabled")) return false;
+    if (node instanceof HTMLInputElement && node.type === "hidden") return false;
+    return node.offsetParent !== null || getComputedStyle(node).position === "fixed";
+  });
+}
+
+function focusFirstIn(root: HTMLElement): void {
+  visibleFocusablesIn(root)[0]?.focus();
+}
+
+/** Escape closes a modal from anywhere inside it; Tab stays inside it. */
+function bindDialogChrome(dlg: HTMLElement, close: () => void): void {
+  dlg.addEventListener("keydown", (e) => {
+    const ev = e as KeyboardEvent;
+    if (ev.key === "Escape") {
+      ev.preventDefault();
+      ev.stopPropagation();
+      close();
+      return;
+    }
+    if (ev.key !== "Tab") return;
+    const focusables = visibleFocusablesIn(dlg);
+    if (!focusables.length) return;
+    const first = focusables[0]!;
+    const last = focusables[focusables.length - 1]!;
+    const active = activeOrNull();
+    if (!active || !dlg.contains(active)) {
+      ev.preventDefault();
+      first.focus();
+    } else if (ev.shiftKey && active === first) {
+      ev.preventDefault();
+      last.focus();
+    } else if (!ev.shiftKey && active === last) {
+      ev.preventDefault();
+      first.focus();
+    }
+  });
 }
 
 /* ── New Document helpers ────────────────────────────────────────────────── */
