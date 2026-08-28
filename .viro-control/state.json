@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 317,
-  "updated_at": "2026-08-28T19:19:08.735Z",
+  "revision": 318,
+  "updated_at": "2026-08-28T19:22:34.466Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -412,8 +412,8 @@
       "scope": [
         "src/app.ts",
         "src/library/store.ts",
-        "docs/agents/deliveries/VIRO-0011.json",
-        "tests/recovery-identity-*"
+        "tests/**",
+        "docs/agents/deliveries/VIRO-0011.json"
       ],
       "dependencies": [
         "VIRO-0010"
@@ -983,9 +983,9 @@
       "scope": [
         "index.html",
         "src/chrome/**",
+        "tests/**",
         "docs/reviews/0017-visual-polish-sweep.md",
-        "docs/agents/deliveries/VIRO-0017.json",
-        "tests/visual-polish-*"
+        "docs/agents/deliveries/VIRO-0017.json"
       ],
       "dependencies": [
         "VIRO-0016"
@@ -1441,11 +1441,6 @@
     }
   },
   "events": [
-    {
-      "at": "2026-08-27T21:56:28.985Z",
-      "type": "packet.reconciled_from_manifest",
-      "packet": "VIRO-0002"
-    },
     {
       "at": "2026-08-27T22:08:16.070Z",
       "type": "packet.reconciled_from_manifest",
@@ -3427,6 +3422,11 @@
       "type": "packet.unblocked",
       "packet": "VIRO-0143",
       "by": "governor"
+    },
+    {
+      "at": "2026-08-28T19:22:34.466Z",
+      "type": "packet.reconciled_from_manifest",
+      "packet": "VIRO-0002"
     }
   ]
 }
