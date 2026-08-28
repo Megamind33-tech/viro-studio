@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 412,
-  "updated_at": "2026-08-28T22:58:33.066Z",
+  "revision": 413,
+  "updated_at": "2026-08-28T22:59:25.409Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -2089,11 +2089,6 @@
     }
   },
   "events": [
-    {
-      "at": "2026-08-28T09:20:06.992Z",
-      "type": "packet.reconciled_from_manifest",
-      "packet": "VIRO-0002"
-    },
     {
       "at": "2026-08-28T09:20:25.767Z",
       "type": "packet.claimed",
@@ -4247,6 +4242,11 @@
       "by": "zcode-gov-audit-pc1",
       "machine": "pc-cloud1",
       "session": "41729506-a432-4f08-bd05-a3698521d68f"
+    },
+    {
+      "at": "2026-08-28T22:59:25.409Z",
+      "type": "packet.reconciled_from_manifest",
+      "packet": "VIRO-0002"
     }
   ]
 }
