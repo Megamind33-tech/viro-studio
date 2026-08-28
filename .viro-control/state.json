@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 312,
-  "updated_at": "2026-08-28T19:15:58.021Z",
+  "revision": 313,
+  "updated_at": "2026-08-28T19:17:03.192Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -992,11 +992,11 @@
       ],
       "critic_needed": true,
       "stage": "build",
-      "status": "ACTIVE",
-      "assigned_agent": "zcode-polish-pc1",
-      "assigned_role": "builder",
+      "status": "BLOCKED",
+      "assigned_agent": null,
+      "assigned_role": null,
       "work_branch": "agent/viro-0017/zcode-gov-audit-pc1",
-      "heartbeat_at": "2026-08-28T17:53:22.443Z",
+      "heartbeat_at": null,
       "attempts": 0,
       "evidence": [
         {
@@ -1015,7 +1015,12 @@
           "before-state confirmed on local main post-wave-merge 2026-08-28; manifest basis valid; builder drafts banked where applicable; unlocked by reconciliation of merged dependency"
         ]
       },
-      "rejection": null
+      "rejection": {
+        "by": "governor",
+        "stage": "build",
+        "reason": "session zcode-polish-pc1 garbage-collected after repeated network flaps (74m stale); work preserved in worktree per checkpoint protocol; fresh session reassigned",
+        "at": "2026-08-28T19:17:03.180Z"
+      }
     },
     "VIRO-0019": {
       "id": "VIRO-0019",
@@ -1419,12 +1424,6 @@
     }
   },
   "agents": {
-    "zcode-polish-pc1": {
-      "role": "builder",
-      "machine": "pc-cloud1",
-      "packet": "VIRO-0017",
-      "heartbeat_at": "2026-08-28T17:53:22.443Z"
-    },
     "zcode-textframe-pc1": {
       "role": "builder",
       "machine": "pc-cloud1",
@@ -1462,31 +1461,9 @@
       "current_agent": "zcode-textframe-pc1",
       "current_stage": "build",
       "heartbeat_at": "2026-08-28T18:19:45.701Z"
-    },
-    "VIRO-0017": {
-      "packet": "VIRO-0017",
-      "scope": [
-        "index.html",
-        "src/chrome/**",
-        "docs/reviews/0017-visual-polish-sweep.md",
-        "docs/agents/deliveries/VIRO-0017.json",
-        "tests/visual-polish-*"
-      ],
-      "acquired_at": "2026-08-28T16:59:27.260Z",
-      "current_agent": "zcode-polish-pc1",
-      "current_stage": "build",
-      "heartbeat_at": "2026-08-28T17:53:22.443Z"
     }
   },
   "events": [
-    {
-      "at": "2026-08-27T21:05:16.500Z",
-      "type": "packet.claimed",
-      "packet": "VIRO-0005",
-      "agent": "claude-export-pc1",
-      "role": "builder",
-      "machine": null
-    },
     {
       "at": "2026-08-27T21:14:42.335Z",
       "type": "packet.reconciled_from_manifest",
@@ -3460,6 +3437,14 @@
       "type": "packet.unblocked",
       "packet": "VIRO-0011",
       "by": "governor"
+    },
+    {
+      "at": "2026-08-28T19:17:03.192Z",
+      "type": "assignment.reaped",
+      "packet": "VIRO-0017",
+      "agent": "zcode-polish-pc1",
+      "by": "governor",
+      "reason": "session zcode-polish-pc1 garbage-collected after repeated network flaps (74m stale); work preserved in worktree per checkpoint protocol; fresh session reassigned"
     }
   ]
 }
