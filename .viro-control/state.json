@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 309,
-  "updated_at": "2026-08-28T19:14:16.719Z",
+  "revision": 310,
+  "updated_at": "2026-08-28T19:14:54.474Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -1176,7 +1176,7 @@
       ],
       "critic_needed": false,
       "stage": "verify",
-      "status": "BLOCKED",
+      "status": "QUEUED",
       "assigned_agent": null,
       "assigned_role": null,
       "work_branch": "agent/viro-0141/zcode-gov-audit-pc1",
@@ -1219,12 +1219,7 @@
           "npx tsc --noEmit exit 0; npm run test:unit 336/336 (baseline 316 + 20); vite build succeeds (264 modules; npm spawn of vite.cmd blocked by local Git-Bash launcher quirk, gate run as node node_modules/vite/bin/vite.js build); delivery record docs/agents/deliveries/VIRO-0141.json"
         ]
       },
-      "rejection": {
-        "by": "governor",
-        "stage": "verify",
-        "reason": "session zcode-verify-pc10 garbage-collected after repeated network flaps (74m stale); work preserved in worktree per checkpoint protocol; fresh session reassigned",
-        "at": "2026-08-28T19:13:59.172Z"
-      }
+      "rejection": null
     },
     "VIRO-0142": {
       "id": "VIRO-0142",
@@ -1503,14 +1498,6 @@
     }
   },
   "events": [
-    {
-      "at": "2026-08-27T17:27:33.021Z",
-      "type": "packet.advanced",
-      "packet": "VIRO-0005",
-      "from": "audit",
-      "to": "build",
-      "by": "claude-audit-cloud1"
-    },
     {
       "at": "2026-08-27T17:27:41.055Z",
       "type": "packet.reconciled_from_manifest",
@@ -3482,6 +3469,12 @@
       "agent": "zcode-verify-pc11",
       "role": "verifier",
       "machine": "pc-cloud1"
+    },
+    {
+      "at": "2026-08-28T19:14:54.474Z",
+      "type": "packet.unblocked",
+      "packet": "VIRO-0141",
+      "by": "governor"
     }
   ]
 }
