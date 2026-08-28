@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 408,
-  "updated_at": "2026-08-28T22:57:41.635Z",
+  "revision": 409,
+  "updated_at": "2026-08-28T22:57:51.342Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -1664,10 +1664,10 @@
       "critic_needed": true,
       "stage": "release",
       "status": "RELEASE",
-      "assigned_agent": "zcode-release-pc1",
-      "assigned_role": "release-manager",
+      "assigned_agent": null,
+      "assigned_role": null,
       "work_branch": "agent/viro-0143/zcode-gov-audit-pc1",
-      "heartbeat_at": "2026-08-28T22:57:41.635Z",
+      "heartbeat_at": null,
       "attempts": 1,
       "evidence": [
         {
@@ -1753,20 +1753,56 @@
           "by": "zcode-critic-pc4",
           "item": "CRITIC PASS-WITH-NOTES (product drive, black-box, real app): drove 94fd70a via Playwright Chromium on http://localhost:5204 with 3 real v6 .press.json docs opened through the real File>Open input; layers selected via real Layers panel. (1) Insets {30,10,20,15}: ink edges measured from real canvas screenshots in page px - left 90.13 (contract 90), right maxX 1009.44 (contract 1010 minus RSB), justify 1080.04/1339.41 (contracts 1080/1340), center ink mid 549.0 vs content-box center 550 (advance-width centering, correct); tops uniform; inset bands ink-free beyond <=1 device-col AA fringe; descender frame bottom 491.2 <= foot 507; no clipped glyphs; extreme-inset stress frame degrades gracefully (overlong word breaks at measure, remainder dropped, overflow indicator shown). (2) verticalAlign: center ink mid 219.6 vs frame mid 220 (optically perfect), bottom seats at foot (375.5 vs 380 = last-line descent), center-overflow and bottom-overflow ink boxes pixel-identical (overflow stays top-aligned per spec) with red overflow indicators. (3) Zero-inset parity IN THE REAL APP: same doc on 94fd70a vs 5014465 (port 5205) - 5,123,872 px compared, 0 differing, max channel delta 0, identical page origin; confirms committed SHA-256 golden claim on the live canvas. (4) autoSize honesty: measureAutoFit has zero UI/bus/anchor callers (tests only); no inset/valign/auto-size controls anywhere in chrome (grep + full-desk screenshot); delivery record returns auto-fit bus command to Governor with spec - no phantom claims. Console errors on all candidate drives: none. Notes non-blocking: overlong-word hard-break + remainder drop is pre-existing engine semantics (InDesign-like); valign 'justify' falls back to top (documented); red overflow + at frame top-right is pre-existing overlay convention. Evidence: /c/viro-worktrees/critic-docs/evidence/ (cand-insets100-*, cand-valign100-*, cand-zero100-*, base-zero100-*, crop-extreme-frame.png, *-meta.json), analyzer+driver /c/viro-worktrees/critic-docs/{drive,analyze,gen-docs}.mjs, notes /c/viro-worktrees/critic-pc4-progress-notes.md",
           "at": "2026-08-28T22:56:16.408Z"
+        },
+        {
+          "stage": "release",
+          "by": "zcode-release-pc1",
+          "item": "PR binds approval to head SHA 94fd70a",
+          "at": "2026-08-28T22:57:51.340Z"
+        },
+        {
+          "stage": "release",
+          "by": "zcode-release-pc1",
+          "item": "verifier zcode-verify-pc12 attempt-2 PASS: exact probe numbers, discrimination independently re-proven, gates green",
+          "at": "2026-08-28T22:57:51.340Z"
+        },
+        {
+          "stage": "release",
+          "by": "zcode-release-pc1",
+          "item": "critic zcode-critic-pc4 PASS-WITH-NOTES: 5.1M-px comparison zero inset-zone ink, zero-inset parity 0 differing, autoSize honesty confirmed",
+          "at": "2026-08-28T22:57:51.340Z"
         }
       ],
       "last_handoff": {
-        "from": "critic",
-        "to": "release",
-        "by": "zcode-critic-pc4",
-        "at": "2026-08-28T22:56:16.410Z",
+        "from": "release",
+        "to": "merge-gate",
+        "by": "zcode-release-pc1",
+        "at": "2026-08-28T22:57:51.340Z",
         "evidence": [
-          "CRITIC PASS-WITH-NOTES (product drive, black-box, real app): drove 94fd70a via Playwright Chromium on http://localhost:5204 with 3 real v6 .press.json docs opened through the real File>Open input; layers selected via real Layers panel. (1) Insets {30,10,20,15}: ink edges measured from real canvas screenshots in page px - left 90.13 (contract 90), right maxX 1009.44 (contract 1010 minus RSB), justify 1080.04/1339.41 (contracts 1080/1340), center ink mid 549.0 vs content-box center 550 (advance-width centering, correct); tops uniform; inset bands ink-free beyond <=1 device-col AA fringe; descender frame bottom 491.2 <= foot 507; no clipped glyphs; extreme-inset stress frame degrades gracefully (overlong word breaks at measure, remainder dropped, overflow indicator shown). (2) verticalAlign: center ink mid 219.6 vs frame mid 220 (optically perfect), bottom seats at foot (375.5 vs 380 = last-line descent), center-overflow and bottom-overflow ink boxes pixel-identical (overflow stays top-aligned per spec) with red overflow indicators. (3) Zero-inset parity IN THE REAL APP: same doc on 94fd70a vs 5014465 (port 5205) - 5,123,872 px compared, 0 differing, max channel delta 0, identical page origin; confirms committed SHA-256 golden claim on the live canvas. (4) autoSize honesty: measureAutoFit has zero UI/bus/anchor callers (tests only); no inset/valign/auto-size controls anywhere in chrome (grep + full-desk screenshot); delivery record returns auto-fit bus command to Governor with spec - no phantom claims. Console errors on all candidate drives: none. Notes non-blocking: overlong-word hard-break + remainder drop is pre-existing engine semantics (InDesign-like); valign 'justify' falls back to top (documented); red overflow + at frame top-right is pre-existing overlay convention. Evidence: /c/viro-worktrees/critic-docs/evidence/ (cand-insets100-*, cand-valign100-*, cand-zero100-*, base-zero100-*, crop-extreme-frame.png, *-meta.json), analyzer+driver /c/viro-worktrees/critic-docs/{drive,analyze,gen-docs}.mjs, notes /c/viro-worktrees/critic-pc4-progress-notes.md"
+          "PR binds approval to head SHA 94fd70a",
+          "verifier zcode-verify-pc12 attempt-2 PASS: exact probe numbers, discrimination independently re-proven, gates green",
+          "critic zcode-critic-pc4 PASS-WITH-NOTES: 5.1M-px comparison zero inset-zone ink, zero-inset parity 0 differing, autoSize honesty confirmed"
         ]
       },
       "rejection": null,
       "assigned_machine": "pc-cloud1",
-      "assigned_session": "e04a19ba-9e84-4319-873a-0015ad287823"
+      "assigned_session": "e04a19ba-9e84-4319-873a-0015ad287823",
+      "release_approval": {
+        "status": "APPROVED",
+        "by": "zcode-release-pc1",
+        "machine": "pc-cloud1",
+        "session": "e04a19ba-9e84-4319-873a-0015ad287823",
+        "at": "2026-08-28T22:57:51.340Z",
+        "pr_number": 27,
+        "pr_url": "https://github.com/Megamind33-tech/viro-studio/pull/27",
+        "head_sha": "94fd70ad63cca641202c7de0ed4466a337ad0219",
+        "base": "main",
+        "evidence": [
+          "PR binds approval to head SHA 94fd70a",
+          "verifier zcode-verify-pc12 attempt-2 PASS: exact probe numbers, discrimination independently re-proven, gates green",
+          "critic zcode-critic-pc4 PASS-WITH-NOTES: 5.1M-px comparison zero inset-zone ink, zero-inset parity 0 differing, autoSize honesty confirmed"
+        ]
+      }
     },
     "VIRO-0144": {
       "id": "VIRO-0144",
@@ -1986,13 +2022,6 @@
       "session": "69a08142-3926-4f09-afda-f139c9b80bdd",
       "packet": "VIRO-0017",
       "heartbeat_at": "2026-08-28T22:39:12.158Z"
-    },
-    "zcode-release-pc1": {
-      "role": "release-manager",
-      "machine": "pc-cloud1",
-      "session": "e04a19ba-9e84-4319-873a-0015ad287823",
-      "packet": "VIRO-0143",
-      "heartbeat_at": "2026-08-28T22:57:41.635Z"
     }
   },
   "leases": {
@@ -2005,7 +2034,7 @@
         "docs/agents/deliveries/VIRO-0143.json"
       ],
       "acquired_at": "2026-08-28T19:25:06.822Z",
-      "current_agent": "zcode-release-pc1",
+      "current_agent": null,
       "current_stage": "release",
       "current_session": "e04a19ba-9e84-4319-873a-0015ad287823"
     },
@@ -2040,12 +2069,6 @@
     }
   },
   "events": [
-    {
-      "at": "2026-08-28T09:13:58.831Z",
-      "type": "agent.heartbeat",
-      "agent": "zcode-perf-pc2",
-      "packet": "VIRO-0012"
-    },
     {
       "at": "2026-08-28T09:15:31.872Z",
       "type": "packet.advanced",
@@ -4188,6 +4211,16 @@
       "role": "release-manager",
       "machine": "pc-cloud1",
       "session": "e04a19ba-9e84-4319-873a-0015ad287823"
+    },
+    {
+      "at": "2026-08-28T22:57:51.342Z",
+      "type": "release.approved",
+      "packet": "VIRO-0143",
+      "by": "zcode-release-pc1",
+      "machine": "pc-cloud1",
+      "session": "e04a19ba-9e84-4319-873a-0015ad287823",
+      "pr": 27,
+      "head_sha": "94fd70ad63cca641202c7de0ed4466a337ad0219"
     }
   ]
 }
