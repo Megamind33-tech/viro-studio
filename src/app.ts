@@ -82,7 +82,7 @@ import {
 } from "./document/multi-transform";
 import {
   deleteRecovery,
-  getRecovery,
+  listRecovery,
   putRecovery,
   putUserAsset,
   type RecoverySnapshot,
@@ -145,8 +145,14 @@ export class PressApp {
    * Autosave/recovery. The working document is written to IndexedDB shortly
    * after each edit so a reload or crash does not lose unsaved work. `dirty`
    * gates writes so an untouched freshly-booted document never overwrites a
-   * genuine recovery snapshot. `pendingRecovery` is a snapshot found at boot
-   * that predates this session; the UI offers to restore it.
+   * genuine recovery snapshot.
+   *
+   * Recovery is keyed by DOCUMENT IDENTITY (VIRO-0011): each autosave record
+   * carries the working document's project id, so editing document B never
+   * destroys document A's snapshot. `pendingRecoveries` holds the snapshots
+   * found at boot, newest first; `pendingRecovery` is its head — the record
+   * the recover bar prompts for, and the target of no-arg restore/discard
+   * (the existing UI handlers and tests act on the newest record).
    */
   private dirty = false;
   private booted = false;
@@ -154,6 +160,8 @@ export class PressApp {
   /** Bus revision last durably written to the recovery slot. */
   private savedRev = 0;
   pendingRecovery: RecoverySnapshot | null = null;
+  /** Every snapshot found at boot, newest first; `pendingRecovery` is the head. */
+  pendingRecoveries: RecoverySnapshot[] = [];
   /**
    * Recovery-sink seam. Production writes go to the IndexedDB recovery store;
    * tests and diagnostics may point this at a rejecting sink to simulate quota
@@ -351,10 +359,27 @@ export class PressApp {
   }
 
   /**
-   * Persist the working document to the local recovery slot. Serialises through
+   * Stable identity of the document being edited (VIRO-0011). The project id
+   * IS the document identity: recovery records are keyed by it, so two
+   * documents edited in sequence keep independent snapshots. One is minted on
+   * first autosave when absent — the same id the project library then reuses,
+   * so a restored document resumes its own project record.
+   */
+  private ensureDocIdentity(): string {
+    if (!this.currentProjectId) {
+      this.currentProjectId = uid("proj");
+      this.projectCreatedAt = this.projectCreatedAt || Date.now();
+    }
+    return this.currentProjectId;
+  }
+
+  /**
+   * Persist the working document to ITS recovery record. Serialises through
    * JSON so the stored value is a plain structured-clone-safe snapshot and never
    * a live reference. `preSerialized` lets one autosave tick share a single
-   * plain snapshot across both persistence sinks.
+   * plain snapshot across both persistence sinks. The record is keyed to the
+   * document's identity (ensureDocIdentity), so a second document's autosave
+   * never overwrites this one (VIRO-0011).
    *
    * Failure contract (quota / private mode / IO): a rejected put never touches
    * the stored record, so the LAST GOOD SNAPSHOT stays intact and recoverable;
@@ -364,11 +389,13 @@ export class PressApp {
   async writeRecovery(preSerialized?: unknown): Promise<void> {
     if (!this.dirty) return;
     const rev = this.bus.revision();
+    const id = this.ensureDocIdentity();
     const snapshot: RecoverySnapshot = {
-      id: "current",
+      id,
       doc: preSerialized ?? JSON.parse(JSON.stringify(this.doc)),
       name: this.doc.name,
       savedAt: Date.now(),
+      ...(this.projectCreatedAt ? { createdAt: this.projectCreatedAt } : {}),
     };
     try {
       await (this.recoverySink ?? putRecovery)(snapshot);
@@ -424,13 +451,12 @@ export class PressApp {
   /** Upsert the working document into the local project library. */
   async persistCurrentProject(force = false, preSerialized?: unknown): Promise<void> {
     if (!this.dirty && !force) return;
-    if (!this.currentProjectId) {
-      this.currentProjectId = uid("proj");
-      this.projectCreatedAt = Date.now();
-    }
+    // Same identity the recovery record uses (ensureDocIdentity mints it once
+    // and both sinks share it), so a project and its crash snapshot agree.
+    const id = this.ensureDocIdentity();
     const now = Date.now();
     const record: ProjectRecord = {
-      id: this.currentProjectId,
+      id,
       name: this.doc.name || "Untitled",
       // Shared tick snapshot when provided (see autosaveTick); may trail edits
       // that landed mid-write by one tick — the rescheduled tick re-persists.
@@ -522,6 +548,9 @@ export class PressApp {
 
   async deleteProject(id: string): Promise<void> {
     await projects().remove(id);
+    // Deleting a project deletes its crash snapshot too, so a deleted document
+    // can never resurrect through the recovery path (VIRO-0011).
+    await deleteRecovery(id);
     if (id === this.currentProjectId) {
       this.currentProjectId = null;
     }
@@ -529,29 +558,49 @@ export class PressApp {
   }
 
   /**
-   * Read any recovery snapshot left by a previous session. Only surfaces a
-   * snapshot that predates this session's edits, so a normal fresh load shows
-   * no prompt.
+   * Read every recovery snapshot left by previous sessions. Only snapshots
+   * that predate this session's edits surface, so a normal fresh load shows
+   * no prompt; the newest record heads `pendingRecoveries` and prompts.
    */
   private async loadPendingRecovery(): Promise<void> {
     if (this.dirty) return;
     try {
-      const snap = await getRecovery();
-      if (snap && snap.doc) this.pendingRecovery = snap;
+      const snaps = (await listRecovery()).filter((s) => s && s.doc);
+      this.pendingRecoveries = snaps;
+      this.pendingRecovery = snaps[0] ?? null;
     } catch {
+      this.pendingRecoveries = [];
       this.pendingRecovery = null;
     }
   }
 
-  /** Adopt the recovery snapshot as the working document. */
-  restoreRecovery(): boolean {
-    const snap = this.pendingRecovery;
+  /**
+   * Adopt a recovery snapshot as the working document. With `id`, restores
+   * that specific document's record; without, the prompted (newest) one —
+   * the shape the existing recover-bar handlers and tests use.
+   *
+   * Identity (VIRO-0011): a `proj_*` record restores AS that project, so the
+   * next autosave re-keys to the same identity and the library record resumes.
+   * The legacy `"current"` key is a slot name, not an identity — a legacy
+   * restore starts under a freshly minted id and never adopts the key.
+   */
+  restoreRecovery(id?: string): boolean {
+    const snap = id ? this.pendingRecoveries.find((s) => s.id === id) ?? null : this.pendingRecovery;
     if (!snap || !snap.doc) return false;
     try {
       const doc = JSON.parse(JSON.stringify(snap.doc)) as PressDocument;
       migrateDocument(doc);
       this.commit("Recover unsaved work", doc);
-      this.pendingRecovery = null;
+      if (snap.id.startsWith("proj_")) {
+        this.currentProjectId = snap.id;
+        this.projectCreatedAt = snap.createdAt ?? 0;
+      } else {
+        this.currentProjectId = uid("proj");
+        this.projectCreatedAt = Date.now();
+      }
+      // The restored record leaves the prompt; the bar shows the next one.
+      this.pendingRecoveries = this.pendingRecoveries.filter((s) => s.id !== snap.id);
+      this.pendingRecovery = this.pendingRecoveries[0] ?? null;
       this.status = `Recovered “${doc.name}” from ${new Date(snap.savedAt).toLocaleString()}`;
       this.emit();
       return true;
@@ -562,10 +611,31 @@ export class PressApp {
     }
   }
 
-  /** Discard the recovery snapshot; the user has chosen to start clean. */
-  discardRecovery(): void {
+  /**
+   * Discard one recovery snapshot — with `id`, that document's record;
+   * without, the prompted (newest) one. Any remaining records keep prompting,
+   * newest first.
+   */
+  discardRecovery(id?: string): void {
+    const target = id ?? this.pendingRecovery?.id ?? null;
+    if (target) {
+      this.pendingRecoveries = this.pendingRecoveries.filter((s) => s.id !== target);
+      void deleteRecovery(target);
+    }
+    this.pendingRecovery = this.pendingRecoveries[0] ?? null;
+    this.emit();
+  }
+
+  /**
+   * Discard every recovery record in the store and clear the prompt state.
+   * Used by diagnostics/tests for a clean slate across all document identities.
+   */
+  async discardAllRecoveries(): Promise<void> {
+    this.pendingRecoveries = [];
     this.pendingRecovery = null;
-    void deleteRecovery();
+    for (const snap of await listRecovery()) {
+      await deleteRecovery(snap.id);
+    }
     this.emit();
   }
 
