@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 389,
-  "updated_at": "2026-08-28T21:54:29.608Z",
+  "revision": 390,
+  "updated_at": "2026-08-28T21:55:15.129Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -1630,12 +1630,12 @@
         "VIRO-0142"
       ],
       "critic_needed": true,
-      "stage": "verify",
-      "status": "VERIFY",
-      "assigned_agent": "zcode-verify-pc12",
-      "assigned_role": "verifier",
+      "stage": "critic",
+      "status": "QUEUED",
+      "assigned_agent": null,
+      "assigned_role": null,
       "work_branch": "agent/viro-0143/zcode-gov-audit-pc1",
-      "heartbeat_at": "2026-08-28T21:52:09.946Z",
+      "heartbeat_at": null,
       "attempts": 1,
       "evidence": [
         {
@@ -1685,18 +1685,49 @@
           "by": "zcode-textframe-pc2",
           "item": "npx tsc --noEmit exit 0; npm run test:unit 316/316 exit 0; node node_modules/vite/bin/vite.js build exit 0. ui-commands.ts and tests/ui-commands.test.mjs still untouched (off-lease); autoSize command remains RETURNED_TO_GOVERNOR with spec frame.autoFitHeight in docs/agents/deliveries/VIRO-0143.json",
           "at": "2026-08-28T21:47:29.313Z"
+        },
+        {
+          "stage": "verify",
+          "by": "zcode-verify-pc12",
+          "item": "attempt2 PASS: original verifier probe 6/6 on 94fd70a (had 1 fail on rejected ebf9da4)",
+          "at": "2026-08-28T21:55:15.127Z"
+        },
+        {
+          "stage": "verify",
+          "by": "zcode-verify-pc12",
+          "item": "discrimination re-run independently by verifier: new text-frame-inset-geometry tests on rejected ebf9da4 fail exactly the 2 align-crossings (right-edge 358 vs 390, center 195 vs 210) and pass 8/8 fixed (right delta -10 exact, center 210.0 exact)",
+          "at": "2026-08-28T21:55:15.129Z"
+        },
+        {
+          "stage": "verify",
+          "by": "zcode-verify-pc12",
+          "item": "fix reviewed: alignPen(lineW,origin,x0,measure,align) splits pen origin from indent at both call sites, zero-inset arithmetic reduces to pre-change",
+          "at": "2026-08-28T21:55:15.129Z"
+        },
+        {
+          "stage": "verify",
+          "by": "zcode-verify-pc12",
+          "item": "gates re-run by verifier on 94fd70a: tsc 0, unit 316/316, text-frame 27/27, chrome 16/16, build 0",
+          "at": "2026-08-28T21:55:15.129Z"
+        },
+        {
+          "stage": "verify",
+          "by": "zcode-verify-pc12",
+          "item": "zero-inset golden: baseline JSON byte-unchanged ebf9da4..94fd70a and 6/6 SHA-256 raw-RGBA bit-identical re-reproduced independently from base 5014465",
+          "at": "2026-08-28T21:55:15.129Z"
         }
       ],
       "last_handoff": {
-        "from": "build",
-        "to": "verify",
-        "by": "zcode-textframe-pc2",
-        "at": "2026-08-28T21:47:29.313Z",
+        "from": "verify",
+        "to": "critic",
+        "by": "zcode-verify-pc12",
+        "at": "2026-08-28T21:55:15.129Z",
         "evidence": [
-          "REJECTION FIX commits 6ff215b+94fd70a on agent/viro-0143/zcode-gov-audit-pc1 (base 5014465): alignPen(lineW, origin, x0, measure, align) now splits pen origin from indent — room/slack reduce by x0 alone (src/engine/type.ts, both call sites setLine ~L607 + emitStops ~L663); right-align pen = originX+measure-lineW (ink maxX 390=W-right, was 358 with -40 delta), center = content-box center 210 (was 195, -left/2), justify slack restored to measure-x0-lineW; zero-inset arithmetic unchanged bit-for-bit",
-          "NEW tests/text-frame-inset-geometry.test.mjs 8 tests: align {left,right,center} x inset {30,10,20,15} exact ink edges (30/390/210) + exact data-level caret deltas (+30/-10/+10); ports verifier probe: exact center/bottom valign dy + ink midpoint tracking, invalid-inset entries (-5/NaN/undefined/Infinity) clamp to zero, autoSize height h==heightPx+bottom-inset exact and refits overflow-free. DISCRIMINATION PROVEN: stashed fix -> exactly right+center crossing tests fail on rejected engine, left control passes (6/8); unstashed -> 8/8",
-          "full text-frame suite 27/27 (19 attempt-1 + 8 new) incl. 6-case golden raw-RGBA SHA-256 baseline bit-identical (zero-inset pixels did not move); regenerated screenshots byte-identical (clean git status)",
-          "npx tsc --noEmit exit 0; npm run test:unit 316/316 exit 0; node node_modules/vite/bin/vite.js build exit 0. ui-commands.ts and tests/ui-commands.test.mjs still untouched (off-lease); autoSize command remains RETURNED_TO_GOVERNOR with spec frame.autoFitHeight in docs/agents/deliveries/VIRO-0143.json"
+          "attempt2 PASS: original verifier probe 6/6 on 94fd70a (had 1 fail on rejected ebf9da4)",
+          "discrimination re-run independently by verifier: new text-frame-inset-geometry tests on rejected ebf9da4 fail exactly the 2 align-crossings (right-edge 358 vs 390, center 195 vs 210) and pass 8/8 fixed (right delta -10 exact, center 210.0 exact)",
+          "fix reviewed: alignPen(lineW,origin,x0,measure,align) splits pen origin from indent at both call sites, zero-inset arithmetic reduces to pre-change",
+          "gates re-run by verifier on 94fd70a: tsc 0, unit 316/316, text-frame 27/27, chrome 16/16, build 0",
+          "zero-inset golden: baseline JSON byte-unchanged ebf9da4..94fd70a and 6/6 SHA-256 raw-RGBA bit-identical re-reproduced independently from base 5014465"
         ]
       },
       "rejection": null,
@@ -1920,13 +1951,6 @@
       "session": "82916b79-821b-41dc-9a84-e0f1a5f90af7",
       "packet": "VIRO-0146",
       "heartbeat_at": "2026-08-28T21:42:18.838Z"
-    },
-    "zcode-verify-pc12": {
-      "role": "verifier",
-      "machine": "pc-cloud1",
-      "session": "7d582a52-7fbe-4354-a69e-cf7f1d44abc3",
-      "packet": "VIRO-0143",
-      "heartbeat_at": "2026-08-28T21:52:09.946Z"
     }
   },
   "leases": {
@@ -1939,8 +1963,8 @@
         "docs/agents/deliveries/VIRO-0143.json"
       ],
       "acquired_at": "2026-08-28T19:25:06.822Z",
-      "current_agent": "zcode-verify-pc12",
-      "current_stage": "verify",
+      "current_agent": null,
+      "current_stage": "critic",
       "current_session": "7d582a52-7fbe-4354-a69e-cf7f1d44abc3",
       "heartbeat_at": "2026-08-28T21:52:09.946Z"
     },
@@ -1974,12 +1998,6 @@
     }
   },
   "events": [
-    {
-      "at": "2026-08-28T07:57:45.830Z",
-      "type": "agent.heartbeat",
-      "agent": "zcode-perf-pc2",
-      "packet": "VIRO-0012"
-    },
     {
       "at": "2026-08-28T08:07:03.528Z",
       "type": "agent.heartbeat",
@@ -4079,6 +4097,16 @@
       "evidence": [
         "landed via LOCAL merge under owner order 2026-08-28 (candidate 65dc905, verifier PASS 23/23 two-document probe); identity suites re-run green on merged main"
       ]
+    },
+    {
+      "at": "2026-08-28T21:55:15.129Z",
+      "type": "packet.advanced",
+      "packet": "VIRO-0143",
+      "from": "verify",
+      "to": "critic",
+      "by": "zcode-verify-pc12",
+      "machine": "pc-cloud1",
+      "session": "7d582a52-7fbe-4354-a69e-cf7f1d44abc3"
     }
   ]
 }
