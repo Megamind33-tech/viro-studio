@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 357,
-  "updated_at": "2026-08-28T20:10:52.011Z",
+  "revision": 358,
+  "updated_at": "2026-08-28T20:11:59.780Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -1372,11 +1372,11 @@
       ],
       "critic_needed": false,
       "stage": "release",
-      "status": "QUEUED",
-      "assigned_agent": null,
-      "assigned_role": null,
+      "status": "RELEASE",
+      "assigned_agent": "zcode-release-pc1",
+      "assigned_role": "release-manager",
       "work_branch": "agent/viro-0141/zcode-gov-audit-pc1",
-      "heartbeat_at": null,
+      "heartbeat_at": "2026-08-28T20:11:59.780Z",
       "attempts": 0,
       "evidence": [
         {
@@ -1468,7 +1468,9 @@
           "independent bus probe tests/vector-node-verify-probe.mjs ALL PASS: bus subtract yields 2-contour ring (nodes empty), appendNode rejected with CommandError naming path.insertNode and revision+history+doc untouched, rejected moveNode also leaves revision untouched, bus moveNode pixel-diff localises to old+new anchors with EvenOdd hole intact, bus undo/redo rasters byte-identical, JSON save/reopen structure+pixel identical with validateDocument clean at every stage, closeContour refuses opening last closed contour of filled layer"
         ]
       },
-      "rejection": null
+      "rejection": null,
+      "assigned_machine": "pc-cloud1",
+      "assigned_session": "e7bff6e8-cd9c-4df4-88f3-178b54a703b6"
     },
     "VIRO-0142": {
       "id": "VIRO-0142",
@@ -1702,6 +1704,13 @@
       "session": "09cc77df-6a55-4bec-a989-ed5242198ade",
       "packet": "VIRO-0143",
       "heartbeat_at": "2026-08-28T20:10:52.011Z"
+    },
+    "zcode-release-pc1": {
+      "role": "release-manager",
+      "machine": "pc-cloud1",
+      "session": "e7bff6e8-cd9c-4df4-88f3-178b54a703b6",
+      "packet": "VIRO-0141",
+      "heartbeat_at": "2026-08-28T20:11:59.780Z"
     }
   },
   "leases": {
@@ -1715,9 +1724,9 @@
         "tests/vector-node-*"
       ],
       "acquired_at": "2026-08-28T19:23:54.933Z",
-      "current_agent": null,
+      "current_agent": "zcode-release-pc1",
       "current_stage": "release",
-      "heartbeat_at": "2026-08-28T19:58:31.320Z"
+      "current_session": "e7bff6e8-cd9c-4df4-88f3-178b54a703b6"
     },
     "VIRO-0143": {
       "packet": "VIRO-0143",
@@ -1762,12 +1771,6 @@
     }
   },
   "events": [
-    {
-      "at": "2026-08-28T05:40:33.434Z",
-      "type": "agent.heartbeat",
-      "agent": "zcode-perf-pc1",
-      "packet": "VIRO-0012"
-    },
     {
       "at": "2026-08-28T05:42:24.469Z",
       "type": "packet.reconciled_from_manifest",
@@ -3814,6 +3817,15 @@
       "packet": "VIRO-0143",
       "session": "09cc77df-6a55-4bec-a989-ed5242198ade",
       "machine": "pc-cloud1"
+    },
+    {
+      "at": "2026-08-28T20:11:59.780Z",
+      "type": "packet.claimed",
+      "packet": "VIRO-0141",
+      "agent": "zcode-release-pc1",
+      "role": "release-manager",
+      "machine": "pc-cloud1",
+      "session": "e7bff6e8-cd9c-4df4-88f3-178b54a703b6"
     }
   ]
 }
