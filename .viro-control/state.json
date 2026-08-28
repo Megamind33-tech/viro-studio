@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 359,
-  "updated_at": "2026-08-28T20:12:24.262Z",
+  "revision": 360,
+  "updated_at": "2026-08-28T20:13:13.480Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -1371,8 +1371,8 @@
         "VIRO-0140"
       ],
       "critic_needed": false,
-      "stage": "release",
-      "status": "RELEASE",
+      "stage": "done",
+      "status": "RECONCILED",
       "assigned_agent": null,
       "assigned_role": null,
       "work_branch": "agent/viro-0141/zcode-gov-audit-pc1",
@@ -1468,17 +1468,21 @@
           "by": "zcode-release-pc1",
           "item": "critic NOT_APPLICABLE per manifest: command/engine layer, Anchor-addressable",
           "at": "2026-08-28T20:12:24.259Z"
+        },
+        {
+          "stage": "reconcile",
+          "by": "governor",
+          "item": "landed via LOCAL merge under owner order 2026-08-28 (candidate 5b74002, verifier PASS 8-step bus probe); suites re-run green on merged main",
+          "at": "2026-08-28T20:13:13.470Z"
         }
       ],
       "last_handoff": {
-        "from": "release",
-        "to": "merge-gate",
-        "by": "zcode-release-pc1",
-        "at": "2026-08-28T20:12:24.259Z",
+        "from": "historical",
+        "to": "done",
+        "by": "governor",
+        "at": "2026-08-28T20:13:13.470Z",
         "evidence": [
-          "PR binds approval to head SHA 5b74002731aff9d3a0a8c2a7eb531ee54cd97395",
-          "independent verifier zcode-verify-pc10b: scope clean 7 files, 8-step bus probe all pass, unit 336/336, chrome 16/16, build 0",
-          "critic NOT_APPLICABLE per manifest: command/engine layer, Anchor-addressable"
+          "landed via LOCAL merge under owner order 2026-08-28 (candidate 5b74002, verifier PASS 8-step bus probe); suites re-run green on merged main"
         ]
       },
       "rejection": null,
@@ -1736,20 +1740,6 @@
     }
   },
   "leases": {
-    "VIRO-0141": {
-      "packet": "VIRO-0141",
-      "scope": [
-        "src/document/ops.ts",
-        "src/document/ui-commands.ts",
-        "src/document/boolean-ops.ts",
-        "docs/agents/deliveries/VIRO-0141.json",
-        "tests/vector-node-*"
-      ],
-      "acquired_at": "2026-08-28T19:23:54.933Z",
-      "current_agent": null,
-      "current_stage": "release",
-      "current_session": "e7bff6e8-cd9c-4df4-88f3-178b54a703b6"
-    },
     "VIRO-0143": {
       "packet": "VIRO-0143",
       "scope": [
@@ -1793,11 +1783,6 @@
     }
   },
   "events": [
-    {
-      "at": "2026-08-28T05:42:24.472Z",
-      "type": "packet.imported",
-      "packet": "VIRO-0140"
-    },
     {
       "at": "2026-08-28T05:42:24.472Z",
       "type": "packet.imported",
@@ -3853,6 +3838,15 @@
       "session": "e7bff6e8-cd9c-4df4-88f3-178b54a703b6",
       "pr": 25,
       "head_sha": "5b74002731aff9d3a0a8c2a7eb531ee54cd97395"
+    },
+    {
+      "at": "2026-08-28T20:13:13.480Z",
+      "type": "packet.reconciled",
+      "packet": "VIRO-0141",
+      "by": "governor",
+      "evidence": [
+        "landed via LOCAL merge under owner order 2026-08-28 (candidate 5b74002, verifier PASS 8-step bus probe); suites re-run green on merged main"
+      ]
     }
   ]
 }
