@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 228,
-  "updated_at": "2026-08-28T16:57:44.898Z",
+  "revision": 229,
+  "updated_at": "2026-08-28T16:57:50.419Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -596,8 +596,8 @@
       ],
       "dependencies": [],
       "critic_needed": false,
-      "stage": "verify",
-      "status": "BLOCKED",
+      "stage": "done",
+      "status": "RECONCILED",
       "assigned_agent": null,
       "assigned_role": null,
       "work_branch": "agent/viro-0013/zcode-gov-audit-pc1",
@@ -651,29 +651,24 @@
           "by": "zcode-import-pc1",
           "item": "minimal fixes inside src/import/** only: errors.ts typed ImportParseError + guards; psd.ts readPsd wrap + 30000px dimension validation + iterative stack walk; vdj.ts hostile-shape/dimension/count hardening; pressjson.ts guarded openJsonDocument boundary — app.ts openBytes wiring left cross-domain for VIRO-0014 (recorded as new_debt in docs/agents/deliveries/VIRO-0013.json builder/delta sections)",
           "at": "2026-08-28T10:35:12.907Z"
+        },
+        {
+          "stage": "reconcile",
+          "by": "governor",
+          "item": "landed via LOCAL merge 3230eb0 (candidate 8cba514; fuzz 8/8 x2 determinism re-confirmed by coordinator); sweep green",
+          "at": "2026-08-28T16:57:50.417Z"
         }
       ],
       "last_handoff": {
-        "from": "build",
-        "to": "verify",
-        "by": "zcode-import-pc1",
-        "at": "2026-08-28T10:35:12.907Z",
+        "from": "historical",
+        "to": "done",
+        "by": "governor",
+        "at": "2026-08-28T16:57:50.417Z",
         "evidence": [
-          "commit 8cba514 on agent/viro-0013/zcode-gov-audit-pc1 (pushed; based on origin/main 9f0ed70)",
-          "tests/import-fuzz.test.mjs 8/8 pass run twice with byte-identical output modulo wall-clock — determinism digests psd 4b23f3882c30b549f9514602cb48a5c29e6f9e844fa719075d6cf71e01848526 / json dc0a3256a642a48aa525c19031660b70d102f2d35cd7401e93f8ec21b8c8a51d",
-          "versioned 66-case corpus (corpusVersion 1, seed 20260827) with SHA-256 corpusDigest 043a5084791654d0a2392698a46c26417b091aa50d35b35e7ee8ead8180f0c63 matching tests/fixtures/import-corpus/manifest.json; categories: zero-length, truncated, wrong magic bytes, oversized dimensions/counts, deep nesting, hostile keys/prototype pollution, malformed JSON, valid baselines",
-          "boundary guarantee proven: every malformed input yields a document or typed ImportParseError; zero uncaught escapes across documentFromPsd/documentFromVdj/openJsonDocument incl. seeded 400+400 mutation fuzz; Object.prototype pollution asserted absent around every hostile case",
-          "valid-import non-regression: npm run test:unit 316/316; real ag-psd-written layered/group PSD round-trips through documentFromPsd to 3 layers with group parentage and pixel-true PNG assets (zlib-decoded in-test)",
-          "npx tsc --noEmit clean; npm run build green (client + electron main + preload)",
-          "minimal fixes inside src/import/** only: errors.ts typed ImportParseError + guards; psd.ts readPsd wrap + 30000px dimension validation + iterative stack walk; vdj.ts hostile-shape/dimension/count hardening; pressjson.ts guarded openJsonDocument boundary — app.ts openBytes wiring left cross-domain for VIRO-0014 (recorded as new_debt in docs/agents/deliveries/VIRO-0013.json builder/delta sections)"
+          "landed via LOCAL merge 3230eb0 (candidate 8cba514; fuzz 8/8 x2 determinism re-confirmed by coordinator); sweep green"
         ]
       },
-      "rejection": {
-        "by": "governor",
-        "stage": "verify",
-        "reason": "verifier session died in provider 5h quota wall; builder PASS candidate 8cba514; coordinator re-executed gates green (tsc, fuzz 8/8 x2 determinism, unit 316/316 on merged main); OWNER ORDER: merged to local main commit 3230eb0",
-        "at": "2026-08-28T16:19:03.962Z"
-      }
+      "rejection": null
     },
     "VIRO-0014": {
       "id": "VIRO-0014",
@@ -2627,6 +2622,15 @@
       "by": "governor",
       "evidence": [
         "landed via LOCAL merge 363c133 (candidate 00f6341, verifier PASS); sweep green"
+      ]
+    },
+    {
+      "at": "2026-08-28T16:57:50.419Z",
+      "type": "packet.reconciled",
+      "packet": "VIRO-0013",
+      "by": "governor",
+      "evidence": [
+        "landed via LOCAL merge 3230eb0 (candidate 8cba514; fuzz 8/8 x2 determinism re-confirmed by coordinator); sweep green"
       ]
     }
   ]
