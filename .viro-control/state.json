@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 382,
-  "updated_at": "2026-08-28T21:48:30.152Z",
+  "revision": 383,
+  "updated_at": "2026-08-28T21:49:33.618Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -419,12 +419,12 @@
         "VIRO-0010"
       ],
       "critic_needed": false,
-      "stage": "verify",
-      "status": "VERIFY",
-      "assigned_agent": "zcode-verify-pc13",
-      "assigned_role": "verifier",
+      "stage": "release",
+      "status": "QUEUED",
+      "assigned_agent": null,
+      "assigned_role": null,
       "work_branch": "agent/viro-0011/zcode-gov-audit-pc1",
-      "heartbeat_at": "2026-08-28T21:44:53.702Z",
+      "heartbeat_at": null,
       "attempts": 0,
       "evidence": [
         {
@@ -462,19 +462,42 @@
           "by": "zcode-identity-pc2",
           "item": "regression: tests/recovery.spec.mjs assertions byte-unchanged, 13/13 green; tests/projects.spec.mjs 11/11 green; src/chrome/desk.ts untouched (recover-bar pendingRecovery head contract preserved, zero chrome changes)",
           "at": "2026-08-28T20:10:21.077Z"
+        },
+        {
+          "stage": "verify",
+          "by": "zcode-verify-pc13",
+          "item": "scope: 65dc905 diff = exactly 5 leased files (src/app.ts, src/library/store.ts, tests/recovery-identity.spec.mjs, tests/recovery-identity.test.mjs, deliveries/VIRO-0011.json)",
+          "at": "2026-08-28T21:49:33.608Z"
+        },
+        {
+          "stage": "verify",
+          "by": "zcode-verify-pc13",
+          "item": "independent two-document probe 23/23 on own vite :5202 via real IndexedDB (dirty writeRecovery mints proj_ identity; persistCurrentProject reuses SAME id; both snapshots distinct + intact; reload head = newest B; restoreRecovery(idA) restores content + identity + createdAt; deleteProject removes project+recovery and subsequent edit mints fresh id, idA never reappears; legacy 'current' record restores under fresh proj_ id; no-arg getRecovery newest-first)",
+          "at": "2026-08-28T21:49:33.618Z"
+        },
+        {
+          "stage": "verify",
+          "by": "zcode-verify-pc13",
+          "item": "gates: recovery-identity unit 5/5, recovery-identity.spec.mjs 16/16, recovery.spec.mjs byte-unchanged vs base 13/13, projects.spec.mjs 11/11, test:chrome 16/16 (a11y 6 + chrome 5 + pdf-compound 5, external config on :5202; stock config hardcodes occupied 5173), test:unit 316/316, tsc --noEmit 0, vite build 0",
+          "at": "2026-08-28T21:49:33.618Z"
+        },
+        {
+          "stage": "verify",
+          "by": "zcode-verify-pc13",
+          "item": "schema: DB viro-press-library v4 unchanged on base and candidate, RecoverySnapshot gain additive (optional createdAt, id widened to string), no chrome/index.html changes",
+          "at": "2026-08-28T21:49:33.618Z"
         }
       ],
       "last_handoff": {
-        "from": "build",
-        "to": "verify",
-        "by": "zcode-identity-pc2",
-        "at": "2026-08-28T20:10:21.077Z",
+        "from": "verify",
+        "to": "release",
+        "by": "zcode-verify-pc13",
+        "at": "2026-08-28T21:49:33.618Z",
         "evidence": [
-          "candidate 65dc905bc447b3e592065f5e78c781d01384d837 on agent/viro-0011/zcode-gov-audit-pc1 (based on main 50144659); commits e60a206 impl, 1866158 tests, 65dc905 manifest; scope strictly src/app.ts + src/library/store.ts + tests/recovery-identity-* + deliveries/VIRO-0011.json",
-          "before-state RED proof: tests/recovery-identity.test.mjs 0/5 on unmodified main (src drafts stashed); with implementation 5/5 green",
-          "browser E2E VIRO_URL=http://127.0.0.1:5178 node tests/recovery-identity.spec.mjs: 16/16 checks, zero page errors (real IndexedDB: two docs independent snapshots, boot lists both pending newest-first, restoreRecovery(idA) restores content+identity+createdAt, deleteProject removes project+recovery and deleted identity never reused)",
-          "npx tsc --noEmit exit 0; npm run test:unit 316/316; npm run build exit 0",
-          "regression: tests/recovery.spec.mjs assertions byte-unchanged, 13/13 green; tests/projects.spec.mjs 11/11 green; src/chrome/desk.ts untouched (recover-bar pendingRecovery head contract preserved, zero chrome changes)"
+          "scope: 65dc905 diff = exactly 5 leased files (src/app.ts, src/library/store.ts, tests/recovery-identity.spec.mjs, tests/recovery-identity.test.mjs, deliveries/VIRO-0011.json)",
+          "independent two-document probe 23/23 on own vite :5202 via real IndexedDB (dirty writeRecovery mints proj_ identity; persistCurrentProject reuses SAME id; both snapshots distinct + intact; reload head = newest B; restoreRecovery(idA) restores content + identity + createdAt; deleteProject removes project+recovery and subsequent edit mints fresh id, idA never reappears; legacy 'current' record restores under fresh proj_ id; no-arg getRecovery newest-first)",
+          "gates: recovery-identity unit 5/5, recovery-identity.spec.mjs 16/16, recovery.spec.mjs byte-unchanged vs base 13/13, projects.spec.mjs 11/11, test:chrome 16/16 (a11y 6 + chrome 5 + pdf-compound 5, external config on :5202; stock config hardcodes occupied 5173), test:unit 316/316, tsc --noEmit 0, vite build 0",
+          "schema: DB viro-press-library v4 unchanged on base and candidate, RecoverySnapshot gain additive (optional createdAt, id widened to string), no chrome/index.html changes"
         ]
       },
       "rejection": null,
@@ -1854,13 +1877,6 @@
       "packet": "VIRO-0017",
       "heartbeat_at": "2026-08-28T21:31:01.023Z"
     },
-    "zcode-verify-pc13": {
-      "role": "verifier",
-      "machine": "pc-cloud1",
-      "session": "b8bf70cd-e98b-4765-8116-fb04d0f6a0ab",
-      "packet": "VIRO-0011",
-      "heartbeat_at": "2026-08-28T21:44:53.702Z"
-    },
     "zcode-effects-pc1": {
       "role": "builder",
       "machine": "pc-cloud1",
@@ -1892,8 +1908,8 @@
         "tests/recovery-identity-*"
       ],
       "acquired_at": "2026-08-28T19:32:14.640Z",
-      "current_agent": "zcode-verify-pc13",
-      "current_stage": "verify",
+      "current_agent": null,
+      "current_stage": "release",
       "current_session": "b8bf70cd-e98b-4765-8116-fb04d0f6a0ab",
       "heartbeat_at": "2026-08-28T21:44:53.702Z"
     },
@@ -1927,12 +1943,6 @@
     }
   },
   "events": [
-    {
-      "at": "2026-08-28T07:22:12.238Z",
-      "type": "agent.heartbeat",
-      "agent": "zcode-perf-pc2",
-      "packet": "VIRO-0012"
-    },
     {
       "at": "2026-08-28T07:34:33.340Z",
       "type": "agent.heartbeat",
@@ -4013,6 +4023,16 @@
       "at": "2026-08-28T21:48:30.152Z",
       "type": "packet.imported",
       "packet": "VIRO-0148"
+    },
+    {
+      "at": "2026-08-28T21:49:33.618Z",
+      "type": "packet.advanced",
+      "packet": "VIRO-0011",
+      "from": "verify",
+      "to": "release",
+      "by": "zcode-verify-pc13",
+      "machine": "pc-cloud1",
+      "session": "b8bf70cd-e98b-4765-8116-fb04d0f6a0ab"
     }
   ]
 }
