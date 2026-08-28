@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 336,
-  "updated_at": "2026-08-28T19:43:25.238Z",
+  "revision": 337,
+  "updated_at": "2026-08-28T19:45:56.796Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -1033,12 +1033,12 @@
       ],
       "dependencies": [],
       "critic_needed": false,
-      "stage": "verify",
-      "status": "VERIFY",
-      "assigned_agent": "zcode-verify-pc9b",
-      "assigned_role": "verifier",
+      "stage": "release",
+      "status": "QUEUED",
+      "assigned_agent": null,
+      "assigned_role": null,
       "work_branch": "agent/viro-0019/zcode-gov-audit-pc1",
-      "heartbeat_at": "2026-08-28T19:43:25.238Z",
+      "heartbeat_at": null,
       "attempts": 0,
       "evidence": [
         {
@@ -1070,18 +1070,56 @@
           "by": "zcode-govtool-pc2",
           "item": "transports identical: both share all identity logic via orchestrator-core; REST parses (node --check) but was not live-tested without GITHUB_TOKEN — stated honestly; git transport proven live end-to-end; candidate SHA e4cf09752e10bf59729a95bf41a3386c1fef5f31 pushed to agent/viro-0019/zcode-gov-audit-pc1",
           "at": "2026-08-28T17:31:27.515Z"
+        },
+        {
+          "stage": "verify",
+          "by": "zcode-verify-pc9b",
+          "item": "scope clean: git diff c659a6a..e4cf097 = 8 files 727+/31-, all inside leased paths",
+          "at": "2026-08-28T19:45:56.734Z"
+        },
+        {
+          "stage": "verify",
+          "by": "zcode-verify-pc9b",
+          "item": "unit 23/23 pass 0 fail via node --test scripts/lib/; scripts/lib/package.json shim benign (private:true, no deps, main=test entry)",
+          "at": "2026-08-28T19:45:56.795Z"
+        },
+        {
+          "stage": "verify",
+          "by": "zcode-verify-pc9b",
+          "item": "new-code live: claim/heartbeat/brief on real viro-agent-control with session c9d6a0ff and machine pc-cloud1; check conflict-free pre and post",
+          "at": "2026-08-28T19:45:56.795Z"
+        },
+        {
+          "stage": "verify",
+          "by": "zcode-verify-pc9b",
+          "item": "old-code live: primary repo @5014465 (pre-merge, no candidate in history) check+status read new-schema state clean; legacy-shape heartbeats zcode-textframe-pc2@19:29:19Z zcode-verify-pc10b@19:29:50Z zcode-verify-pc11@19:18:09Z (session null) accepted on new state",
+          "at": "2026-08-28T19:45:56.795Z"
+        },
+        {
+          "stage": "verify",
+          "by": "zcode-verify-pc9b",
+          "item": "duplicate refusal: re-claim same agent + decoy session 11111111 exited 1 'duplicate live identity refused ... unexpired heartbeat (2026-08-28T19:30:38.984Z, TTL 30m)'; revision 331->333 fully attributed to other workers' heartbeat commits, decoy token absent from state, VIRO-0019 assignment byte-identical = zero mutation",
+          "at": "2026-08-28T19:45:56.795Z"
+        },
+        {
+          "stage": "verify",
+          "by": "zcode-verify-pc9b",
+          "item": "node --check OK on viro-orchestrator.mjs, viro-release.mjs, viro-orchestrator-git.mjs, orchestrator-core.mjs; identity fields verified in live events/brief/board; advance itself exercises new session-bound advance path",
+          "at": "2026-08-28T19:45:56.795Z"
         }
       ],
       "last_handoff": {
-        "from": "build",
-        "to": "verify",
-        "by": "zcode-govtool-pc2",
-        "at": "2026-08-28T17:31:27.515Z",
+        "from": "verify",
+        "to": "release",
+        "by": "zcode-verify-pc9b",
+        "at": "2026-08-28T19:45:56.795Z",
         "evidence": [
-          "compat fixture proof: constructed pre-change state fixture operated by new code (legacyState tests in scripts/lib/orchestrator-core.test.mjs) PLUS live proof — pre-merge old-code worker (primary repo at main 72b05f0) heartbeated the new session-bound VIRO-0019 assignment without --session and all identity fields survived the old-code write",
-          "duplicate-refusal: unit IdentityConflictError coverage + live dry-run on real viro-agent-control — re-claim of zcode-govtool-pc2/VIRO-0019 with a different session token while heartbeat unexpired exited 1 'duplicate live identity refused' with zero state mutation; wrong-session heartbeat and throwaway claims (zcode-0019-dryrun-a, zcode-0019-dryrun-b) refused live too",
-          "core unit tests 23/23 via node --test scripts/lib/ covering claim/lease/conflict/stale(30-min TTL)/reap, scopesOverlap disjoint prefixes (tests/autosave-* vs tests/import-*), roleCanServe per stage, depsSatisfied",
-          "transports identical: both share all identity logic via orchestrator-core; REST parses (node --check) but was not live-tested without GITHUB_TOKEN — stated honestly; git transport proven live end-to-end; candidate SHA e4cf09752e10bf59729a95bf41a3386c1fef5f31 pushed to agent/viro-0019/zcode-gov-audit-pc1"
+          "scope clean: git diff c659a6a..e4cf097 = 8 files 727+/31-, all inside leased paths",
+          "unit 23/23 pass 0 fail via node --test scripts/lib/; scripts/lib/package.json shim benign (private:true, no deps, main=test entry)",
+          "new-code live: claim/heartbeat/brief on real viro-agent-control with session c9d6a0ff and machine pc-cloud1; check conflict-free pre and post",
+          "old-code live: primary repo @5014465 (pre-merge, no candidate in history) check+status read new-schema state clean; legacy-shape heartbeats zcode-textframe-pc2@19:29:19Z zcode-verify-pc10b@19:29:50Z zcode-verify-pc11@19:18:09Z (session null) accepted on new state",
+          "duplicate refusal: re-claim same agent + decoy session 11111111 exited 1 'duplicate live identity refused ... unexpired heartbeat (2026-08-28T19:30:38.984Z, TTL 30m)'; revision 331->333 fully attributed to other workers' heartbeat commits, decoy token absent from state, VIRO-0019 assignment byte-identical = zero mutation",
+          "node --check OK on viro-orchestrator.mjs, viro-release.mjs, viro-orchestrator-git.mjs, orchestrator-core.mjs; identity fields verified in live events/brief/board; advance itself exercises new session-bound advance path"
         ]
       },
       "rejection": null,
@@ -1437,13 +1475,6 @@
       "packet": "VIRO-0143",
       "heartbeat_at": "2026-08-28T19:39:19.193Z"
     },
-    "zcode-verify-pc9b": {
-      "role": "verifier",
-      "machine": "pc-cloud1",
-      "session": "c9d6a0ff-4064-4611-9ffd-afefc55ddcc2",
-      "packet": "VIRO-0019",
-      "heartbeat_at": "2026-08-28T19:43:25.238Z"
-    },
     "zcode-identity-pc2": {
       "role": "builder",
       "machine": "pc-cloud1",
@@ -1508,8 +1539,8 @@
         "docs/agents/orchestrator-identity.md"
       ],
       "acquired_at": "2026-08-28T19:28:17.592Z",
-      "current_agent": "zcode-verify-pc9b",
-      "current_stage": "verify",
+      "current_agent": null,
+      "current_stage": "release",
       "current_session": "c9d6a0ff-4064-4611-9ffd-afefc55ddcc2",
       "heartbeat_at": "2026-08-28T19:43:25.238Z"
     },
@@ -1542,11 +1573,6 @@
     }
   },
   "events": [
-    {
-      "at": "2026-08-28T04:36:36.146Z",
-      "type": "packet.imported",
-      "packet": "VIRO-0019"
-    },
     {
       "at": "2026-08-28T04:38:58.685Z",
       "type": "packet.claimed",
@@ -3553,6 +3579,16 @@
       "packet": "VIRO-0019",
       "session": "c9d6a0ff-4064-4611-9ffd-afefc55ddcc2",
       "machine": "pc-cloud1"
+    },
+    {
+      "at": "2026-08-28T19:45:56.796Z",
+      "type": "packet.advanced",
+      "packet": "VIRO-0019",
+      "from": "verify",
+      "to": "release",
+      "by": "zcode-verify-pc9b",
+      "machine": "pc-cloud1",
+      "session": "c9d6a0ff-4064-4611-9ffd-afefc55ddcc2"
     }
   ]
 }
