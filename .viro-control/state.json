@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 171,
-  "updated_at": "2026-08-28T10:40:58.207Z",
+  "revision": 172,
+  "updated_at": "2026-08-28T10:41:28.158Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -502,7 +502,7 @@
       "assigned_agent": "zcode-verify-pc4",
       "assigned_role": "verifier",
       "work_branch": "agent/viro-0013/zcode-gov-audit-pc1",
-      "heartbeat_at": "2026-08-28T10:40:58.207Z",
+      "heartbeat_at": "2026-08-28T10:41:28.158Z",
       "attempts": 0,
       "evidence": [
         {
@@ -973,7 +973,7 @@
       "role": "verifier",
       "machine": "pc-cloud1",
       "packet": "VIRO-0013",
-      "heartbeat_at": "2026-08-28T10:40:58.207Z"
+      "heartbeat_at": "2026-08-28T10:41:28.158Z"
     }
   },
   "leases": {
@@ -999,7 +999,8 @@
       ],
       "acquired_at": "2026-08-28T10:21:38.619Z",
       "current_agent": "zcode-verify-pc4",
-      "current_stage": "verify"
+      "current_stage": "verify",
+      "heartbeat_at": "2026-08-28T10:41:28.158Z"
     },
     "VIRO-0016": {
       "packet": "VIRO-0016",
@@ -2154,6 +2155,12 @@
       "agent": "zcode-verify-pc4",
       "role": "verifier",
       "machine": "pc-cloud1"
+    },
+    {
+      "at": "2026-08-28T10:41:28.158Z",
+      "type": "agent.heartbeat",
+      "agent": "zcode-verify-pc4",
+      "packet": "VIRO-0013"
     }
   ]
 }
