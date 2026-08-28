@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 147,
-  "updated_at": "2026-08-28T10:22:50.246Z",
+  "revision": 148,
+  "updated_at": "2026-08-28T10:23:05.364Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -849,18 +849,25 @@
       "dependencies": [],
       "critic_needed": true,
       "stage": "audit",
-      "status": "QUEUED",
-      "assigned_agent": null,
-      "assigned_role": null,
-      "work_branch": null,
-      "heartbeat_at": null,
+      "status": "ACTIVE",
+      "assigned_agent": "zcode-gov-audit-pc1",
+      "assigned_role": "gap-auditor",
+      "work_branch": "agent/viro-0145/zcode-gov-audit-pc1",
+      "heartbeat_at": "2026-08-28T10:23:05.364Z",
       "attempts": 0,
       "evidence": [],
       "last_handoff": null,
       "rejection": null
     }
   },
-  "agents": {},
+  "agents": {
+    "zcode-gov-audit-pc1": {
+      "role": "gap-auditor",
+      "machine": "pc-cloud1",
+      "packet": "VIRO-0145",
+      "heartbeat_at": "2026-08-28T10:23:05.364Z"
+    }
+  },
   "leases": {
     "VIRO-0012": {
       "packet": "VIRO-0012",
@@ -923,6 +930,17 @@
       "acquired_at": "2026-08-28T10:22:41.241Z",
       "current_agent": null,
       "current_stage": "build"
+    },
+    "VIRO-0145": {
+      "packet": "VIRO-0145",
+      "scope": [
+        "src/export/pdf.ts",
+        "docs/agents/deliveries/VIRO-0145.json",
+        "tests/pdf-font-*"
+      ],
+      "acquired_at": "2026-08-28T10:23:05.364Z",
+      "current_agent": "zcode-gov-audit-pc1",
+      "current_stage": "audit"
     }
   },
   "events": [
@@ -1835,6 +1853,14 @@
       "from": "audit",
       "to": "build",
       "by": "zcode-gov-audit-pc1"
+    },
+    {
+      "at": "2026-08-28T10:23:05.364Z",
+      "type": "packet.claimed",
+      "packet": "VIRO-0145",
+      "agent": "zcode-gov-audit-pc1",
+      "role": "gap-auditor",
+      "machine": "pc-cloud1"
     }
   ]
 }
