@@ -1,0 +1,14 @@
+{
+  "name": "before",
+  "at": "2026-08-28T08:54:36.415Z",
+  "doc": {
+    "kind": "shadow30",
+    "layers": 30,
+    "pageW": 2480,
+    "pageH": 3508
+  },
+  "width": 2480,
+  "height": 3508,
+  "rgbaBytes": 34799360,
+  "rgbaSha256": "0fa979a3fc68810c0e8b8801690bf2281220d171023d9aa54546ba0622b4b44c"
+}
