@@ -12,8 +12,8 @@
     "scripts/viro-orchestrator.mjs",
     "scripts/viro-orchestrator-git.mjs",
     "scripts/viro-release.mjs",
-    "docs/agents/**",
-    "docs/agents/deliveries/VIRO-0019.json"
+    "docs/agents/deliveries/VIRO-0019.json",
+    "docs/agents/orchestrator-identity.md"
   ],
   "depends_on": [],
   "acceptance": [
@@ -29,9 +29,18 @@
     "Backward-compatibility demo with a pre-change state file",
     "Live end-to-end claim/heartbeat/advance dry-run output"
   ],
-  "builder": { "status": "PENDING", "notes": "Governance-engineering packet; deployed by the Orchestrator in wave 2 to avoid control-plane churn during first product wave." },
-  "verifier": { "status": "PENDING", "notes": "Independent verification required." },
-  "critic": { "status": "NOT_APPLICABLE", "notes": "Governance tooling; no product UI." },
+  "builder": {
+    "status": "PENDING",
+    "notes": "Governance-engineering packet; deployed by the Orchestrator in wave 2 to avoid control-plane churn during first product wave."
+  },
+  "verifier": {
+    "status": "PENDING",
+    "notes": "Independent verification required."
+  },
+  "critic": {
+    "status": "NOT_APPLICABLE",
+    "notes": "Governance tooling; no product UI."
+  },
   "delta": {
     "before": "Identity by convention; no core lease-logic unit tests.",
     "after": "Session-bound identity with refusal on duplicate live identity, tested core logic, backward-compatible state.",
