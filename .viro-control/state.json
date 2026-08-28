@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 310,
-  "updated_at": "2026-08-28T19:14:54.474Z",
+  "revision": 311,
+  "updated_at": "2026-08-28T19:15:24.825Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -420,11 +420,11 @@
       ],
       "critic_needed": false,
       "stage": "build",
-      "status": "ACTIVE",
-      "assigned_agent": "zcode-identity-pc1",
-      "assigned_role": "builder",
+      "status": "BLOCKED",
+      "assigned_agent": null,
+      "assigned_role": null,
       "work_branch": "agent/viro-0011/zcode-gov-audit-pc1",
-      "heartbeat_at": "2026-08-28T17:54:36.500Z",
+      "heartbeat_at": null,
       "attempts": 0,
       "evidence": [
         {
@@ -443,7 +443,12 @@
           "before-state confirmed on local main post-wave-merge 2026-08-28; manifest basis valid; builder drafts banked where applicable; unlocked by reconciliation of merged dependency"
         ]
       },
-      "rejection": null
+      "rejection": {
+        "by": "governor",
+        "stage": "build",
+        "reason": "session zcode-identity-pc1 garbage-collected after repeated network flaps (74m stale); work preserved in worktree per checkpoint protocol; fresh session reassigned",
+        "at": "2026-08-28T19:15:24.822Z"
+      }
     },
     "VIRO-0012": {
       "id": "VIRO-0012",
@@ -1419,12 +1424,6 @@
     }
   },
   "agents": {
-    "zcode-identity-pc1": {
-      "role": "builder",
-      "machine": "pc-cloud1",
-      "packet": "VIRO-0011",
-      "heartbeat_at": "2026-08-28T17:54:36.500Z"
-    },
     "zcode-polish-pc1": {
       "role": "builder",
       "machine": "pc-cloud1",
@@ -1445,19 +1444,6 @@
     }
   },
   "leases": {
-    "VIRO-0011": {
-      "packet": "VIRO-0011",
-      "scope": [
-        "src/app.ts",
-        "src/library/store.ts",
-        "docs/agents/deliveries/VIRO-0011.json",
-        "tests/recovery-identity-*"
-      ],
-      "acquired_at": "2026-08-28T16:58:23.286Z",
-      "current_agent": "zcode-identity-pc1",
-      "current_stage": "build",
-      "heartbeat_at": "2026-08-28T17:54:36.500Z"
-    },
     "VIRO-0015": {
       "packet": "VIRO-0015",
       "scope": [
@@ -1498,11 +1484,6 @@
     }
   },
   "events": [
-    {
-      "at": "2026-08-27T17:27:41.055Z",
-      "type": "packet.reconciled_from_manifest",
-      "packet": "VIRO-0002"
-    },
     {
       "at": "2026-08-27T18:44:00.686Z",
       "type": "packet.reconciled_from_manifest",
@@ -3475,6 +3456,14 @@
       "type": "packet.unblocked",
       "packet": "VIRO-0141",
       "by": "governor"
+    },
+    {
+      "at": "2026-08-28T19:15:24.825Z",
+      "type": "assignment.reaped",
+      "packet": "VIRO-0011",
+      "agent": "zcode-identity-pc1",
+      "by": "governor",
+      "reason": "session zcode-identity-pc1 garbage-collected after repeated network flaps (74m stale); work preserved in worktree per checkpoint protocol; fresh session reassigned"
     }
   ]
 }
