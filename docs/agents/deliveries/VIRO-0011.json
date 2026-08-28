@@ -28,15 +28,27 @@
     "npx tsc --noEmit",
     "npm run build"
   ],
-  "builder": { "status": "PENDING", "notes": "Gated on VIRO-0010 DONE." },
+  "builder": {
+    "status": "DELIVERED",
+    "notes": "Builder zcode-identity-pc2 (pc-cloud1), branch agent/viro-0011/zcode-gov-audit-pc1 based on main 50144659 (post-wave-merge). Inherited uncommitted prep drafts (src/app.ts, src/library/store.ts, tests/recovery-identity.*) from the banked prior seat; reviewed every line as incoming owner before adoption. Implementation: identity = project id via PressApp.ensureDocIdentity() (mints uid('proj') on first autosave when absent, shared by writeRecovery and persistCurrentProject so both sinks agree); RecoverySnapshot.id widened to string with optional createdAt — the recovery object store is already keyed by generic keyPath 'id', so NO DB version bump and no format migration; listRecovery() added (getAll + newest-first by savedAt); no-arg getRecovery() returns the newest record (legacy single-slot read semantics kept so tests/recovery.spec.mjs passes unmodified); restoreRecovery(id?) adopts currentProjectId only for proj_-prefixed ids (legacy 'current' restores under a freshly minted id, never adopting the slot key) and resumes the record's createdAt; deleteProject(id) also deleteRecovery(id) so a deleted document can never resurrect through recovery and its identity is never reused; discardAllRecoveries() added for diagnostics/clean-slate; pendingRecovery stays the newest-first head of pendingRecoveries so the existing recover bar (src/chrome/desk.ts reads only pendingRecovery + no-arg restore/discard) works with ZERO chrome changes. Before-state proof: draft unit tests run RED 0/5 on unmodified main (stash of src changes), GREEN 5/5 after. Honest records: package.json test:unit list and tests/slices.mjs SCRIPTS are OUTSIDE the granted lease (tests/recovery-identity-* only), so the new suites are run by documented command rather than wired into npm scripts; wiring them in is left to the Governor/Verifier coordination."
+  },
   "verifier": { "status": "PENDING", "notes": "Independent verification required." },
   "critic": { "status": "NOT_APPLICABLE", "notes": "Persistence behavior only; no visual redesign." },
   "delta": {
     "before": "One recovery slot keyed to the last session regardless of document identity.",
     "after": "Per-document recovery records with identity-preserving restore.",
-    "proof": [],
+    "proof": [
+      "Before-state: node --experimental-transform-types --import ./tests/ts-register.mjs --test tests/recovery-identity.test.mjs with src drafts stashed (unmodified main 50144659): 0/5 pass — every acceptance test RED, proving the gap",
+      "node --experimental-transform-types --import ./tests/ts-register.mjs --test tests/recovery-identity.test.mjs with implementation: 5/5 pass (independence, identity-preserving restore, legacy 'current' recovery, delete/never-reuse, pending head contract)",
+      "VIRO_URL=http://127.0.0.1:5178 node tests/recovery-identity.spec.mjs (real IndexedDB, real Chromium): 16/16 checks passed, zero page errors — two sequentially edited documents keep independent snapshots, boot lists both pending recoveries newest-first, restoreRecovery(idA) restores A's content AND identity AND createdAt, deleteProject removes project + recovery records and the deleted identity is never reused",
+      "npx tsc --noEmit: exit 0",
+      "npm run test:unit: 316/316 pass (baseline unchanged)",
+      "npm run build: exit 0 (client + electron)"
+    ],
     "regression_protection": [
-      "tests/recovery.spec.mjs and tests/projects.spec.mjs green"
+      "tests/recovery.spec.mjs assertions byte-unchanged in this packet: 13/13 green against the implementation (VIRO_URL=http://127.0.0.1:5178)",
+      "tests/projects.spec.mjs: 11/11 green (save/open/rename/delete/thumbnail flows unaffected)",
+      "npm run test:unit 316/316 unchanged; src/chrome/desk.ts untouched (recover-bar head contract preserved)"
     ],
     "new_debt": "none yet"
   }

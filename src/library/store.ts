@@ -25,13 +25,24 @@ export interface UserFont {
  * snapshot is the only safety net between explicit `.press.json` saves.
  */
 export interface RecoverySnapshot {
-  /** Single-slot key. The app keeps one recovery record for the active session. */
-  id: "current";
+  /**
+   * Document identity (VIRO-0011). Autosaves key the record to the working
+   * document's project id (`proj_*`), so editing document B never overwrites
+   * document A's snapshot. The legacy single-slot key `"current"` is still
+   * read so snapshots written before identity recovery remain recoverable.
+   */
+  id: string;
   /** Serialised PressDocument (structured-clone safe). */
   doc: unknown;
   /** Document name at the time of the snapshot, for the recovery prompt. */
   name: string;
   savedAt: number;
+  /**
+   * Project creation timestamp carried from the session that wrote the
+   * snapshot, so a restore can resume the SAME project record (identity
+   * preservation, critic P3-2). Absent on legacy `"current"` records.
+   */
+  createdAt?: number;
 }
 
 /**
@@ -133,17 +144,41 @@ export async function putRecovery(snapshot: RecoverySnapshot): Promise<void> {
   await (await db()).put("recovery", snapshot);
 }
 
-export async function getRecovery(): Promise<RecoverySnapshot | undefined> {
+/**
+ * Every recovery snapshot, newest first. The store is keyed by document
+ * identity (VIRO-0011), so this lists one record per document rather than a
+ * single slot.
+ */
+export async function listRecovery(): Promise<RecoverySnapshot[]> {
   try {
-    return await (await db()).get("recovery", "current");
+    const rows = await (await db()).getAll("recovery");
+    return rows.sort((a, b) => b.savedAt - a.savedAt);
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Read one recovery snapshot. With `id`, the record for that exact document
+ * identity; without, the NEWEST record in the store — the legacy single-slot
+ * read kept for the existing recover-bar flow (no-arg callers always acted on
+ * the one record there was).
+ */
+export async function getRecovery(id?: string): Promise<RecoverySnapshot | undefined> {
+  try {
+    const dbh = await db();
+    if (id !== undefined) return await dbh.get("recovery", id);
+    const rows = await dbh.getAll("recovery");
+    return rows.sort((a, b) => b.savedAt - a.savedAt)[0];
   } catch {
     return undefined;
   }
 }
 
-export async function deleteRecovery(): Promise<void> {
+/** Delete one recovery record. Defaults to the legacy single-slot key. */
+export async function deleteRecovery(id: string = "current"): Promise<void> {
   try {
-    await (await db()).delete("recovery", "current");
+    await (await db()).delete("recovery", id);
   } catch {
     // Blocked/private-mode IndexedDB — nothing durable to clear.
   }

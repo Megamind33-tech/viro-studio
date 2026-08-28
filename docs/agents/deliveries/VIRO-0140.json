@@ -1,0 +1,68 @@
+{
+  "id": "VIRO-0140",
+  "title": "Layer integrity: fix group duplication childless-shell and deep-delete dangling-parent corruption",
+  "priority": "P1",
+  "domain": "editor-core",
+  "state": "ACTIVE",
+  "outcome": "Duplicating a group produces a complete independent copy (children included) with exact undo/redo; deleting a group of any depth leaves zero layers with dangling parentId; a document already carrying dangling parent links is repaired on open to visually-stable page-space positions; validateDocument stays clean through all three flows.",
+  "before": "Gap audit 2026-08-27 (read-only, main 14e2812): duplicateSelected (src/document/ops.ts:425-449) clones only activeLayerIds rows, so duplicating a group (reachable via bus layer.duplicate ui-commands.ts:241, app.duplicate src/app.ts:1469, layers panel desk.ts:1528, Anchor press.duplicate anchor/tools.ts:793-803) yields a childless shell while children stay behind; no test covers group duplication (tests/ui-commands.test.mjs:93 covers only the guard). deleteSelected (ops.ts:414-423) computes descendants one level deep, so deleting an outer group from a PSD-imported tree (src/import/psd.ts:15-58 recursive walk) leaves grandchildren with dangling parentId; parentChain (src/document/transform.ts:100-110) then treats local coords as page coords (layer teleports) and validateDocument reports 'parentId points outside the page' (factory.ts:1084-1086) permanently; migrateDocument (migrate.ts:56-80) notes but never repairs dangling links.",
+  "after": "Descendant-closure logic shared by duplicate/delete makes group operations structurally complete; a repair pass heals pre-corrupted documents idempotently on open.",
+  "allowed_paths": [
+    "src/document/ops.ts",
+    "src/document/factory.ts",
+    "tests/layer-integrity-*",
+    "docs/agents/deliveries/VIRO-0140.json"
+  ],
+  "depends_on": [],
+  "acceptance": [
+    "Duplicating a selected group yields a copy whose rendered pixels match the original offset by the duplicate delta, children included; undo/redo restore exactly.",
+    "Deleting a group of nesting depth >= 2 leaves zero layers whose parentId references a missing id; validateDocument reports no parentId errors afterwards.",
+    "A hand-crafted v6 document with dangling parentId values is repaired on open to page-space positions; reopening the repaired file is a no-op (idempotent).",
+    "PSD-imported nested trees survive duplicate/delete of outer groups.",
+    "npx tsc --noEmit, targeted new tests, npm run test:unit baseline files, npm run test:chrome and npm run build pass."
+  ],
+  "evidence": [
+    "Group duplicate pixel/structure test with undo proof",
+    "Deep delete dangling-id test (depth >= 2 tree)",
+    "Repair-on-open idempotency test",
+    "npx tsc --noEmit",
+    "npm run test:chrome",
+    "npm run build"
+  ],
+  "builder": {
+    "status": "DONE",
+    "notes": "Build stage complete on agent/viro-0140/zcode-gov-audit-pc1. (1) ops.ts: deleteSelected and duplicateSelected now share descendantIds(), a cycle-safe transitive closure over the flat layer list. Duplicate remaps parentIds to fresh ids, clones stories for every nested type frame, applies the (+16,+16) delta at the copied ROOT only (descendants are LOCAL to their parent), and never re-duplicates a selected layer already inside another selected subtree; single-layer behavior unchanged. (2) factory.ts: exported repairDanglingParents(doc) — detaches dangling parentId to the page WITHOUT touching the transform (with the parent gone, parentChain already composes nothing, so local x/y ARE the rendered page-space position); per-page scoping matches validateDocument; idempotent by construction. RECORDED FOLLOW-UP (cross-domain, out of lease): the in-app open pipeline (app.ts openProject/openBytes/restoreRecovery, migrate.ts) does not call the repair yet — app.ts and migrate.ts are outside this packet's lease, so the pass is exported from factory.ts and proven by direct invocation; wiring needs a one-line call site the Governor must route. Verifier should still hold acceptance 3 to the exported-pass contract above.",
+    "proof": [
+      "commit 76c33b1 subtree-complete delete/duplicate via shared descendantIds closure",
+      "commit 339f23b repairDanglingParents in factory.ts (exported, idempotent, per-page)",
+      "tests/layer-integrity-ops.test.mjs + tests/layer-integrity-repair.test.mjs: 15/15 pass via node --experimental-strip-types --import ./tests/ts-register.mjs --test tests/layer-integrity-*.test.mjs",
+      "npx tsc --noEmit exit 0 after all edits",
+      "npm run test:unit 316/316 pass, exit 0 (baseline files unchanged)",
+      "baseline pre-edit: tsc exit 0, test:unit 316/316 (main 14e2812)"
+    ]
+  },
+  "verifier": {
+    "status": "PENDING",
+    "notes": "Independent verification required. Run: npx tsc --noEmit; node --experimental-strip-types --import ./tests/ts-register.mjs --test tests/layer-integrity-*.test.mjs; npm run test:unit (expect 316/316); npm run test:chrome; npm run build. Acceptance 3 is proven at the document layer by direct invocation of repairDanglingParents (export-and-flag agreed by Orchestrator); the app.ts/migrate.ts open-path wiring is a recorded follow-up outside this lease.",
+    "proof": []
+  },
+  "critic": {
+    "status": "NOT_APPLICABLE",
+    "notes": "Engine-only integrity fixes; rendering correctness of duplicates is asserted by tests, no aesthetic judgment."
+  },
+  "delta": {
+    "before": "Group duplicate loses children; deep delete dangles grandchild parents permanently.",
+    "after": "Structurally complete duplicate/delete with open-time repair for already-corrupted files.",
+    "proof": [
+      "tests/layer-integrity-ops.test.mjs: group duplicate copies whole subtree with remapped parentIds; worldBounds of every copy member equals original shifted by (+16,+16); CommandBus layer.duplicate undo/redo JSON-exact; type-frame child story cloned not shared; nested-leaf duplicate unchanged",
+      "tests/layer-integrity-ops.test.mjs: deleting depth-3 group leaves zero dangling parentIds and validateDocument []; group+child co-selection removes subtree once; inner-group delete does not over-delete; PSD-like 4-level tree survives duplicate then delete of outer groups",
+      "tests/layer-integrity-repair.test.mjs: hand-crafted v6 dangling doc repairs to page space with transforms untouched, validateDocument clean; rendered worldBounds identical before/after repair; JSON reopen + second repair is a no-op; healthy docs byte-identical; cross-page parent detached per validateDocument semantics"
+    ],
+    "regression_protection": [
+      "tests/ui-commands.test.mjs full command matrix incl. layer.duplicate/layer.delete undo-redo (green, 316/316 suite unchanged)",
+      "tests/transform.test.mjs migration invariants untouched",
+      "New in-lease regressions: single-layer delete/duplicate behavior pinned; healthy-document repair is byte-identical"
+    ],
+    "new_debt": "Open-path wiring: app.ts (openProject/openBytes/restoreRecovery) and migrate.ts are off-lease, so the shipped repairDanglingParents pass is not yet invoked by the app open pipeline; needs a Governor-routed one-line follow-up."
+  }
+}
