@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 403,
-  "updated_at": "2026-08-28T22:36:45.924Z",
+  "revision": 404,
+  "updated_at": "2026-08-28T22:39:12.158Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -1183,7 +1183,7 @@
       "assigned_agent": "zcode-critic-pc3",
       "assigned_role": "critic",
       "work_branch": "agent/viro-0017/zcode-gov-audit-pc1",
-      "heartbeat_at": "2026-08-28T22:36:45.924Z",
+      "heartbeat_at": "2026-08-28T22:39:12.158Z",
       "attempts": 0,
       "evidence": [
         {
@@ -1990,7 +1990,7 @@
       "machine": "pc-cloud1",
       "session": "69a08142-3926-4f09-afda-f139c9b80bdd",
       "packet": "VIRO-0017",
-      "heartbeat_at": "2026-08-28T22:36:45.924Z"
+      "heartbeat_at": "2026-08-28T22:39:12.158Z"
     }
   },
   "leases": {
@@ -2020,7 +2020,8 @@
       "acquired_at": "2026-08-28T19:33:41.736Z",
       "current_agent": "zcode-critic-pc3",
       "current_stage": "critic",
-      "current_session": "69a08142-3926-4f09-afda-f139c9b80bdd"
+      "current_session": "69a08142-3926-4f09-afda-f139c9b80bdd",
+      "heartbeat_at": "2026-08-28T22:39:12.158Z"
     },
     "VIRO-0146": {
       "packet": "VIRO-0146",
@@ -2038,12 +2039,6 @@
     }
   },
   "events": [
-    {
-      "at": "2026-08-28T08:58:08.086Z",
-      "type": "agent.heartbeat",
-      "agent": "zcode-verify-pc2",
-      "packet": "VIRO-0005"
-    },
     {
       "at": "2026-08-28T09:03:40.962Z",
       "type": "agent.heartbeat",
@@ -4173,6 +4168,14 @@
       "role": "critic",
       "machine": "pc-cloud1",
       "session": "69a08142-3926-4f09-afda-f139c9b80bdd"
+    },
+    {
+      "at": "2026-08-28T22:39:12.158Z",
+      "type": "agent.heartbeat",
+      "agent": "zcode-critic-pc3",
+      "packet": "VIRO-0017",
+      "session": "69a08142-3926-4f09-afda-f139c9b80bdd",
+      "machine": "pc-cloud1"
     }
   ]
 }
