@@ -726,9 +726,13 @@ export function composeFrame(
 
   // Vertical justification ("justify") needs per-line gap distribution and is
   // not composed yet; like "top" it starts the block at the top inset.
+  // Center/bottom shift only text that FITS — an overflowing frame aligns at
+  // the top inset exactly as it would without vertical alignment, so the
+  // overflow indicator and the dropped lines stay where the measure puts them.
   const va = textFrame?.verticalAlign;
   if (va === "center" || va === "bottom") {
     const topSet = compose(0);
+    if (topSet.overflow) return topSet;
     const blockH = Math.max(0, topSet.heightPx - inset.top);
     const free = Math.max(0, contentH - blockH);
     const dy = va === "center" ? free / 2 : free;
@@ -836,7 +840,13 @@ export function measureAutoFit(face: FacePack, story: Story, layer: TypeFrameLay
   const tf = layer.textFrame;
   if (tf?.autoSize !== "height") return null;
   const inset = insetsOf(tf);
-  const composed = composeFrame(face, story, layer.transform.w, layer.transform.h, tf);
+  // Measure against an UNBOUNDED foot with vertical alignment neutralized: a
+  // frame that is currently too small drops its trailing lines before the
+  // measurement can see them, and center/bottom placement only means anything
+  // once the content already fits. The insets still shrink the measure, so the
+  // line breaking is exactly what the fitted frame will show.
+  const measuring: TextFrameProperties = { ...tf, verticalAlign: "top" };
+  const composed = composeFrame(face, story, layer.transform.w, Number.MAX_VALUE / 16, measuring);
   const contentH = composed.lineCount
     ? composed.heightPx
     : composed.firstBaselinePx + composed.lastDescentPx;
