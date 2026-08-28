@@ -1,0 +1,63 @@
+{
+  "id": "VIRO-0141",
+  "title": "Post-boolean contour node editing commands + appendNode corruption guard",
+  "priority": "P2",
+  "domain": "editor-core",
+  "state": "ACTIVE",
+  "outcome": "Boolean-result vectors (contours-authoritative) become editable at the node level through contour-addressed bus commands (move/insert/delete node, close contour), and the legacy appendNode path refuses to corrupt contours-authoritative layers, with derived inverses so every operation undoes exactly.",
+  "before": "Local main 72b05f0 (post VIRO-0140/0142 wave merges): boolean results carry contours[] as the authoritative geometry with an EMPTY legacy nodes list (boolean-ops.ts layerContours, compositor.ts drawVector precedence). No op or command can edit a contour node; path.appendNode (ops.ts) pushes into the inert nodes list, recomputes bounds from it (Infinity on an empty list) and would teleport the layer while the renderer keeps drawing untouched contours. closePath only flips the legacy layer.closed flag. The contour node surface had zero coverage.",
+  "after": "Contour addressing {layerId, contourIndex, nodeIndex} resolves through the SAME precedence the compositor draws (exported layerContours); move keeps handles rigid, insert splices (0..n on closed contours), delete refuses to degenerate below 2 drawable nodes, closeContour generalizes closePath (index 0 on legacy layers edits layer.closed), appendNode is guarded at both command and op level, and all commands undo/redo byte-exactly via derived inverses.",
+  "allowed_paths": [
+    "src/document/ops.ts",
+    "src/document/ui-commands.ts",
+    "src/document/boolean-ops.ts",
+    "docs/agents/deliveries/VIRO-0141.json",
+    "tests/vector-node-*"
+  ],
+  "depends_on": ["VIRO-0140"],
+  "acceptance": [
+    "path.moveNode on a boolean-result contour changes canvas output by exactly the node delta (pixel-diff via CanvasKit rasterization mirroring compositor drawVector), with handles riding along.",
+    "Undo/redo restore the document exactly for all four new commands (derived inverses through the existing define() wrapper; patch.ts diffs whole layer records).",
+    "Sibling nodes/contours stay byte-identical; moveNode never rewrites the layer transform.",
+    "path.appendNode on a contours-authoritative layer is rejected with a CommandError that names path.insertNode; the ops-level appendPathNode is a silent no-op there (no Infinity transform); legacy vectors keep the old append behavior.",
+    "Contour edits survive a JSON save/reopen round-trip byte-identically; validateDocument stays clean.",
+    "tests/ui-commands.test.mjs CASES parity guard green (179 tests incl. the four new commands); npx tsc --noEmit, npm run test:unit (336), npm run build pass."
+  ],
+  "evidence": [
+    "tests/vector-node-commands.test.mjs 16/16 (ops+bus contract, corruption guard, undo/redo exact, round-trip)",
+    "tests/vector-node-pixels.test.mjs 3/3 (CanvasKit rasterization: node-delta locality, untouched contour byte-identical, restore-stable)",
+    "tests/ui-commands.test.mjs 179/179 incl. CASES parity guard and 5 mechanical tests per new command",
+    "npx tsc --noEmit clean; npm run test:unit 336/336; vite build succeeds (264 modules)"
+  ],
+  "builder": {
+    "status": "DONE",
+    "notes": "Build stage complete on agent/viro-0141/zcode-gov-audit-pc1 (base 72b05f0). (1) boolean-ops.ts: exported layerContours(layer) — the v6 precedence read that already mirrors compositor drawVector — as the single source for contour addressing. (2) ops.ts: added moveContourNode (anchor to (x,y), in/out handles translated by the same delta so segment tangents survive; transform never rewritten), insertContourNode (splice after afterNodeIndex; index n allowed only on closed contours, where the new node is the tail of the closing segment), deleteContourNode (refuses below the 2-drawable-node floor validateContours enforces), setContourClosed (contours[i].closed; index 0 on a legacy single-contour vector edits layer.closed, generalizing closePath without changing it); appendPathNode now returns the doc unchanged when contours are authoritative. All ops resolve targets via layerContours, so legacy vectors are contour index 0. (3) ui-commands.ts: registered path.moveNode / path.insertNode / path.deleteNode / path.closeContour with {layerId, contourIndex, ...} params, integer/bounds validation throwing named CommandErrors BEFORE apply (rejected commands never enter history); path.appendNode validate refuses contours-authoritative layers with routing guidance naming path.insertNode; closeContour additionally refuses to open the last closed contour of a filled layer (the exact state validateDocument rejects). Inverses derived via the existing define() invertAfter wrapper — patch.ts carries whole prior layer records, so undo is byte-exact. (4) tests: banked drafts wired and green; two draft defects fixed during build — CommandBus import (lives in command-bus.ts, not commands.ts) and the subtract operand order in the ring fixture (draw order last = TOPMOST: [inner, outer] gives outer − inner; the drafted [outer, inner] asked for inner − outer and produced an empty set); pixels test readRGBA adapted to canvaskit-wasm 0.42 plain-object ImageInfo (same pattern as tests/rich-text-harness.mjs); ly_path fixture extended to 3 nodes so path.deleteNode can delete and stay above the drawable floor; four CASES added to tests/ui-commands.test.mjs. commands.ts, factory.ts, app.ts untouched (lease respected).",
+    "proof": [
+      "commit(s) on agent/viro-0141/zcode-gov-audit-pc1: contour ops + commands + guards + suites + delivery record",
+      "tests/vector-node-commands.test.mjs 16/16 pass (node --experimental-strip-types --import ./tests/ts-register.mjs --test tests/vector-node-commands.test.mjs)",
+      "tests/vector-node-pixels.test.mjs 3/3 pass (real CanvasKit subtract ring rasterized; node-delta locality, sibling contour byte-identical, restore-stable)",
+      "tests/ui-commands.test.mjs 179/179 pass (CASES parity: UI_COMMAND_TYPES == CASES keys incl. path.moveNode/insertNode/deleteNode/closeContour)",
+      "npm run test:unit 336/336 pass (baseline 316 on 72b05f0 + 20 new)",
+      "npx tsc --noEmit exit 0",
+      "vite build succeeds (264 modules, dist/ emitted). NOTE: `npm run build` on this Windows Git-Bash seat fails to spawn vite.cmd ('The system cannot execute the specified program') — environment launcher quirk, not a build failure; the identical `node node_modules/vite/bin/vite.js build` was used as the gate"
+    ]
+  },
+  "verifier": {
+    "status": "PENDING",
+    "notes": "Independent verification required. Run: npx tsc --noEmit; node --experimental-strip-types --import ./tests/ts-register.mjs --test tests/vector-node-commands.test.mjs tests/vector-node-pixels.test.mjs; npm run test:unit (expect 336/336); npm run build. Key acceptance probes: moveNode pixel-diff locality on a real engine ring; undo/redo JSON-exact for all four commands; appendNode rejection message names path.insertNode; validateDocument [] after every flow.",
+    "proof": []
+  },
+  "critic": {
+    "status": "NOT_APPLICABLE",
+    "notes": "Engine-level document commands only; no user-facing UI surface changes in this phase (pen/overlay wiring is phase 2, app.ts explicitly out of lease)."
+  },
+  "delta": {
+    "before": "Boolean-result vectors are node-editable by nothing, and the pen-tool append path silently corrupts them (Infinity-bounds transform rewrite on an empty legacy nodes list).",
+    "after": "Contour-addressed move/insert/delete/close commands with exact undo, precise pre-apply validation, a double-layered appendNode corruption guard, and pixel-level proof that a node move changes exactly the addressed geometry.",
+    "proof": [
+      "tests/vector-node-commands.test.mjs: moveNode moves exactly the addressed anchor with handles rigid, other nodes/contours/transform byte-identical; legacy vectors addressed as contour 0 without gaining a contours list; insert splices (incl. closing-segment append at index n on closed contours); delete preserves order and refuses the 2-node floor; closeContour flips only the addressed contour; appendNode rejected with routing hint and zero history entries; undo/redo JSON-exact for all four; save/reopen round-trip clean",
+      "tests/vector-node-pixels.test.mjs: raster diff shows pixels changed at old AND new anchor, bounded region (<25% of surface), hole stays transparent (EvenOdd intact); untouched contour rasterizes byte-identically; restored prior record rasterizes identically",
+      "tests/ui-commands.test.mjs: parity guard plus applies/refuses/undo/redo/JSON-round-trip for each new command against the shared fixture"
+    ]
+  }
+}

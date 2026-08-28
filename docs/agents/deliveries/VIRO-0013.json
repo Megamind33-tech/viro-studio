@@ -28,16 +28,32 @@
     "npx tsc --noEmit",
     "npm run build"
   ],
-  "builder": { "status": "PENDING", "notes": "Claimable after VIRO-0005 releases the tests/** lease." },
+  "builder": {
+    "status": "DELIVERED",
+    "notes": "Builder zcode-import-pc1 (pc-cloud1), branch agent/viro-0013/zcode-gov-audit-pc1 based on origin/main 9f0ed70. Before-state re-confirmed by probes: documentFromVdj crashed with raw TypeErrors on null/undefined root, non-array layers, pseudo-array pages, null layer entries and non-string color/fill; documentFromPsd let ag-psd escape bare Errors and raw RangeErrors (DataView bounds) and could import out-of-spec canvas dimensions; the Press JSON open path had no guarded parse boundary. Fixes, all inside src/import/**: typed ImportParseError (errors.ts); readPsd wrapped + dimension validation + iterative (stack-based) layer walk in psd.ts; root/array/dimension/count guards in vdj.ts; new guarded openJsonDocument boundary in pressjson.ts (mirrors the app gate; wiring src/app.ts openBytes to it is cross-domain and deliberately left for VIRO-0014/coordination). Corpus: 66 versioned cases (tests/import-corpus.mjs + tests/fixtures/import-corpus/manifest.json, corpusVersion 1, seed 20260827, SHA-256 corpusDigest 043a5084791654d0a2392698a46c26417b091aa50d35b35e7ee8ead8180f0c63) covering zero-length, truncated, wrong magic bytes, oversized dimensions/counts, deep nesting, hostile keys/prototype pollution, malformed JSON, valid baselines. Runner tests/import-fuzz.test.mjs: 8 tests, seeded 400+400 fuzz iterations, in-process double-run and cross-run determinism asserted. Prototype pollution proved absent (Object.prototype own keys snapshotted around every hostile case). Known honest records: flattened-PSD composite imports with 0 layers (pre-existing ag-psd synthesized-child behavior, unchanged and now documented); v6 hostile press docs short-circuit migration so hostile pages/stories ride in inert (documented in corpus outcomes).",
+    "proof": [
+      "node --experimental-strip-types --import ./tests/ts-register.mjs --test tests/import-fuzz.test.mjs: 8/8 pass, twice, byte-identical output modulo wall-clock (determinism)",
+      "psd fuzz outcome digest 4b23f3882c30b549f9514602cb48a5c29e6f9e844fa719075d6cf71e01848526; json fuzz outcome digest dc0a3256a642a48aa525c19031660b70d102f2d35cd7401e93f8ec21b8c8a51d (stable across all runs)",
+      "npx tsc --noEmit: clean",
+      "npm run test:unit: 316/316 pass (valid-file import non-regression)",
+      "npm run build: green (client + electron main + preload)",
+      "Real PSD round-trip: ag-psd-written layered/group PSD -> documentFromPsd -> 3 layers with group parentage and pixel-true PNG assets (zlib-decoded in-test)"
+    ]
+  },
   "verifier": { "status": "PENDING", "notes": "Independent verification required." },
   "critic": { "status": "NOT_APPLICABLE", "notes": "Engine/import hardening; no UI change." },
   "delta": {
-    "before": "No malformed-input corpus; parser robustness unproven beyond valid files.",
-    "after": "Versioned corpus + deterministic runner + typed-failure guarantee, with minimal fixes for proven defects.",
-    "proof": [],
-    "regression_protection": [
-      "Existing import/PSD tests and valid-file round-trip green"
+    "before": "No malformed-input corpus; parser robustness unproven beyond valid files. Probes confirmed five uncaught raw-TypeError crash paths in documentFromVdj, bare Error/RangeError leakage from documentFromPsd, and no guarded Press JSON parse boundary.",
+    "after": "Versioned 66-case corpus + deterministic seeded runner proving the typed-failure guarantee; minimal in-lease fixes: typed ImportParseError, readPsd wrap + dimension validation + iterative layer walk (psd.ts), hostile-shape guards + dimension/count caps (vdj.ts), guarded openJsonDocument boundary (pressjson.ts).",
+    "proof": [
+      "tests/import-fuzz.test.mjs 8/8 green across two identical runs (determinism digests 4b23f388…/dc0a3256…)",
+      "corpusDigest 043a5084791654d0a2392698a46c26417b091aa50d35b35e7ee8ead8180f0c63 matches tests/fixtures/import-corpus/manifest.json",
+      "npx tsc --noEmit clean; npm run test:unit 316/316; npm run build green"
     ],
-    "new_debt": "none yet"
+    "regression_protection": [
+      "Existing import/PSD tests and valid-file round-trip green",
+      "npm run test:unit 316/316 unchanged by the hardening"
+    ],
+    "new_debt": "src/app.ts openBytes still parses .json inline instead of calling src/import/pressjson.ts openJsonDocument — app.ts is outside this packet's lease; wiring deferred to VIRO-0014 / Governor coordination."
   }
 }

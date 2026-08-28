@@ -1,0 +1,14 @@
+VIRO-0012: heartbeat recorded.
+run idle/starter … drawMs median 186.0 · mean 211.2 · p95 462.4 · max 462.4 (n=15)
+run idle/plain30 … drawMs median 165.8 · mean 159.4 · p95 189.5 · max 189.5 (n=15)
+run idle/shadow30 … drawMs median 115482.4 · mean 111791.4 · p95 115627.1 · max 115627.1 (n=3)
+run g/starter/pan … frameMs median 16.7 · mean 58.2 · p95 200.1 · max 333.3 (n=160) | drawMs median 102.8 · mean 89.3 · p95 242.6 · max 270.8 (n=51)
+run g/starter/zoom … frameMs median 50.0 · mean 88.3 · p95 249.9 · max 266.7 (n=40) | drawMs median 122.9 · mean 131.1 · p95 248.7 · max 248.7 (n=13)
+run g/plain30/move … frameMs median 16.7 · mean 46.8 · p95 133.4 · max 333.2 (n=155) | drawMs median 76.3 · mean 63.7 · p95 164.7 · max 322.7 (n=51)
+run g/plain30/resize … frameMs median 16.7 · mean 59.6 · p95 200.0 · max 266.7 (n=123) | drawMs median 77.1 · mean 65.0 · p95 173.2 · max 194.0 (n=53)
+run g/plain30/pan … frameMs median 16.7 · mean 35.3 · p95 116.7 · max 199.9 (n=219) | drawMs median 70.0 · mean 59.8 · p95 130.0 · max 197.0 (n=51)
+run g/plain30/zoom … frameMs median 33.3 · mean 75.0 · p95 249.9 · max 283.3 (n=50) | drawMs median 140.8 · mean 137.7 · p95 185.3 · max 185.3 (n=13)
+run g/shadow30/move … frameMs median 16.7 · mean 1838.4 · p95 33.4 · max 117211.9 (n=369) | drawMs median 104327.2 · mean 60794.8 · p95 117097.2 · max 117097.2 (n=11)
+run g/shadow30/resize … frameMs median 16.7 · mean 2660.6 · p95 83.4 · max 131511.5 (n=334) | drawMs median 90166.4 · mean 59261.2 · p95 131007.9 · max 131007.9 (n=13)
+run g/shadow30/pan … frameMs median 16.7 · mean 8420.0 · p95 101812.6 · max 118828.6 (n=73) | drawMs median 85476.1 · mean 55550.2 · p95 118763.3 · max 118763.3 (n=11)
+run g/shadow30/zoom … 
