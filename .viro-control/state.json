@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 69,
-  "updated_at": "2026-08-28T06:22:53.334Z",
+  "revision": 70,
+  "updated_at": "2026-08-28T06:40:50.230Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -68,11 +68,11 @@
       ],
       "critic_needed": true,
       "stage": "verify",
-      "status": "VERIFY",
-      "assigned_agent": "zcode-verify-pc1",
-      "assigned_role": "verifier",
+      "status": "BLOCKED",
+      "assigned_agent": null,
+      "assigned_role": null,
       "work_branch": "agent/viro-0005/claude-audit-cloud1",
-      "heartbeat_at": "2026-08-28T06:15:00.978Z",
+      "heartbeat_at": null,
       "attempts": 0,
       "evidence": [
         {
@@ -186,7 +186,12 @@
           "real PDFs generated for subtract-ring/disjoint-union/legacy-single-contour with report.vectorPaths=1 and rasterFallbacks=[] for both compound cases"
         ]
       },
-      "rejection": null
+      "rejection": {
+        "by": "governor",
+        "stage": "verify",
+        "reason": "verifier session zcode-verify-pc1 confirmed DEAD (agent process failed: ENOTFOUND zcode.z.ai provider API) mid-verification ~115min; never will heartbeat again; evidence preserved in worktree viro-0005-verify-zcode1/test-results-5190; reassignment follows immediately - Governor recovery per mandate section 13",
+        "at": "2026-08-28T06:40:50.217Z"
+      }
     },
     "VIRO-0010": {
       "id": "VIRO-0010",
@@ -587,12 +592,6 @@
     }
   },
   "agents": {
-    "zcode-verify-pc1": {
-      "role": "verifier",
-      "machine": "pc-cloud1",
-      "packet": "VIRO-0005",
-      "heartbeat_at": "2026-08-28T06:15:00.978Z"
-    },
     "zcode-perf-pc1": {
       "role": "builder",
       "machine": "pc-cloud1",
@@ -601,18 +600,6 @@
     }
   },
   "leases": {
-    "VIRO-0005": {
-      "packet": "VIRO-0005",
-      "scope": [
-        "src/export/pdf.ts",
-        "tests/**",
-        "docs/agents/deliveries/VIRO-0005.json"
-      ],
-      "acquired_at": "2026-08-27T17:19:55.733Z",
-      "current_agent": "zcode-verify-pc1",
-      "current_stage": "verify",
-      "heartbeat_at": "2026-08-28T06:15:00.978Z"
-    },
     "VIRO-0012": {
       "packet": "VIRO-0012",
       "scope": [
@@ -1024,6 +1011,14 @@
       "type": "agent.heartbeat",
       "agent": "zcode-perf-pc1",
       "packet": "VIRO-0012"
+    },
+    {
+      "at": "2026-08-28T06:40:50.230Z",
+      "type": "assignment.reaped",
+      "packet": "VIRO-0005",
+      "agent": "zcode-verify-pc1",
+      "by": "governor",
+      "reason": "verifier session zcode-verify-pc1 confirmed DEAD (agent process failed: ENOTFOUND zcode.z.ai provider API) mid-verification ~115min; never will heartbeat again; evidence preserved in worktree viro-0005-verify-zcode1/test-results-5190; reassignment follows immediately - Governor recovery per mandate section 13"
     }
   ]
 }
