@@ -1,0 +1,65 @@
+{
+  "id": "VIRO-0145",
+  "title": "Fix corrupt embedded FontFile2 subsets in vector PDF text export",
+  "priority": "P1",
+  "domain": "export",
+  "state": "ACTIVE",
+  "outcome": "Text exported to vector PDF embeds valid font subsets: third-party viewers (pdf.js, fontkit) parse the embedded FontFile2 and render every glyph used on the page completely, with the export report unchanged and compound/single-contour vector proofs from VIRO-0005 still green.",
+  "before": "Critic finding 2026-08-28, reproduced independently by the builder: the text export path embedded a FontFile2 via pdf-lib embedFont(bytes, { subset: true }) whose output is corrupt. For public/fonts/NotoSans-Regular.ttf the saved subset has numGlyphs 16, a 1313-byte glyf table (odd length, not 4-byte aligned) against a last loca entry of 1312; glyph outlines 4 and 12 throw on read ('Offset is outside the bounds of the DataView' under fontkit 2.0.4, 'Trying to access beyond buffer length' under pdf-lib's vendored fork). pdf.js paints only fragmentary glyphs (measured: 1618 dark pixels vs 4123 for the same string rendered from a valid face at scale 2). Root cause lives in pdf-lib 1.17.1's bundled fontkit fork (font.createSubset / TTFSubset), not in the exporter's glyph-by-id call pattern: the identical corruption reproduces at an isolated embedFont seam without any app code. The subset's missing cmap/name/post tables are pdfkit-subset convention, not the defect; the glyf/loca drift is.",
+  "after": "src/export/pdf.ts faceFor() now embeds the face whole (subset: false), the truthful alternative frozen into acceptance item 3. The FontFile2 stream is the original face byte-for-byte, so Identity-H CIDs remain equal to the HarfBuzz glyph ids the exporter writes (EmbeddedFace's non-subset branch already implements exactly this), every placed gid resolves to a real outline, and the full /ToUnicode plus full /W arrays pdf-lib builds for a whole face come along. Export report shape is unchanged; the Subject/notes wording was corrected to claim a full TrueType font (not a subset) and carries an honest size caveat. Also made the same mechanical change VIRO-0005 recorded as a test-harness blocker: EmbeddedFace's constructor was rewritten off TypeScript parameter-property syntax so node --experimental-strip-types can import src/export/pdf.ts at all (parameter properties are non-erasable; this is why no unit test could previously drive the exporter).",
+  "allowed_paths": [
+    "src/export/pdf.ts",
+    "docs/agents/deliveries/VIRO-0145.json",
+    "tests/pdf-font-*"
+  ],
+  "acceptance": [
+    "An exported PDF containing a text layer renders ALL its glyphs in pdf.js (assert via pdf.js text-content or pixel render - not just successful serialization).",
+    "fontkit parses the embedded FontFile2 without error and reports expected glyph coverage.",
+    "If valid subsetting is not achievable with pdf-lib's subsetter, a truthful alternative is acceptable: full-font embed with measured size impact documented in the manifest delta notes. No false claims.",
+    "Compound-vector proofs stay green: tests/pdf-compound.test.mjs (5/5) - lives outside this packet's test lease; RUNNING it was required, not modifying it.",
+    "Gates: npx tsc --noEmit; tests/pdf-font-*.test.mjs; npm run test:unit 316/316 unchanged; npm run test:chrome; npm run build."
+  ],
+  "evidence": [
+    "Root cause reproduced at an isolated seam (no app code): embedFont(notoSansRegular, {subset:true}) + subset.includeGlyph -> saved FontFile2 fails fontkit outline reads on glyphs 4 and 12",
+    "Fix: faceFor() embeds subset:false; exported FontFile2 is byte-identical to public/fonts/NotoSans-Regular.ttf (2049096 bytes) and parses with fontkit 2.0.4",
+    "tests/pdf-font-embed.test.mjs 5/5: before-state seam defect, full-face parse, per-placed-glyph outline coverage, ToUnicode round-trip of 'VIRO typographic' incl. the exporter's re-inserted word space, truthful report counts/Subject",
+    "pdf.js 4.10.38 cross-check (scratch install outside the repo): getOperatorList OK, getTextContent returns exactly 'VIRO typographic', zero font warnings; pixel render (disableFontFace, @napi-rs/canvas) 1618 dark px before vs 4123 after",
+    "Size impact (acceptance 3 documentation): corrupt-subset PDF was 2929 bytes; full-embed export of the same fixture is 1215591 bytes total with the 2049096-byte NotoSans-Regular.ttf inside (pdf-lib Flate-compresses the stream, ~0.59x). Roughly +1.2 MB per unique face per exported document; the report notes now say so",
+    "Gates: npx tsc --noEmit clean; npm run test:unit 316/316 (unchanged baseline); npm run build exit 0"
+  ],
+  "builder": {
+    "status": "PENDING",
+    "notes": "Built on branch agent/viro-0145/zcode-gov-audit-pc1. Fix chosen: full-font embed per frozen acceptance item 3 - repairing or replacing pdf-lib's vendored TTFSubset inside the lease would be a from-scratch TrueType subsetter, and acceptance 3 explicitly blesses the truthful full embed with documented size. Verdict is the verifier's to give; note that acceptance item 5's npm run test:chrome was deferred to independent verification per the Orchestrator speed protocol (2026-08-28), and acceptance item 4's tests/pdf-compound.test.mjs does not exist at base 14e2812 - it arrives with the blocked VIRO-0005 branch (commit 8c6f2db). Per coordinator instruction, compound-suite compatibility is deferred to integration, which will rebase this branch onto the VIRO-0005 result if the merge has not landed first. Integration note for that rebase: this packet's src/export/pdf.ts delta includes the same EmbeddedFace parameter-property rewrite VIRO-0005 made (mechanical, byte-for-byte compatible intent), so the two branches should merge cleanly on that hunk.",
+    "proof": [
+      "node --experimental-strip-types --import ./tests/ts-register.mjs --test tests/pdf-font-embed.test.mjs -> tests 5, pass 5, fail 0",
+      "npx tsc --noEmit -> exit 0",
+      "npm run test:unit -> tests 316, pass 316, fail 0 (baseline 316/316 unchanged)",
+      "npm run build -> exit 0",
+      "pdf.js cross-check on exported PDF: text layer PASS, pixel render 4123 dark px (fixed) vs 1618 (corrupt before-state)",
+      "Regression guard against the pre-fix tree: with the pdf.ts change stashed, tests/pdf-font-embed.test.mjs cannot even import the exporter (parameter-property syntax), matching VIRO-0005's recorded harness blocker"
+    ]
+  },
+  "verifier": {
+    "status": "PENDING",
+    "notes": "Independent verification required. Reproduction recipe: run the four gate commands above, then the pdf.js cross-check (pdfjs-dist + @napi-rs/canvas in a scratch dir) against a fresh exportPagePdf fixture; FontFile2 must equal the source TTF byte length and every TJ gid on the page must have a non-empty outline under fontkit.",
+    "proof": []
+  },
+  "critic": {
+    "status": "PENDING",
+    "notes": "User-visible claim to judge: text exported to vector PDF now displays completely in third-party viewers, at the cost of larger files (report and PDF Subject disclose this).",
+    "proof": []
+  },
+  "delta": {
+    "before": "Vector PDF text export embedded a corrupt pdf-lib FontFile2 subset: fontkit threw on glyph outline reads, pdf.js painted fragmentary glyphs, and the exporter was unimportable under node --experimental-strip-types (parameter-property syntax), so no unit test could drive it.",
+    "after": "The exporter embeds each used face whole and truthfully reports it; pdf.js and fontkit parse and render every placed glyph; size impact is measured and disclosed (+1.2 MB per unique face per document for Noto Sans Regular); unit tests can import and drive the real exporter.",
+    "proof": [
+      "tests/pdf-font-embed.test.mjs 5/5 through the real exporter with the real bundled face",
+      "pdf.js 4.10.38 text-content and pixel-render evidence recorded in this manifest",
+      "tsc / test:unit 316/316 / build all green at the candidate commit"
+    ],
+    "regression_protection": [
+      "tests/pdf-font-embed.test.mjs pins: valid full-face FontFile2, per-placed-glyph outline coverage, ToUnicode text round-trip incl. word space, truthful report/Subject claims, and the recorded pdf-lib subset defect at the seam"
+    ],
+    "new_debt": "PDF file size grows by the compressed size of each embedded face because valid subsetting is unavailable in-repo (pdf-lib's subsetter corrupts; fontkit 2.x exposes no subsetter). A correct TrueType/CFF subsetter (or a repaired upstream) would reclaim ~1.2 MB per face per document and is a candidate for a future Governor-chartered packet. Also deferred to integration: re-running tests/pdf-compound.test.mjs after the VIRO-0005 rebase."
+  }
+}
