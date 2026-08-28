@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 209,
-  "updated_at": "2026-08-28T11:47:55.593Z",
+  "revision": 210,
+  "updated_at": "2026-08-28T11:48:14.077Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -838,7 +838,7 @@
       "assigned_agent": "zcode-govtool-pc1",
       "assigned_role": "builder",
       "work_branch": "agent/viro-0019/zcode-gov-audit-pc1",
-      "heartbeat_at": "2026-08-28T11:47:25.343Z",
+      "heartbeat_at": "2026-08-28T11:48:14.077Z",
       "attempts": 0,
       "evidence": [
         {
@@ -857,7 +857,9 @@
           "before-state confirmed 2026-08-28: claim supports --machine but no session binding or duplicate-identity refusal exists in orchestrator-core; no lease-logic unit tests exist; wave-2 hold released - build-time churn cannot affect running workers since each executes its own worktree copy"
         ]
       },
-      "rejection": null
+      "rejection": null,
+      "assigned_session": "sess-viro0019-zcode1-live-dryrun",
+      "assigned_machine": "pc-cloud1"
     },
     "VIRO-0140": {
       "id": "VIRO-0140",
@@ -1146,7 +1148,8 @@
       "role": "builder",
       "machine": "pc-cloud1",
       "packet": "VIRO-0019",
-      "heartbeat_at": "2026-08-28T11:47:25.343Z"
+      "heartbeat_at": "2026-08-28T11:48:14.077Z",
+      "session": "sess-viro0019-zcode1-live-dryrun"
     },
     "zcode-verify-pc6": {
       "role": "verifier",
@@ -1259,7 +1262,8 @@
       "acquired_at": "2026-08-28T10:39:09.362Z",
       "current_agent": "zcode-govtool-pc1",
       "current_stage": "build",
-      "heartbeat_at": "2026-08-28T11:47:25.343Z"
+      "heartbeat_at": "2026-08-28T11:48:14.077Z",
+      "current_session": "sess-viro0019-zcode1-live-dryrun"
     }
   },
   "events": [
@@ -2582,6 +2586,15 @@
       "at": "2026-08-28T11:47:55.593Z",
       "type": "packet.reconciled_from_manifest",
       "packet": "VIRO-0002"
+    },
+    {
+      "at": "2026-08-28T11:48:14.077Z",
+      "type": "agent.session_adopted",
+      "packet": "VIRO-0019",
+      "agent": "zcode-govtool-pc1",
+      "role": "builder",
+      "machine": "pc-cloud1",
+      "session": "sess-viro0019-zcode1-live-dryrun"
     }
   ]
 }
