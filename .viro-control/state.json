@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 232,
-  "updated_at": "2026-08-28T16:58:08.897Z",
+  "revision": 233,
+  "updated_at": "2026-08-28T16:58:15.458Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -1078,8 +1078,8 @@
       ],
       "dependencies": [],
       "critic_needed": true,
-      "stage": "verify",
-      "status": "BLOCKED",
+      "stage": "done",
+      "status": "RECONCILED",
       "assigned_agent": null,
       "assigned_role": null,
       "work_branch": "agent/viro-0145/zcode-gov-audit-pc1",
@@ -1127,28 +1127,24 @@
           "by": "zcode-pdffont-pc1",
           "item": "compound suite deferred to integration rebase onto VIRO-0005 (test absent at base 14e2812, per coordinator 2026-08-28); test:chrome deferred to independent verification per speed protocol; EmbeddedFace parameter-property rewrite noted for VIRO-0005 rebase",
           "at": "2026-08-28T11:39:42.942Z"
+        },
+        {
+          "stage": "reconcile",
+          "by": "governor",
+          "item": "landed via LOCAL merge af7519b (candidate c93b7ac; pdf-font 5/5 + 0145x0005 combination proven); sweep green; critic deferred",
+          "at": "2026-08-28T16:58:15.456Z"
         }
       ],
       "last_handoff": {
-        "from": "build",
-        "to": "verify",
-        "by": "zcode-pdffont-pc1",
-        "at": "2026-08-28T11:39:42.942Z",
+        "from": "historical",
+        "to": "done",
+        "by": "governor",
+        "at": "2026-08-28T16:58:15.456Z",
         "evidence": [
-          "candidate c93b7ac (fix a79daee) on agent/viro-0145/zcode-gov-audit-pc1: faceFor() embeds subset:false; FontFile2 byte-identical to source TTF",
-          "root cause: pdf-lib vendored fontkit TTFSubset emits glyf 1313B vs loca end 1312, outlines of glyphs 4+12 throw in fontkit; full-embed chosen per acceptance 3, size +1.2MB/face documented in manifest",
-          "tests/pdf-font-embed.test.mjs 5/5 (seam defect, full-face parse, per-glyph outline coverage, ToUnicode round-trip incl word space, truthful report)",
-          "gates: tsc clean; npm run test:unit 316/316 unchanged; npm run build exit 0",
-          "pdf.js 4.10.38 cross-check (scratch, outside repo): getTextContent exactly 'VIRO typographic', operatorList OK, no font warnings; pixel render 4123 dark px vs 1618 corrupt before-state",
-          "compound suite deferred to integration rebase onto VIRO-0005 (test absent at base 14e2812, per coordinator 2026-08-28); test:chrome deferred to independent verification per speed protocol; EmbeddedFace parameter-property rewrite noted for VIRO-0005 rebase"
+          "landed via LOCAL merge af7519b (candidate c93b7ac; pdf-font 5/5 + 0145x0005 combination proven); sweep green; critic deferred"
         ]
       },
-      "rejection": {
-        "by": "governor",
-        "stage": "verify",
-        "reason": "verifier session died in quota wall; builder PASS candidate c93b7ac; coordinator gate-ran green (pdf-font 5/5, tsc, unit, build) + 0145x0005 combination proven green; OWNER ORDER: merged to local main commit af7519b; independent critic still PENDING",
-        "at": "2026-08-28T16:19:36.249Z"
-      }
+      "rejection": null
     }
   },
   "agents": {},
@@ -2655,6 +2651,15 @@
       "by": "governor",
       "evidence": [
         "landed via LOCAL merge c8d6f2e (candidate 684b34e; rich-text 12/12); sweep green; critic deferred"
+      ]
+    },
+    {
+      "at": "2026-08-28T16:58:15.458Z",
+      "type": "packet.reconciled",
+      "packet": "VIRO-0145",
+      "by": "governor",
+      "evidence": [
+        "landed via LOCAL merge af7519b (candidate c93b7ac; pdf-font 5/5 + 0145x0005 combination proven); sweep green; critic deferred"
       ]
     }
   ]
