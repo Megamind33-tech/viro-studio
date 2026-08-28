@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 388,
-  "updated_at": "2026-08-28T21:53:15.427Z",
+  "revision": 389,
+  "updated_at": "2026-08-28T21:54:29.608Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -419,8 +419,8 @@
         "VIRO-0010"
       ],
       "critic_needed": false,
-      "stage": "release",
-      "status": "RELEASE",
+      "stage": "done",
+      "status": "RECONCILED",
       "assigned_agent": null,
       "assigned_role": null,
       "work_branch": "agent/viro-0011/zcode-gov-audit-pc1",
@@ -504,17 +504,21 @@
           "by": "zcode-release-pc1",
           "item": "critic NOT_APPLICABLE per manifest: persistence behavior only",
           "at": "2026-08-28T21:53:15.396Z"
+        },
+        {
+          "stage": "reconcile",
+          "by": "governor",
+          "item": "landed via LOCAL merge under owner order 2026-08-28 (candidate 65dc905, verifier PASS 23/23 two-document probe); identity suites re-run green on merged main",
+          "at": "2026-08-28T21:54:29.606Z"
         }
       ],
       "last_handoff": {
-        "from": "release",
-        "to": "merge-gate",
-        "by": "zcode-release-pc1",
-        "at": "2026-08-28T21:53:15.396Z",
+        "from": "historical",
+        "to": "done",
+        "by": "governor",
+        "at": "2026-08-28T21:54:29.606Z",
         "evidence": [
-          "PR binds approval to head SHA 65dc905bc447b3e592065f5e78c781d01384d837",
-          "independent verifier zcode-verify-pc13: 23/23 own two-document probe, legacy current-record compat, additive schema, byte-unchanged recovery.spec.mjs, gates green",
-          "critic NOT_APPLICABLE per manifest: persistence behavior only"
+          "landed via LOCAL merge under owner order 2026-08-28 (candidate 65dc905, verifier PASS 23/23 two-document probe); identity suites re-run green on merged main"
         ]
       },
       "rejection": null,
@@ -1940,19 +1944,6 @@
       "current_session": "7d582a52-7fbe-4354-a69e-cf7f1d44abc3",
       "heartbeat_at": "2026-08-28T21:52:09.946Z"
     },
-    "VIRO-0011": {
-      "packet": "VIRO-0011",
-      "scope": [
-        "src/app.ts",
-        "src/library/store.ts",
-        "docs/agents/deliveries/VIRO-0011.json",
-        "tests/recovery-identity-*"
-      ],
-      "acquired_at": "2026-08-28T19:32:14.640Z",
-      "current_agent": null,
-      "current_stage": "release",
-      "current_session": "46fe8aa5-14ed-46b9-908f-9b66cdcb36f0"
-    },
     "VIRO-0017": {
       "packet": "VIRO-0017",
       "scope": [
@@ -1983,12 +1974,6 @@
     }
   },
   "events": [
-    {
-      "at": "2026-08-28T07:56:43.514Z",
-      "type": "agent.heartbeat",
-      "agent": "zcode-verify-pc2",
-      "packet": "VIRO-0005"
-    },
     {
       "at": "2026-08-28T07:57:45.830Z",
       "type": "agent.heartbeat",
@@ -4085,6 +4070,15 @@
       "session": "46fe8aa5-14ed-46b9-908f-9b66cdcb36f0",
       "pr": 26,
       "head_sha": "65dc905bc447b3e592065f5e78c781d01384d837"
+    },
+    {
+      "at": "2026-08-28T21:54:29.608Z",
+      "type": "packet.reconciled",
+      "packet": "VIRO-0011",
+      "by": "governor",
+      "evidence": [
+        "landed via LOCAL merge under owner order 2026-08-28 (candidate 65dc905, verifier PASS 23/23 two-document probe); identity suites re-run green on merged main"
+      ]
     }
   ]
 }
