@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 321,
-  "updated_at": "2026-08-28T19:24:28.102Z",
+  "revision": 322,
+  "updated_at": "2026-08-28T19:25:06.822Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -1285,11 +1285,11 @@
       ],
       "critic_needed": true,
       "stage": "build",
-      "status": "QUEUED",
-      "assigned_agent": null,
-      "assigned_role": null,
+      "status": "ACTIVE",
+      "assigned_agent": "zcode-textframe-pc2",
+      "assigned_role": "builder",
       "work_branch": "agent/viro-0143/zcode-gov-audit-pc1",
-      "heartbeat_at": null,
+      "heartbeat_at": "2026-08-28T19:25:06.822Z",
       "attempts": 0,
       "evidence": [
         {
@@ -1430,6 +1430,12 @@
       "machine": "pc-cloud1",
       "packet": "VIRO-0141",
       "heartbeat_at": "2026-08-28T19:23:54.933Z"
+    },
+    "zcode-textframe-pc2": {
+      "role": "builder",
+      "machine": "pc-cloud1",
+      "packet": "VIRO-0143",
+      "heartbeat_at": "2026-08-28T19:25:06.822Z"
     }
   },
   "leases": {
@@ -1457,17 +1463,21 @@
       "acquired_at": "2026-08-28T19:23:54.933Z",
       "current_agent": "zcode-verify-pc10b",
       "current_stage": "verify"
+    },
+    "VIRO-0143": {
+      "packet": "VIRO-0143",
+      "scope": [
+        "src/engine/type.ts",
+        "src/document/text-model.ts",
+        "tests/text-frame-*",
+        "docs/agents/deliveries/VIRO-0143.json"
+      ],
+      "acquired_at": "2026-08-28T19:25:06.822Z",
+      "current_agent": "zcode-textframe-pc2",
+      "current_stage": "build"
     }
   },
   "events": [
-    {
-      "at": "2026-08-27T22:20:11.848Z",
-      "type": "packet.advanced",
-      "packet": "VIRO-0005",
-      "from": "build",
-      "to": "verify",
-      "by": "claude-export-pc1"
-    },
     {
       "at": "2026-08-27T22:22:19.455Z",
       "type": "packet.reconciled_from_manifest",
@@ -3448,6 +3458,14 @@
       "at": "2026-08-28T19:24:28.102Z",
       "type": "packet.reconciled_from_manifest",
       "packet": "VIRO-0002"
+    },
+    {
+      "at": "2026-08-28T19:25:06.822Z",
+      "type": "packet.claimed",
+      "packet": "VIRO-0143",
+      "agent": "zcode-textframe-pc2",
+      "role": "builder",
+      "machine": "pc-cloud1"
     }
   ]
 }
