@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 134,
-  "updated_at": "2026-08-28T10:18:18.033Z",
+  "revision": 135,
+  "updated_at": "2026-08-28T10:18:34.641Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -281,11 +281,11 @@
       "dependencies": [],
       "critic_needed": false,
       "stage": "audit",
-      "status": "QUEUED",
-      "assigned_agent": null,
-      "assigned_role": null,
-      "work_branch": null,
-      "heartbeat_at": null,
+      "status": "ACTIVE",
+      "assigned_agent": "zcode-gov-audit-pc1",
+      "assigned_role": "gap-auditor",
+      "work_branch": "agent/viro-0010/zcode-gov-audit-pc1",
+      "heartbeat_at": "2026-08-28T10:18:34.641Z",
       "attempts": 0,
       "evidence": [],
       "last_handoff": null,
@@ -784,7 +784,14 @@
       "rejection": null
     }
   },
-  "agents": {},
+  "agents": {
+    "zcode-gov-audit-pc1": {
+      "role": "gap-auditor",
+      "machine": "pc-cloud1",
+      "packet": "VIRO-0010",
+      "heartbeat_at": "2026-08-28T10:18:34.641Z"
+    }
+  },
   "leases": {
     "VIRO-0012": {
       "packet": "VIRO-0012",
@@ -797,6 +804,18 @@
       "acquired_at": "2026-08-28T06:43:47.797Z",
       "current_agent": null,
       "current_stage": "release"
+    },
+    "VIRO-0010": {
+      "packet": "VIRO-0010",
+      "scope": [
+        "src/app.ts",
+        "src/library/store.ts",
+        "tests/**",
+        "docs/agents/deliveries/VIRO-0010.json"
+      ],
+      "acquired_at": "2026-08-28T10:18:34.641Z",
+      "current_agent": "zcode-gov-audit-pc1",
+      "current_stage": "audit"
     }
   },
   "events": [
@@ -1611,6 +1630,14 @@
       "packet": "VIRO-0005",
       "by": "governor",
       "reason": "RELEASE/APPROVED on PR #19 (head 4d2576c frozen, verify PASS zcode-verify-pc2, critic PASS zcode-critic-pc1). Merge blocked EXTERNALLY: GitHub Actions account locked (billing issue) - required checks Delivery policy / Product regression gates cannot run, so the release sweep cannot merge. Blocking solely to release the tests/** lease so the parallel wave can proceed. When Actions billing is fixed: sweep auto-merges (sweep selects stage=release + approval=APPROVED regardless of BLOCKED status); if needed run: unblock VIRO-0005 then trigger any workflow. Governor recovery decision 2026-08-28."
+    },
+    {
+      "at": "2026-08-28T10:18:34.641Z",
+      "type": "packet.claimed",
+      "packet": "VIRO-0010",
+      "agent": "zcode-gov-audit-pc1",
+      "role": "gap-auditor",
+      "machine": "pc-cloud1"
     }
   ]
 }
