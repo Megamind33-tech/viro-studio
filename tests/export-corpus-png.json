@@ -29,6 +29,11 @@
     "height": 300,
     "sha256": "5bc6dac2f2e016c1180bf9439f2636e524b77f745f7cf494fe984be5dcd730fb"
   },
+  "export/styled-text-layer": {
+    "width": 400,
+    "height": 300,
+    "sha256": "b9ebf308ede26618d645e2b90163ba6648ff63b2989e305608bc89689e8f898c"
+  },
   "export/raster-layer": {
     "width": 400,
     "height": 300,
