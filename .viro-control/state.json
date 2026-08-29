@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 436,
-  "updated_at": "2026-08-29T00:01:34.242Z",
+  "revision": 437,
+  "updated_at": "2026-08-29T00:03:03.635Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -1999,11 +1999,11 @@
       "dependencies": [],
       "critic_needed": true,
       "stage": "release",
-      "status": "QUEUED",
-      "assigned_agent": null,
-      "assigned_role": null,
+      "status": "RELEASE",
+      "assigned_agent": "zcode-release-pc1",
+      "assigned_role": "release-manager",
       "work_branch": "agent/viro-0146/zcode-gov-audit-pc1",
-      "heartbeat_at": null,
+      "heartbeat_at": "2026-08-29T00:03:03.635Z",
       "attempts": 0,
       "evidence": [
         {
@@ -2091,7 +2091,7 @@
       },
       "rejection": null,
       "assigned_machine": "pc-cloud1",
-      "assigned_session": "facb1be4-ac98-4bf1-bc4c-ab2151f2211a"
+      "assigned_session": "2c2e86e1-8cf0-4ea5-892e-0d47d213ab28"
     },
     "VIRO-0147": {
       "id": "VIRO-0147",
@@ -2155,6 +2155,13 @@
       "session": "51efe904-f1a0-4f6d-9378-10f113c068fc",
       "packet": "VIRO-0144",
       "heartbeat_at": "2026-08-28T23:44:43.324Z"
+    },
+    "zcode-release-pc1": {
+      "role": "release-manager",
+      "machine": "pc-cloud1",
+      "session": "2c2e86e1-8cf0-4ea5-892e-0d47d213ab28",
+      "packet": "VIRO-0146",
+      "heartbeat_at": "2026-08-29T00:03:03.635Z"
     }
   },
   "leases": {
@@ -2167,10 +2174,9 @@
         "docs/agents/deliveries/VIRO-0146.json"
       ],
       "acquired_at": "2026-08-28T21:32:32.991Z",
-      "current_agent": null,
+      "current_agent": "zcode-release-pc1",
       "current_stage": "release",
-      "current_session": "facb1be4-ac98-4bf1-bc4c-ab2151f2211a",
-      "heartbeat_at": "2026-08-29T00:01:05.235Z"
+      "current_session": "2c2e86e1-8cf0-4ea5-892e-0d47d213ab28"
     },
     "VIRO-0144": {
       "packet": "VIRO-0144",
@@ -2187,13 +2193,6 @@
     }
   },
   "events": [
-    {
-      "at": "2026-08-28T10:21:11.504Z",
-      "type": "packet.blocked",
-      "packet": "VIRO-0010",
-      "by": "governor",
-      "reason": "Governor lease-scope refresh: manifest tests/** narrowed to tests/autosave-*; block-unblock to let sync update the active lease scope"
-    },
     {
       "at": "2026-08-28T10:21:19.421Z",
       "type": "packet.unblocked",
@@ -4381,6 +4380,15 @@
       "by": "zcode-critic-pc3",
       "machine": "pc-cloud1",
       "session": "facb1be4-ac98-4bf1-bc4c-ab2151f2211a"
+    },
+    {
+      "at": "2026-08-29T00:03:03.635Z",
+      "type": "packet.claimed",
+      "packet": "VIRO-0146",
+      "agent": "zcode-release-pc1",
+      "role": "release-manager",
+      "machine": "pc-cloud1",
+      "session": "2c2e86e1-8cf0-4ea5-892e-0d47d213ab28"
     }
   ]
 }
