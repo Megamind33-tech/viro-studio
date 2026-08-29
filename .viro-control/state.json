@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 458,
-  "updated_at": "2026-08-29T00:57:01.844Z",
+  "revision": 459,
+  "updated_at": "2026-08-29T00:57:09.349Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -2169,11 +2169,11 @@
       ],
       "critic_needed": true,
       "stage": "verify",
-      "status": "QUEUED",
-      "assigned_agent": null,
-      "assigned_role": null,
+      "status": "VERIFY",
+      "assigned_agent": "zcode-verify-pc17",
+      "assigned_role": "verifier",
       "work_branch": "agent/viro-0147/zcode-gov-audit-pc1",
-      "heartbeat_at": null,
+      "heartbeat_at": "2026-08-29T00:57:09.349Z",
       "attempts": 0,
       "evidence": [
         {
@@ -2221,7 +2221,7 @@
       },
       "rejection": null,
       "assigned_machine": "pc-cloud1",
-      "assigned_session": "0b3e1d7c-5b42-41c5-a8f3-9d0a5810e056"
+      "assigned_session": "4a87f438-fb98-4d6c-8f83-535860d6f49b"
     },
     "VIRO-0148": {
       "id": "VIRO-0148",
@@ -2258,6 +2258,13 @@
       "session": "6f16c4bb-6ddd-486b-ab04-5248ba496c52",
       "packet": "VIRO-0144",
       "heartbeat_at": "2026-08-29T00:54:39.285Z"
+    },
+    "zcode-verify-pc17": {
+      "role": "verifier",
+      "machine": "pc-cloud1",
+      "session": "4a87f438-fb98-4d6c-8f83-535860d6f49b",
+      "packet": "VIRO-0147",
+      "heartbeat_at": "2026-08-29T00:57:09.349Z"
     }
   },
   "leases": {
@@ -2283,19 +2290,12 @@
         "docs/agents/deliveries/VIRO-0147.json"
       ],
       "acquired_at": "2026-08-29T00:03:52.025Z",
-      "current_agent": null,
+      "current_agent": "zcode-verify-pc17",
       "current_stage": "verify",
-      "current_session": "0b3e1d7c-5b42-41c5-a8f3-9d0a5810e056",
-      "heartbeat_at": "2026-08-29T00:51:24.312Z"
+      "current_session": "4a87f438-fb98-4d6c-8f83-535860d6f49b"
     }
   },
   "events": [
-    {
-      "at": "2026-08-28T10:27:53.852Z",
-      "type": "agent.heartbeat",
-      "agent": "zcode-import-pc1",
-      "packet": "VIRO-0013"
-    },
     {
       "at": "2026-08-28T10:28:27.809Z",
       "type": "packet.claimed",
@@ -4505,6 +4505,15 @@
       "at": "2026-08-29T00:57:01.844Z",
       "type": "packet.reconciled_from_manifest",
       "packet": "VIRO-0002"
+    },
+    {
+      "at": "2026-08-29T00:57:09.349Z",
+      "type": "packet.claimed",
+      "packet": "VIRO-0147",
+      "agent": "zcode-verify-pc17",
+      "role": "verifier",
+      "machine": "pc-cloud1",
+      "session": "4a87f438-fb98-4d6c-8f83-535860d6f49b"
     }
   ]
 }
