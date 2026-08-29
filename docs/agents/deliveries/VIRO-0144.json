@@ -5,8 +5,8 @@
   "domain": "canvas-rendering",
   "state": "QUEUED",
   "outcome": "Caret stops derive from HarfBuzz cluster boundaries so carets and selection highlights land correctly under kerning and ligatures; story script/direction/language feed HarfBuzz instead of guessSegmentProperties; per-line compose stops re-shaping every prefix.",
-  "before": "Gap audit 2026-08-27 (main 14e2812): ShapedRun.glyphs stores only {gid,dx,dy,adv} - the cluster value HarfBuzz returns is dropped (type.ts:60-64, 167-177); caret stops are reconstructed by re-shaping each text prefix and summing advances (emitStops type.ts:398-410) while glyph positions come from shaping the whole line (setLine type.ts:371-387), so any kerning pair or ligature (e.g. 'fi') makes caret x land mid-glyph and selection rectangles (compositor.ts:1229-1243) highlight the wrong span; prefix re-shaping is O(line length) per line; buffer.guessSegmentProperties is the only script input (type.ts:162-164) while story language/script/direction (types.ts:281-285) are inert. Related app-side edge (leased src/app.ts, flagged separately): Backspace deletes one UTF-16 code unit (app.ts:1782-1787) splitting surrogate pairs.",
-  "after": "caretStops derive from glyph clusters (prefix re-shaping removed), setSegmentProperties feeds story script/direction/language, and mixed-kerning fixtures place carets within 0.5px of glyph origins with correct selection spans.",
+  "before": "Gap audit 2026-08-27 (main 14e2812), re-confirmed 2026-08-28 on base 668d682 (includes 0142 styled runs + 0143 insets): ShapedRun.glyphs stores only {gid,dx,dy,adv} - the cluster value HarfBuzz returns is dropped; caret stops are reconstructed by re-shaping each text prefix and summing advances (emitStops) while glyph positions come from shaping the whole line (setLine), so any kerning pair or ligature makes caret x land mid-glyph and selection rectangles highlight the wrong span. Live pre-change probe on 668d682: with kern on, the caret after \"A\" of \"AV To\" sat at 17.89px while \"V\" inked at 16.77px. Prefix re-shaping is O(line length) per line; buffer.guessSegmentProperties is the only script input while story language/script/direction (types.ts:281-285) are inert. Related app-side edge (leased src/app.ts, flagged separately): Backspace deletes one UTF-16 code unit splitting surrogate pairs.",
+  "after": "ShapedRun and ShapedGlyph retain the HarfBuzz cluster (UTF-16 offset identity — harfbuzzjs addText feeds hb_buffer_add_utf16, so clusters arrive as UTF-16 indices into the shaped slice). emitStops is deleted: setLine derives caret stops from the same glyph walk that places glyphs — one stop per cluster group at the group's pen edges, mirrored for RTL pieces (direction detected from cluster monotonicity, since harfbuzzjs exposes no direction getter), deduped first-wins by story offset, sorted on return. story.character (and per-range overrides via characterWith) language/script/direction now feed the buffer through hb's segment-property setters (setLanguage/setScript/setDirection — harfbuzzjs 1.6 has no combined setSegmentProperties binding; these three ARE the hb_buffer_set_segment_properties fields) before guessSegmentProperties fills whatever the story left unset, so stories without the fields shape byte-identically to before. The shaping cache keys segment properties separately from OpenType feature keys. caretStops derive from glyph clusters (prefix re-shaping removed), and mixed-kerning fixtures place carets within 0.5px of glyph origins with correct selection spans.",
   "allowed_paths": [
     "src/engine/type.ts",
     "docs/agents/deliveries/VIRO-0144.json",
@@ -17,27 +17,39 @@
   ],
   "acceptance": [
     "For a kerning+ligature fixture, caret x from caretStops matches shaped glyph origins at every boundary (unit assert, <= 0.5px).",
-    "Selection highlight covers exactly the selected glyphs (canvas screenshot).",
-    "Pixel output identical to before for runs without kerning-dependent boundaries (regression).",
-    "Prefix re-shaping eliminated (cache-miss count assert).",
-    "RTL/Arabic fixture shapes and measures with correct direction instead of guessed properties.",
-    "npx tsc --noEmit, targeted tests, npm run build pass."
+    "Selection highlight covers exactly the selected glyphs (canvas screenshot at 2 ranges incl. across a style boundary from 0142's runs).",
+    "Pixel output identical to before for runs without kerning-dependent boundaries (pixel-diff regression against hashes captured on pristine 668d682).",
+    "Prefix re-shaping eliminated (cache-size assert + code-structure proof: emitStops deleted).",
+    "RTL/Arabic fixture shapes and measures with correct direction instead of guessed properties; story script/direction/language provably reach the shaper.",
+    "npx tsc --noEmit, targeted tests, test:unit + text-frame + rich-text suites untouched and green, test:chrome (packet spec) on 5206, npm build pass."
   ],
   "evidence": [
-    "Caret-boundary unit assertions on kerning/ligature fixture",
-    "Selection span screenshot",
-    "Pixel-identical regression for simple runs",
-    "RTL shaping proof",
-    "npx tsc --noEmit",
-    "npm run build"
+    "tests/caret-fidelity.test.mjs 14/14: every visible-cluster caret stop equals its glyph origin (<= 0.5px) under kern+liga on 'AVATAR office fi' (stop(1) == 16.77, the kerned V origin, vs 17.89 pre-change); no stops inside the ffi/fi ligatures (offsets 9,10,15 absent); space-boundary stops sit at the pen; selection rects built the compositor's way cover exactly the selected glyphs across a size+face style boundary (boundary offset dedupes to ONE stop); a ligature selection highlights the whole glyph; nearestCaretOffset snaps mid-ligature clicks to boundaries",
+    "RTL proof (tests/caret-fidelity-arabic/NotoNaskhArabic-Regular.ttf, OFL Noto Naskh Arabic vendored from fontsource CDN): direction rtl shapes with descending clusters and mirrored carets (offset 0 at the right edge, last offset at the left edge, strictly decreasing x); direction ltr FORCED on Arabic produces ascending clusters — impossible via the guesser, so the setter provably reached the buffer; script latn vs Arab changes the shaped glyph ids (isolated vs contextual forms); language ar vs fa produce separate shaping-cache entries (no key collision)",
+    "Prefix re-shaping eliminated: emitStops removed from src/engine/type.ts; one compose of a 16-char line adds <= 12 shaped runs to a fresh face (the deleted path added 17+ prefix runs); a second compose adds zero; unit test pins both",
+    "Pixel regression: tests/caret-fidelity-pixel-baseline.json holds raw-RGBA SHA-256 captured from the UNMODIFIED engine at 668d682 by tests/caret-fidelity-baseline-capture.mjs (capture verified deterministic on pristine base); tests/caret-fidelity-pixel-baseline.test.mjs re-renders all 6 cases (plain left/justify/center, 0142 styled runs, 0143 inset frame, empty) through the changed engine — every hash identical, 8/8",
+    "Canvas selection proof: tests/caret-fidelity-selection.spec.ts (playwright, this worktree's dev server on 127.0.0.1:5206 via the spec's VIRO_CARET_BASE_URL) drives the real desk — type frame through type.addFrame + type.characterRange (style boundary at offset 7), kern+liga on; self-calibrating whole-canvas pixel diffs (caret hairlines mark the painted x of stop 8 and stop 11) prove the painted highlight spans exactly stop(8)..stop(11) for the ffi ligature and stop(4)..stop(13) across the style boundary, with no highlight cells beyond either boundary",
+    "Gates: npx tsc --noEmit exit 0; npm run test:unit 336/336 (suite grown from the frozen 316 by earlier merged packets; every pre-existing file untouched and green); text-frame + rich-text suites 39/39 (tests/text-frame-{inset,valign,autosize,pixel-baseline,inset-geometry}.test.mjs + tests/rich-text-{compose,history}.test.mjs); node node_modules/vite/bin/vite.js build exit 0"
   ],
   "builder": {
-    "status": "PENDING",
-    "notes": "Serialized behind VIRO-0143 (shared type.ts). app.ts Backspace edge is out of scope here (leased); flagged to Governor for the persistence/app packet."
+    "status": "DONE",
+    "agent": "zcode-caret-pc1",
+    "branch": "agent/viro-0144/zcode-gov-audit-pc1",
+    "notes": "Implementation notes for VERIFY/CRITIC: (1) harfbuzzjs 1.6 exports no combined setSegmentProperties binding — segment properties are fed through the exported setters setDirection/setScript/setLanguage (exactly the hb_buffer_set_segment_properties fields) applied BEFORE guessSegmentProperties, which only fills unset properties, so stories without the fields shape byte-identically to before (pixel baseline proves it). Direction values come from the module's exported Direction enum via face.hb.Direction — no magic numbers. (2) Cluster identity: harfbuzzjs Buffer.addText encodes UTF-16 (hb_buffer_add_utf16 over a charCodeAt copy), so cluster values are UTF-16 offsets into the shaped slice; para-local = piece.s + cluster; story offset = paraStart + that. ShapedGlyph.cluster stores the story-space offset (future input for PDF text mapping). (3) Per-piece RTL detection uses cluster monotonicity in visual order (a clean fall without a rise = RTL) because harfbuzzjs exposes no direction getter; works for both explicitly set and guessed directions. (4) Caret edges use pen box edges, not dx-shifted glyph origins, so shared boundaries between adjacent groups agree exactly regardless of which neighbour claims them first (first-wins dedup by story offset); the LTR before-caret uses the group's first-glyph origin, which equals the pen edge for Latin. (5) Overflow lines keep emitting stops (setLine no longer early-returns; glyph pushes and line-count/baseline updates are gated instead) — preserves the old emitStops-before-setLine behaviour where the caret can sit in text the frame dropped. (6) characterWith now merges language/script/direction from range overrides and sameRunStyle splits spans on segKey, so the inert fields are real at range level too; spans without them merge exactly as before. (7) FIXTURE FACT: bundled NotoSans-Bold.ttf carries NO liga lookups (its stops stay per-character) — the chrome spec places the style boundary before 'office fi' so the ligature words stay in the regular face. (8) RECORDED DEBT (unchanged, out of lease): app.ts Backspace surrogate-pair edge remains recorded debt per the packet note — app.ts untouched. (9) Mixed-direction runs within one paragraph shape under one direction (HarfBuzz has no bidi itemizer and the engine never had one); full bidi paragraph itemization remains future work, unchanged from before this packet. (10) test:chrome environment note: 127.0.0.1:5173 is occupied by a foreign tree in this shared environment (verified serving pre-0144 type.ts), so the packet's chrome gate ran against this worktree's own dev server on 127.0.0.1:5206 via the spec's VIRO_CARET_BASE_URL override; the spec defaults to '/' elsewhere. No files outside the lease were modified.",
+    "proof": [
+      "commit b9e8f6b baseline fixtures captured on pristine 668d682 (pixel hashes deterministic across two runs + OFL Noto Naskh Arabic test font in tests/caret-fidelity-arabic/)",
+      "commit 8aff7e9 caret stops derive from HarfBuzz clusters; story script/direction/language reach the shaper (src/engine/type.ts only)",
+      "commit cb6524d caret fidelity unit suite + pixel regression + canvas selection spec",
+      "tests/caret-fidelity.test.mjs 14/14 via node --experimental-strip-types --import ./tests/ts-register.mjs --test tests/caret-fidelity.test.mjs",
+      "tests/caret-fidelity-pixel-baseline.test.mjs 8/8 (all six 668d682 hashes reproduced post-change)",
+      "npm run test:unit 336/336 exit 0; text-frame + rich-text suites 39/39; npx tsc --noEmit exit 0; node node_modules/vite/bin/vite.js build exit 0",
+      "tests/caret-fidelity-selection.spec.ts PASS against http://127.0.0.1:5206 (playwright; PLAYWRIGHT_BROWSERS_PATH pointed at the repo-shared browser install)",
+      "live before-state probe (pre-change): kern-on caret after 'A' at 17.89px vs V origin 16.77px; post-change stop(1) == 16.77 exactly"
+    ]
   },
   "verifier": {
     "status": "PENDING",
-    "notes": "Independent verification required."
+    "notes": "Independent verification required. Chrome spec needs PLAYWRIGHT_BROWSERS_PATH to a provisioned browser install and a dev server (default '/' or VIRO_CARET_BASE_URL)."
   },
   "critic": {
     "status": "PENDING",
@@ -46,11 +58,16 @@
   "delta": {
     "before": "Carets drift under kerning/ligatures; script fields inert; O(n) re-shapes per line.",
     "after": "Cluster-derived carets, honored direction/script, single shape per line.",
-    "proof": [],
-    "regression_protection": [
-      "Pixel-identical simple-run regression",
-      "Existing type/engine suites green"
+    "proof": [
+      "tests/caret-fidelity.test.mjs 14/14 (kern/liga origin match <= 0.5px, ligature-interior stops absent, boundary dedupe, RTL mirror, forced-LTR/script/language proofs, cache-bound prefix proof)",
+      "tests/caret-fidelity-selection.spec.ts PASS on 5206: painted highlight spans exactly the calibrated stop-to-stop span for the ffi ligature range and a cross-style-boundary range",
+      "tests/caret-fidelity-pixel-baseline.test.mjs 8/8: bit-identical to the pristine 668d682 engine for all six kern-free cases",
+      "emitStops deleted; face.runs cache grows <= 12 entries for a 16-char compose (old path: 17+)"
     ],
-    "new_debt": "app.ts surrogate-pair Backspace fix belongs to an app-leased packet."
+    "regression_protection": [
+      "Pixel-identical simple-run regression (raw-RGBA SHA-256 vs pristine-base capture)",
+      "Existing type/engine suites green: test:unit 336/336, text-frame + rich-text 39/39"
+    ],
+    "new_debt": "app.ts surrogate-pair Backspace fix belongs to an app-leased packet (untouched here). Bidi paragraph itemization (mixed-direction runs in one paragraph) remains future work, unchanged by this packet."
   }
 }
