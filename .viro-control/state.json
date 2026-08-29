@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 448,
-  "updated_at": "2026-08-29T00:32:51.392Z",
+  "revision": 449,
+  "updated_at": "2026-08-29T00:40:04.418Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -1875,12 +1875,12 @@
         "VIRO-0143"
       ],
       "critic_needed": true,
-      "stage": "build",
-      "status": "ACTIVE",
-      "assigned_agent": "zcode-caret-pc1",
-      "assigned_role": "builder",
+      "stage": "verify",
+      "status": "QUEUED",
+      "assigned_agent": null,
+      "assigned_role": null,
       "work_branch": "agent/viro-0144/zcode-gov-audit-pc1",
-      "heartbeat_at": "2026-08-29T00:32:51.392Z",
+      "heartbeat_at": null,
       "attempts": 0,
       "evidence": [
         {
@@ -1888,15 +1888,35 @@
           "by": "zcode-gov-audit-pc1",
           "item": "before-state confirmed 2026-08-28 on local main (now incl. 0142/0143 type work): ShapedRun drops HarfBuzz cluster (type.ts:60-64,167-177); caret stops re-shaped per prefix (emitStops 398-410) vs whole-line shaping; story script/direction/language fields inert (162-164); base 72b05f0+ merges do not alter these seams",
           "at": "2026-08-28T22:58:33.062Z"
+        },
+        {
+          "stage": "build",
+          "by": "zcode-caret-pc1",
+          "item": "candidate 9b962a0 on agent/viro-0144/zcode-gov-audit-pc1 (base 668d682): caretStops derived from HarfBuzz clusters in setLine's glyph walk, emitStops prefix re-shaping deleted, story.character language/script/direction (+range overrides) feed hb segment properties via setDirection/setScript/setLanguage before guessSegmentProperties",
+          "at": "2026-08-29T00:40:04.354Z"
+        },
+        {
+          "stage": "build",
+          "by": "zcode-caret-pc1",
+          "item": "acceptance: tests/caret-fidelity.test.mjs 14/14 (cluster stops == glyph origins <=0.5px under kern+liga, ligature interiors stopless, boundary dedupe, RTL mirror + forced-LTR/script/language reaching the buffer, cache-bound proof that prefix re-shaping is gone); tests/caret-fidelity-pixel-baseline.test.mjs 8/8 (raw-RGBA SHA-256 captured on pristine 668d682, bit-identical post-change); tests/caret-fidelity-selection.spec.ts PASS twice against dev server 127.0.0.1:5206 (self-calibrating whole-canvas diffs prove the painted highlight spans exactly stop(8)..stop(11) for the ffi ligature and stop(4)..stop(13) across a 0142 style boundary)",
+          "at": "2026-08-29T00:40:04.418Z"
+        },
+        {
+          "stage": "build",
+          "by": "zcode-caret-pc1",
+          "item": "gates: npx tsc --noEmit exit 0; npm run test:unit 336/336; text-frame + rich-text suites 39/39 untouched and green; node node_modules/vite/bin/vite.js build exit 0; delivery record docs/agents/deliveries/VIRO-0144.json (notes: harfbuzzjs 1.6 exposes segment properties as individual setters; NotoSans-Bold has no liga lookups; 5173 occupied by a foreign tree in this env so the chrome gate used 5206; app.ts Backspace debt untouched)",
+          "at": "2026-08-29T00:40:04.418Z"
         }
       ],
       "last_handoff": {
-        "from": "audit",
-        "to": "build",
-        "by": "zcode-gov-audit-pc1",
-        "at": "2026-08-28T22:58:33.066Z",
+        "from": "build",
+        "to": "verify",
+        "by": "zcode-caret-pc1",
+        "at": "2026-08-29T00:40:04.418Z",
         "evidence": [
-          "before-state confirmed 2026-08-28 on local main (now incl. 0142/0143 type work): ShapedRun drops HarfBuzz cluster (type.ts:60-64,167-177); caret stops re-shaped per prefix (emitStops 398-410) vs whole-line shaping; story script/direction/language fields inert (162-164); base 72b05f0+ merges do not alter these seams"
+          "candidate 9b962a0 on agent/viro-0144/zcode-gov-audit-pc1 (base 668d682): caretStops derived from HarfBuzz clusters in setLine's glyph walk, emitStops prefix re-shaping deleted, story.character language/script/direction (+range overrides) feed hb segment properties via setDirection/setScript/setLanguage before guessSegmentProperties",
+          "acceptance: tests/caret-fidelity.test.mjs 14/14 (cluster stops == glyph origins <=0.5px under kern+liga, ligature interiors stopless, boundary dedupe, RTL mirror + forced-LTR/script/language reaching the buffer, cache-bound proof that prefix re-shaping is gone); tests/caret-fidelity-pixel-baseline.test.mjs 8/8 (raw-RGBA SHA-256 captured on pristine 668d682, bit-identical post-change); tests/caret-fidelity-selection.spec.ts PASS twice against dev server 127.0.0.1:5206 (self-calibrating whole-canvas diffs prove the painted highlight spans exactly stop(8)..stop(11) for the ffi ligature and stop(4)..stop(13) across a 0142 style boundary)",
+          "gates: npx tsc --noEmit exit 0; npm run test:unit 336/336; text-frame + rich-text suites 39/39 untouched and green; node node_modules/vite/bin/vite.js build exit 0; delivery record docs/agents/deliveries/VIRO-0144.json (notes: harfbuzzjs 1.6 exposes segment properties as individual setters; NotoSans-Bold has no liga lookups; 5173 occupied by a foreign tree in this env so the chrome gate used 5206; app.ts Backspace debt untouched)"
         ]
       },
       "rejection": null,
@@ -2205,13 +2225,6 @@
     }
   },
   "agents": {
-    "zcode-caret-pc1": {
-      "role": "builder",
-      "machine": "pc-cloud1",
-      "session": "51efe904-f1a0-4f6d-9378-10f113c068fc",
-      "packet": "VIRO-0144",
-      "heartbeat_at": "2026-08-29T00:32:51.392Z"
-    },
     "zcode-styledtext-pc1": {
       "role": "builder",
       "machine": "pc-cloud1",
@@ -2229,8 +2242,8 @@
         "tests/caret-fidelity-*"
       ],
       "acquired_at": "2026-08-28T22:58:25.165Z",
-      "current_agent": "zcode-caret-pc1",
-      "current_stage": "build",
+      "current_agent": null,
+      "current_stage": "verify",
       "current_session": "51efe904-f1a0-4f6d-9378-10f113c068fc",
       "heartbeat_at": "2026-08-29T00:32:51.392Z"
     },
@@ -2250,14 +2263,6 @@
     }
   },
   "events": [
-    {
-      "at": "2026-08-28T10:23:23.695Z",
-      "type": "packet.advanced",
-      "packet": "VIRO-0145",
-      "from": "audit",
-      "to": "build",
-      "by": "zcode-gov-audit-pc1"
-    },
     {
       "at": "2026-08-28T10:24:52.472Z",
       "type": "packet.claimed",
@@ -4455,6 +4460,16 @@
       "packet": "VIRO-0144",
       "session": "51efe904-f1a0-4f6d-9378-10f113c068fc",
       "machine": "pc-cloud1"
+    },
+    {
+      "at": "2026-08-29T00:40:04.418Z",
+      "type": "packet.advanced",
+      "packet": "VIRO-0144",
+      "from": "build",
+      "to": "verify",
+      "by": "zcode-caret-pc1",
+      "machine": "pc-cloud1",
+      "session": "51efe904-f1a0-4f6d-9378-10f113c068fc"
     }
   ]
 }
