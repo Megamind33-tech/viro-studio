@@ -27,6 +27,11 @@ const base = baseConfig as Config;
 export default defineConfig({
   ...base,
   testDir: ".",
+  // One worker: with the default 2, two SwiftShader Chromium instances contend
+  // for the CPU and desks randomly miss the 90s bootReady gate (observed as
+  // first-attempt failures across a11y/pdf/polish suites, passing on retry).
+  // Serial execution makes this seat gate deterministic.
+  workers: 1,
   use: {
     ...base.use,
     baseURL: "http://127.0.0.1:5211",

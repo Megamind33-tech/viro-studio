@@ -26,17 +26,28 @@
     "npx tsc --noEmit",
     "npm run build"
   ],
-  "builder": { "status": "PENDING", "notes": "Serialized behind VIRO-0017 (shared chrome lease)." },
+  "builder": {
+    "status": "DELIVERED",
+    "notes": "Builder zcode-status-pc1 (pc-cloud1), branch agent/viro-0148/zcode-gov-audit-pc1 based on fc96f44 (includes 0016 a11y + 0017 polish chrome; composed, not regressed). Before-state re-confirmed: index.html #stat-engine was the ONLY aria-live=polite cell and desk.ts:1853 wrote docSizeLabel(page,...) into it whenever app.engines was set, clobbering every post-boot app.status message (save/export/recovery) on the next render; screen readers and sighted users both lost the message. Fix (2 product files, inside lease): (1) index.html adds a dedicated non-live <span class=\"stat\" id=\"stat-docsize\" hidden> slot before the live cell; #stat-engine keeps aria-live=polite and the grow slot as the ONE status channel; (2) desk.ts render now writes app.status into #stat-engine textContent IN PLACE behind a change guard (no element replacement, no innerHTML swap; the guard also stops re-render churn from rewriting identical text into the live node, which screen readers can re-announce), and renders docSizeLabel into #stat-docsize only while app.engines is up — the slot stays hidden and empty during boot (truthful: no document to measure yet). Regression suite tests/a11y-status-live.spec.ts: (T1) pins the exact pre-save #stat-engine element in the page, presses Ctrl+S, asserts 'Saved … to Projects' text AND that the announcing node IS the pinned node (same reference, isConnected, aria-live=polite preserved) — node identity + text as frozen; (T2) proves the announcement survives later render churn (zoom commands re-run the render path that used to clobber it) and that the Doc: readout sits in #stat-docsize which carries NO aria-live attribute; (T3) post-boot slot/region content contract + committed statusbar screenshot. Bite check: with the fix git-stashed (pre-fix desk.ts+index.html) the same suite FAILS 3/3; with the fix it PASSES 3/3 — the guard is real, not vacuous. Evidence shots committed under tests/a11y-status-shots/ (statusbar-after-save.png reads: Untitled | Zoom 21% | 2480 x 3508 px | 300 ppi | RGB/8 | Doc: 33.2M/33.2M | Saved \"Untitled\" to Projects — doc-size in its own cell, truthful message in the live region, matching the critic probe's 33.2M/33.2M numbers). tests/a11y-status-playwright.config.ts is the seat-local gate runner on the assigned port 5211 (0017 seat-port pattern; reuseExistingServer:false; workers:1 after observing default 2 workers make two SwiftShader Chromium instances contend and randomly miss the 90s bootReady gate across ALL suites)."
+  },
   "verifier": { "status": "PENDING", "notes": "Independent verification required." },
   "critic": { "status": "PENDING", "notes": "Small user-visible fix; critic re-checks announcement behavior." },
   "delta": {
     "before": "aria-live region clobbered post-boot; save/export messages invisible and unannounced.",
     "after": "Truthful visible + announced status messages with stable live node.",
-    "proof": [],
-    "regression_protection": [
-      "VIRO-0016 a11y suite green",
-      "Existing chrome suites green"
+    "proof": [
+      "npx tsc --noEmit - clean (exit 0)",
+      "npm run test:unit - 336/336 pass, 0 fail on candidate (frozen acceptance cited 316; the suite grew on main before this branch's base fc96f44 - VIRO-0147-era additions - none of the 336 touch status chrome)",
+      "npx playwright test --config=tests/a11y-status-playwright.config.ts a11y-status-live - 3/3 PASS; pre-fix stash run of the same suite: 3/3 FAIL (bite check)",
+      "npx playwright test --config=tests/a11y-status-playwright.config.ts (FULL chrome suite on seat port 5211, serial workers=1) - 34/34 PASSED, zero retries needed: chrome.spec 6, a11y-keyboard.spec (VIRO-0016) 6, visual-polish-chrome.spec (VIRO-0017) 8, visual-polish-tokens.spec (VIRO-0017) 5, pdf-compound.spec 5, pdf-effects-parity.spec 2, a11y-status-live.spec (VIRO-0148) 3",
+      "node node_modules/vite/bin/vite.js build - exit 0 (web dist + electron preload)",
+      "tests/a11y-status-shots/statusbar-after-save.png + desk-after-save.png - corrected status content only"
     ],
-    "new_debt": "none yet"
+    "regression_protection": [
+      "tests/a11y-status-live.spec.ts - node identity + truthful text after post-boot save, announcement survives render churn, Doc: readout confined to non-live #stat-docsize",
+      "tests/a11y-keyboard.spec.ts - full VIRO-0016 suite rerun green on the candidate",
+      "tests/visual-polish-chrome.spec.ts + tests/visual-polish-tokens.spec.ts - VIRO-0017 polish suites rerun green on the candidate"
+    ],
+    "new_debt": "none"
   }
 }
