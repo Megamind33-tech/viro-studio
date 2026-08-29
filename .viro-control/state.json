@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 464,
-  "updated_at": "2026-08-29T01:00:57.284Z",
+  "revision": 465,
+  "updated_at": "2026-08-29T01:01:04.392Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -1875,12 +1875,12 @@
         "VIRO-0143"
       ],
       "critic_needed": true,
-      "stage": "verify",
-      "status": "VERIFY",
-      "assigned_agent": "zcode-verify-pc16",
-      "assigned_role": "verifier",
+      "stage": "critic",
+      "status": "QUEUED",
+      "assigned_agent": null,
+      "assigned_role": null,
       "work_branch": "agent/viro-0144/zcode-gov-audit-pc1",
-      "heartbeat_at": "2026-08-29T01:00:57.284Z",
+      "heartbeat_at": null,
       "attempts": 0,
       "evidence": [
         {
@@ -1906,17 +1906,91 @@
           "by": "zcode-caret-pc1",
           "item": "gates: npx tsc --noEmit exit 0; npm run test:unit 336/336; text-frame + rich-text suites 39/39 untouched and green; node node_modules/vite/bin/vite.js build exit 0; delivery record docs/agents/deliveries/VIRO-0144.json (notes: harfbuzzjs 1.6 exposes segment properties as individual setters; NotoSans-Bold has no liga lookups; 5173 occupied by a foreign tree in this env so the chrome gate used 5206; app.ts Backspace debt untouched)",
           "at": "2026-08-29T00:40:04.418Z"
+        },
+        {
+          "stage": "verify",
+          "by": "zcode-verify-pc16",
+          "item": "verifier zcode-verify-pc16 @ pc-cloud1 on clean worktree 9b962a0 (base 668d682): diff-scope confirmed = src/engine/type.ts + tests/caret-fidelity-* + docs/agents/deliveries/VIRO-0144.json only",
+          "at": "2026-08-29T01:01:04.390Z"
+        },
+        {
+          "stage": "verify",
+          "by": "zcode-verify-pc16",
+          "item": "npx tsc --noEmit exit 0",
+          "at": "2026-08-29T01:01:04.391Z"
+        },
+        {
+          "stage": "verify",
+          "by": "zcode-verify-pc16",
+          "item": "npm run test:unit 336/336 exit 0",
+          "at": "2026-08-29T01:01:04.391Z"
+        },
+        {
+          "stage": "verify",
+          "by": "zcode-verify-pc16",
+          "item": "tests/caret-fidelity.test.mjs 14/14 + tests/caret-fidelity-pixel-baseline.test.mjs 8/8 exit 0",
+          "at": "2026-08-29T01:01:04.391Z"
+        },
+        {
+          "stage": "verify",
+          "by": "zcode-verify-pc16",
+          "item": "text-frame{inset,valign,autosize,pixel-baseline,inset-geometry}+rich-text{compose,history} 39/39 exit 0",
+          "at": "2026-08-29T01:01:04.391Z"
+        },
+        {
+          "stage": "verify",
+          "by": "zcode-verify-pc16",
+          "item": "node node_modules/vite/bin/vite.js build exit 0",
+          "at": "2026-08-29T01:01:04.391Z"
+        },
+        {
+          "stage": "verify",
+          "by": "zcode-verify-pc16",
+          "item": "INDEPENDENT PROBES 21/21 (own scripts, own fixture 'Waffle afflict fi' with ff/ffl/fi ligatures + W-a/A-f kern pairs): worst |caret stop - glyph origin| = 0.0000px (<= 0.5px required) across all glyph-starting stops; ZERO stops inside ligatures (non-glyph stops are exactly space boundaries 6,14 + line end); style-boundary offset dedupes to 1 stop; selection band [4,12) across 34px/bold boundary covers exactly its glyphs both faces; fresh-face compose adds 5 runs vs ~18+ for the deleted prefix path, second compose adds 0; mid-ligature click snaps to boundary",
+          "at": "2026-08-29T01:01:04.391Z"
+        },
+        {
+          "stage": "verify",
+          "by": "zcode-verify-pc16",
+          "item": "INDEPENDENT RTL PROBE on own multi-word Arabic text (مرحبا يا عالم, 13 units): rtl clusters descend in visual order with strictly mirrored carets (x 128.2 -> 0.0), forced ltr flips clusters ascending (setters provably reach the buffer), unset still guesses RTL, script Arab vs latn changes shaped gids, language ar/fa occupy separate cache entries (ar +5, fa +5, repeat ar +0)",
+          "at": "2026-08-29T01:01:04.391Z"
+        },
+        {
+          "stage": "verify",
+          "by": "zcode-verify-pc16",
+          "item": "BASELINE INDEPENDENTLY REPRODUCED: re-ran capture on a separate pristine 668d682 worktree with same fonts/wasm - all 6 raw-RGBA SHA-256 hashes byte-identical to committed tests/caret-fidelity-pixel-baseline.json (capture verified to hash real Skia readPixels RGBA)",
+          "at": "2026-08-29T01:01:04.391Z"
+        },
+        {
+          "stage": "verify",
+          "by": "zcode-verify-pc16",
+          "item": "SELECTION SPEC PASS x2 (4.1m, 4.8m) retries=0 via verifier-owned playwright config + verifier-owned dev server 127.0.0.1:5209 using the documented VIRO_CARET_BASE_URL override: painted highlight spans exactly the calibrated stop(8)..stop(11) ffi ligature span and stop(4)..stop(13) across the 0142 style boundary, no cells beyond either boundary",
+          "at": "2026-08-29T01:01:04.391Z"
+        },
+        {
+          "stage": "verify",
+          "by": "zcode-verify-pc16",
+          "item": "NOTE for Governor: lease glob 'tests/caret-fidelity-*' vs new file 'tests/caret-fidelity.test.mjs' (dot not dash) - file is new, uniquely named, named in build evidence, collides with no lease; flagged as observation only",
+          "at": "2026-08-29T01:01:04.391Z"
         }
       ],
       "last_handoff": {
-        "from": "build",
-        "to": "verify",
-        "by": "zcode-caret-pc1",
-        "at": "2026-08-29T00:40:04.418Z",
+        "from": "verify",
+        "to": "critic",
+        "by": "zcode-verify-pc16",
+        "at": "2026-08-29T01:01:04.391Z",
         "evidence": [
-          "candidate 9b962a0 on agent/viro-0144/zcode-gov-audit-pc1 (base 668d682): caretStops derived from HarfBuzz clusters in setLine's glyph walk, emitStops prefix re-shaping deleted, story.character language/script/direction (+range overrides) feed hb segment properties via setDirection/setScript/setLanguage before guessSegmentProperties",
-          "acceptance: tests/caret-fidelity.test.mjs 14/14 (cluster stops == glyph origins <=0.5px under kern+liga, ligature interiors stopless, boundary dedupe, RTL mirror + forced-LTR/script/language reaching the buffer, cache-bound proof that prefix re-shaping is gone); tests/caret-fidelity-pixel-baseline.test.mjs 8/8 (raw-RGBA SHA-256 captured on pristine 668d682, bit-identical post-change); tests/caret-fidelity-selection.spec.ts PASS twice against dev server 127.0.0.1:5206 (self-calibrating whole-canvas diffs prove the painted highlight spans exactly stop(8)..stop(11) for the ffi ligature and stop(4)..stop(13) across a 0142 style boundary)",
-          "gates: npx tsc --noEmit exit 0; npm run test:unit 336/336; text-frame + rich-text suites 39/39 untouched and green; node node_modules/vite/bin/vite.js build exit 0; delivery record docs/agents/deliveries/VIRO-0144.json (notes: harfbuzzjs 1.6 exposes segment properties as individual setters; NotoSans-Bold has no liga lookups; 5173 occupied by a foreign tree in this env so the chrome gate used 5206; app.ts Backspace debt untouched)"
+          "verifier zcode-verify-pc16 @ pc-cloud1 on clean worktree 9b962a0 (base 668d682): diff-scope confirmed = src/engine/type.ts + tests/caret-fidelity-* + docs/agents/deliveries/VIRO-0144.json only",
+          "npx tsc --noEmit exit 0",
+          "npm run test:unit 336/336 exit 0",
+          "tests/caret-fidelity.test.mjs 14/14 + tests/caret-fidelity-pixel-baseline.test.mjs 8/8 exit 0",
+          "text-frame{inset,valign,autosize,pixel-baseline,inset-geometry}+rich-text{compose,history} 39/39 exit 0",
+          "node node_modules/vite/bin/vite.js build exit 0",
+          "INDEPENDENT PROBES 21/21 (own scripts, own fixture 'Waffle afflict fi' with ff/ffl/fi ligatures + W-a/A-f kern pairs): worst |caret stop - glyph origin| = 0.0000px (<= 0.5px required) across all glyph-starting stops; ZERO stops inside ligatures (non-glyph stops are exactly space boundaries 6,14 + line end); style-boundary offset dedupes to 1 stop; selection band [4,12) across 34px/bold boundary covers exactly its glyphs both faces; fresh-face compose adds 5 runs vs ~18+ for the deleted prefix path, second compose adds 0; mid-ligature click snaps to boundary",
+          "INDEPENDENT RTL PROBE on own multi-word Arabic text (مرحبا يا عالم, 13 units): rtl clusters descend in visual order with strictly mirrored carets (x 128.2 -> 0.0), forced ltr flips clusters ascending (setters provably reach the buffer), unset still guesses RTL, script Arab vs latn changes shaped gids, language ar/fa occupy separate cache entries (ar +5, fa +5, repeat ar +0)",
+          "BASELINE INDEPENDENTLY REPRODUCED: re-ran capture on a separate pristine 668d682 worktree with same fonts/wasm - all 6 raw-RGBA SHA-256 hashes byte-identical to committed tests/caret-fidelity-pixel-baseline.json (capture verified to hash real Skia readPixels RGBA)",
+          "SELECTION SPEC PASS x2 (4.1m, 4.8m) retries=0 via verifier-owned playwright config + verifier-owned dev server 127.0.0.1:5209 using the documented VIRO_CARET_BASE_URL override: painted highlight spans exactly the calibrated stop(8)..stop(11) ffi ligature span and stop(4)..stop(13) across the 0142 style boundary, no cells beyond either boundary",
+          "NOTE for Governor: lease glob 'tests/caret-fidelity-*' vs new file 'tests/caret-fidelity.test.mjs' (dot not dash) - file is new, uniquely named, named in build evidence, collides with no lease; flagged as observation only"
         ]
       },
       "rejection": null,
@@ -2269,13 +2343,6 @@
     }
   },
   "agents": {
-    "zcode-verify-pc16": {
-      "role": "verifier",
-      "machine": "pc-cloud1",
-      "session": "6f16c4bb-6ddd-486b-ab04-5248ba496c52",
-      "packet": "VIRO-0144",
-      "heartbeat_at": "2026-08-29T01:00:57.284Z"
-    },
     "zcode-verify-pc17": {
       "role": "verifier",
       "machine": "pc-cloud1",
@@ -2300,8 +2367,8 @@
         "tests/caret-fidelity-*"
       ],
       "acquired_at": "2026-08-28T22:58:25.165Z",
-      "current_agent": "zcode-verify-pc16",
-      "current_stage": "verify",
+      "current_agent": null,
+      "current_stage": "critic",
       "current_session": "6f16c4bb-6ddd-486b-ab04-5248ba496c52",
       "heartbeat_at": "2026-08-29T01:00:57.284Z"
     },
@@ -2333,12 +2400,6 @@
     }
   },
   "events": [
-    {
-      "at": "2026-08-28T10:34:52.384Z",
-      "type": "agent.heartbeat",
-      "agent": "zcode-pdffont-pc1",
-      "packet": "VIRO-0145"
-    },
     {
       "at": "2026-08-28T10:35:12.907Z",
       "type": "packet.advanced",
@@ -4560,6 +4621,16 @@
       "packet": "VIRO-0144",
       "session": "6f16c4bb-6ddd-486b-ab04-5248ba496c52",
       "machine": "pc-cloud1"
+    },
+    {
+      "at": "2026-08-29T01:01:04.392Z",
+      "type": "packet.advanced",
+      "packet": "VIRO-0144",
+      "from": "verify",
+      "to": "critic",
+      "by": "zcode-verify-pc16",
+      "machine": "pc-cloud1",
+      "session": "6f16c4bb-6ddd-486b-ab04-5248ba496c52"
     }
   ]
 }
