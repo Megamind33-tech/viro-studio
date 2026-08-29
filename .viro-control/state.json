@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 475,
-  "updated_at": "2026-08-29T01:28:49.782Z",
+  "revision": 476,
+  "updated_at": "2026-08-29T01:28:56.737Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -2242,12 +2242,12 @@
         "VIRO-0146"
       ],
       "critic_needed": true,
-      "stage": "verify",
-      "status": "VERIFY",
-      "assigned_agent": "zcode-verify-pc17",
-      "assigned_role": "verifier",
+      "stage": "critic",
+      "status": "QUEUED",
+      "assigned_agent": null,
+      "assigned_role": null,
       "work_branch": "agent/viro-0147/zcode-gov-audit-pc1",
-      "heartbeat_at": "2026-08-29T01:28:49.782Z",
+      "heartbeat_at": null,
       "attempts": 0,
       "evidence": [
         {
@@ -2279,18 +2279,42 @@
           "by": "zcode-styledtext-pc1",
           "item": "corpus 14/14 incl new export/styled-text-layer (textRuns 2/Tf 2/TJ 2); CORPUS_PIN=1 regen diff adds ONLY the new row, all other fingerprints byte-identical; tsc clean; test:unit 336/336; vite build 264 modules ok",
           "at": "2026-08-29T00:55:15.611Z"
+        },
+        {
+          "stage": "verify",
+          "by": "zcode-verify-pc17",
+          "item": "independent verify 3bcc204 (base fc96f44): diff 8 files, all inside lease (pdf.ts, export-corpus-*, pdf-styled-text-*, manifest)",
+          "at": "2026-08-29T01:28:56.736Z"
+        },
+        {
+          "stage": "verify",
+          "by": "zcode-verify-pc17",
+          "item": "gates: tsc 0 errors; test:unit 336/336; export-corpus 14/14 twice, CORPUS_PIN=1 regen diff CRLF-only no-op; pdf-styled-text node 6/6; pdf-compound+pdf-font 10/10; pdf-effects-parity chrome 2/2 (0146 composes); vite build ok",
+          "at": "2026-08-29T01:28:56.737Z"
+        },
+        {
+          "stage": "verify",
+          "by": "zcode-verify-pc17",
+          "item": "own three-range probe (Abc Def Ghi: 58px copper / 26px blue / 42px green + noto-serif override over 12px black story): operator decode shows 3 styled runs 58/26/42 with own rg+gs under ONE Tm, no mid-text embeds; serif run FontFile2 byte-identical to NotoSerif-Regular.ttf and gids decode 'Ghi' through serif ToUnicode only; sequential Tm/TJ replay with fontkit advances lands every glyph gid-exact <0.05px on composeFrame x, only 2 re-inserted spaces off-canvas, single baseline (no scatter); report discloses both face names and exact total KB (rounded sum of both files)",
+          "at": "2026-08-29T01:28:56.737Z"
+        },
+        {
+          "stage": "verify",
+          "by": "zcode-verify-pc17",
+          "item": "chrome parity on own config port 5210: pdf.js text layer three sizes 58/26/42 at canvas origins left-to-right on one baseline, text extracts 'Abc Def Ghi', three hue populations copper/blue/green present in correct x order and agree canvas-vs-pdf within 0.5x-2x, report.textRuns=3, rasterFallbacks empty",
+          "at": "2026-08-29T01:28:56.737Z"
         }
       ],
       "last_handoff": {
-        "from": "build",
-        "to": "verify",
-        "by": "zcode-styledtext-pc1",
-        "at": "2026-08-29T00:55:15.611Z",
+        "from": "verify",
+        "to": "critic",
+        "by": "zcode-verify-pc17",
+        "at": "2026-08-29T01:28:56.737Z",
         "evidence": [
-          "candidate 3bcc204 on agent/viro-0147/zcode-gov-audit-pc1 (base fc96f44): emitType segments composed glyphs per (face,size,fill), per-run gs/Tf/rg under one Tm, range glyph ids written only under their own embedded face",
-          "tests/pdf-styled-text.test.mjs 6/6: sequential Tm/TJ replay (fontkit advances) lands every glyph on composeFrame x gid-exact no-scatter; serif fontId range embeds FontFile2 byte-identical to source, decodes 'corpus' under serif resource at canvas x; extraction 'VIRO corpus'; report counts + multi-face KB disclosure; uniform topology BT/Tf/Tm/TJ=1 regression green",
-          "pdf.js artifact on 5208: tests/pdf-styled-text-parity.spec.ts getTextContent 'VIRO corpus', item sizes 64/34 at canvas origins, hue-classified rendered pixels agree canvas-vs-pdf within tolerance; effects-parity shadow+control pass alongside (0146 composes)",
-          "corpus 14/14 incl new export/styled-text-layer (textRuns 2/Tf 2/TJ 2); CORPUS_PIN=1 regen diff adds ONLY the new row, all other fingerprints byte-identical; tsc clean; test:unit 336/336; vite build 264 modules ok"
+          "independent verify 3bcc204 (base fc96f44): diff 8 files, all inside lease (pdf.ts, export-corpus-*, pdf-styled-text-*, manifest)",
+          "gates: tsc 0 errors; test:unit 336/336; export-corpus 14/14 twice, CORPUS_PIN=1 regen diff CRLF-only no-op; pdf-styled-text node 6/6; pdf-compound+pdf-font 10/10; pdf-effects-parity chrome 2/2 (0146 composes); vite build ok",
+          "own three-range probe (Abc Def Ghi: 58px copper / 26px blue / 42px green + noto-serif override over 12px black story): operator decode shows 3 styled runs 58/26/42 with own rg+gs under ONE Tm, no mid-text embeds; serif run FontFile2 byte-identical to NotoSerif-Regular.ttf and gids decode 'Ghi' through serif ToUnicode only; sequential Tm/TJ replay with fontkit advances lands every glyph gid-exact <0.05px on composeFrame x, only 2 re-inserted spaces off-canvas, single baseline (no scatter); report discloses both face names and exact total KB (rounded sum of both files)",
+          "chrome parity on own config port 5210: pdf.js text layer three sizes 58/26/42 at canvas origins left-to-right on one baseline, text extracts 'Abc Def Ghi', three hue populations copper/blue/green present in correct x order and agree canvas-vs-pdf within 0.5x-2x, report.textRuns=3, rasterFallbacks empty"
         ]
       },
       "rejection": null,
@@ -2343,13 +2367,6 @@
     }
   },
   "agents": {
-    "zcode-verify-pc17": {
-      "role": "verifier",
-      "machine": "pc-cloud1",
-      "session": "4a87f438-fb98-4d6c-8f83-535860d6f49b",
-      "packet": "VIRO-0147",
-      "heartbeat_at": "2026-08-29T01:28:49.782Z"
-    },
     "zcode-status-pc1": {
       "role": "builder",
       "machine": "pc-cloud1",
@@ -2387,8 +2404,8 @@
         "docs/agents/deliveries/VIRO-0147.json"
       ],
       "acquired_at": "2026-08-29T00:03:52.025Z",
-      "current_agent": "zcode-verify-pc17",
-      "current_stage": "verify",
+      "current_agent": null,
+      "current_stage": "critic",
       "current_session": "4a87f438-fb98-4d6c-8f83-535860d6f49b",
       "heartbeat_at": "2026-08-29T01:28:49.782Z"
     },
@@ -2408,12 +2425,6 @@
     }
   },
   "events": [
-    {
-      "at": "2026-08-28T10:47:37.820Z",
-      "type": "agent.heartbeat",
-      "agent": "zcode-a11y-pc1",
-      "packet": "VIRO-0016"
-    },
     {
       "at": "2026-08-28T10:48:25.791Z",
       "type": "agent.heartbeat",
@@ -4652,6 +4663,16 @@
       "packet": "VIRO-0147",
       "session": "4a87f438-fb98-4d6c-8f83-535860d6f49b",
       "machine": "pc-cloud1"
+    },
+    {
+      "at": "2026-08-29T01:28:56.737Z",
+      "type": "packet.advanced",
+      "packet": "VIRO-0147",
+      "from": "verify",
+      "to": "critic",
+      "by": "zcode-verify-pc17",
+      "machine": "pc-cloud1",
+      "session": "4a87f438-fb98-4d6c-8f83-535860d6f49b"
     }
   ]
 }
