@@ -154,6 +154,12 @@ export class PressApp {
   /** Bus revision last durably written to the recovery slot. */
   private savedRev = 0;
   pendingRecovery: RecoverySnapshot | null = null;
+  /**
+   * Recovery-sink seam. Production writes go to the IndexedDB recovery store;
+   * tests and diagnostics may point this at a rejecting sink to simulate quota
+   * or IO failures without patching module bindings. `null` uses the real store.
+   */
+  recoverySink: ((snapshot: RecoverySnapshot) => Promise<void>) | null = null;
   /** Debounce for autosave writes, in ms. */
   private static AUTOSAVE_MS = 1200;
   /**
@@ -319,34 +325,62 @@ export class PressApp {
 
   /** One debounced autosave: crash-recovery slot + the persisted project. */
   private async autosaveTick(): Promise<void> {
-    await this.writeRecovery();
-    if (flag("platform.enabled")) await this.persistCurrentProject();
+    // Serialise the document at most ONCE per tick (critic P2-3: the old code
+    // deep-cloned the whole embedded-image document once per sink) and share
+    // the plain snapshot between both sinks. On a successful recovery write
+    // `dirty` clears, so the project write skips as before; on a failed write
+    // `dirty` stays set and the project write reuses the same snapshot instead
+    // of re-cloning. A tick with no pending edits clones nothing.
+    const plain = this.dirty ? JSON.parse(JSON.stringify(this.doc)) : undefined;
+    await this.writeRecovery(plain);
+    if (flag("platform.enabled")) await this.persistCurrentProject(false, plain);
+  }
+
+  /**
+   * Surface a status message through the chrome listeners WITHOUT the full
+   * emit() funnel. A failed autosave must not re-enter trackRevision(): that
+   * would see the unsaved revision and re-arm the autosave timer, re-cloning a
+   * large document every debounce interval while storage keeps failing. The
+   * failed edits retry on the next real edit or a pagehide flush instead, and
+   * the message tells the user exactly that.
+   */
+  private announce(msg: string): void {
+    this.status = msg;
+    if (this.drag) return; // same deferral rule as emit(); drag end re-renders
+    for (const fn of this.listeners) fn();
   }
 
   /**
    * Persist the working document to the local recovery slot. Serialises through
    * JSON so the stored value is a plain structured-clone-safe snapshot and never
-   * a live reference. Failures (private mode, quota) degrade to an in-memory
-   * session rather than throwing into the edit path.
+   * a live reference. `preSerialized` lets one autosave tick share a single
+   * plain snapshot across both persistence sinks.
+   *
+   * Failure contract (quota / private mode / IO): a rejected put never touches
+   * the stored record, so the LAST GOOD SNAPSHOT stays intact and recoverable;
+   * `dirty` stays set so the next edit or a pagehide flush retries; and the
+   * failure is announced truthfully — never a silent fake success.
    */
-  async writeRecovery(): Promise<void> {
+  async writeRecovery(preSerialized?: unknown): Promise<void> {
     if (!this.dirty) return;
     const rev = this.bus.revision();
     const snapshot: RecoverySnapshot = {
       id: "current",
-      doc: JSON.parse(JSON.stringify(this.doc)),
+      doc: preSerialized ?? JSON.parse(JSON.stringify(this.doc)),
       name: this.doc.name,
       savedAt: Date.now(),
     };
     try {
-      await putRecovery(snapshot);
+      await (this.recoverySink ?? putRecovery)(snapshot);
       this.savedRev = rev;
       // Edits may have landed while the write was in flight.
       if (this.bus.revision() === rev) this.dirty = false;
       else this.scheduleAutosave();
-    } catch {
-      // Non-durable environment: keep editing; the reload safety net is simply
-      // unavailable and we do not pretend otherwise.
+    } catch (err) {
+      const reason = err instanceof Error ? err.message : String(err);
+      this.announce(
+        `Autosave failed (${reason}) — edits after the last good autosave exist only in this tab; save a .press.json copy now.`,
+      );
     }
   }
 
@@ -388,7 +422,7 @@ export class PressApp {
   }
 
   /** Upsert the working document into the local project library. */
-  async persistCurrentProject(force = false): Promise<void> {
+  async persistCurrentProject(force = false, preSerialized?: unknown): Promise<void> {
     if (!this.dirty && !force) return;
     if (!this.currentProjectId) {
       this.currentProjectId = uid("proj");
@@ -398,15 +432,22 @@ export class PressApp {
     const record: ProjectRecord = {
       id: this.currentProjectId,
       name: this.doc.name || "Untitled",
-      doc: JSON.parse(JSON.stringify(this.doc)),
+      // Shared tick snapshot when provided (see autosaveTick); may trail edits
+      // that landed mid-write by one tick — the rescheduled tick re-persists.
+      doc: preSerialized ?? JSON.parse(JSON.stringify(this.doc)),
       thumbnail: this.maybeThumbnail(force),
       createdAt: this.projectCreatedAt || now,
       updatedAt: now,
     };
     try {
       await projects().save(record);
-    } catch {
-      // Non-durable environment: keep editing; local library is unavailable.
+    } catch (err) {
+      // Truthful degradation: the library copy was NOT updated. Keep editing;
+      // say so instead of silently pretending the save happened.
+      const reason = err instanceof Error ? err.message : String(err);
+      this.announce(
+        `Project autosave failed (${reason}) — the saved library copy was not updated; use Save to Projects to retry.`,
+      );
     }
   }
 

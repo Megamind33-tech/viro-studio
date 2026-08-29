@@ -12,8 +12,8 @@
     "scripts/viro-orchestrator.mjs",
     "scripts/viro-orchestrator-git.mjs",
     "scripts/viro-release.mjs",
-    "docs/agents/**",
-    "docs/agents/deliveries/VIRO-0019.json"
+    "docs/agents/deliveries/VIRO-0019.json",
+    "docs/agents/orchestrator-identity.md"
   ],
   "depends_on": [],
   "acceptance": [
@@ -29,16 +29,34 @@
     "Backward-compatibility demo with a pre-change state file",
     "Live end-to-end claim/heartbeat/advance dry-run output"
   ],
-  "builder": { "status": "PENDING", "notes": "Governance-engineering packet; deployed by the Orchestrator in wave 2 to avoid control-plane churn during first product wave." },
-  "verifier": { "status": "PENDING", "notes": "Independent verification required." },
-  "critic": { "status": "NOT_APPLICABLE", "notes": "Governance tooling; no product UI." },
+  "builder": {
+    "status": "DELIVERED",
+    "notes": "Built by zcode-govtool-pc1 (worktree preserved through quota-wall reap) and completed by zcode-govtool-pc2 on pc-cloud1. Session-bound claims + duplicate-identity refusal in orchestrator-core (shared by both transports), additive state schema with a lazy adoption migration bridge, 23 unit tests for the lease/identity state machine runnable via node --test scripts/lib/, live duplicate-refusal and old-worker-compatibility dry-runs against the real viro-agent-control branch. Design contract in docs/agents/orchestrator-identity.md."
+  },
+  "verifier": {
+    "status": "PENDING",
+    "notes": "Independent verification required."
+  },
+  "critic": {
+    "status": "NOT_APPLICABLE",
+    "notes": "Governance tooling; no product UI."
+  },
   "delta": {
     "before": "Identity by convention; no core lease-logic unit tests.",
     "after": "Session-bound identity with refusal on duplicate live identity, tested core logic, backward-compatible state.",
-    "proof": [],
-    "regression_protection": [
-      "Ordinary claim/heartbeat/advance/reject flows unchanged and dry-run proven"
+    "proof": [
+      "Unit tests 23/23 green via node --test scripts/lib/ (scripts/lib/orchestrator-core.test.mjs): scopesOverlap disjoint prefixes (tests/autosave-* vs tests/import-*), roleCanServe at every stage, depsSatisfied, 30-minute TTL staleAssignments, reapAssignment lease release, blockPacket, claim/lease lifecycle, duplicate-identity refusals, legacy-state and legacy-caller compatibility fixtures, identity in events/briefs/team board",
+      "Duplicate live identity refused live on the real viro-agent-control branch: re-claim of zcode-govtool-pc2/VIRO-0019 with a different session token while the heartbeat was unexpired exited 1 with 'duplicate live identity refused: worker 'zcode-govtool-pc2' already owns VIRO-0019 under session 'sess-vir…' from machine 'pc-cloud1'' and mutated no state",
+      "Live refusal also proven for wrong-session heartbeat ('identity conflict: ... the supplied session 'sess-imp…' does not match') and for throwaway agents zcode-0019-dryrun-a / zcode-0019-dryrun-b attempting to claim an assigned packet ('No conflict-free packet VIRO-0019 is claimable by builder')",
+      "Backward compatibility proven live: the pre-merge orchestrator (old code at main 72b05f0, primary repo) heartbeated the new-schema session-bound VIRO-0019 assignment without --session and all identity fields (assigned_session/assigned_machine/agents.session) survived the old-code write; new code also operated the real pre-change control state (claims/heartbeats/brief) throughout this session",
+      "Live ordinary-worker flow on the real control branch: claim (session mint/adopt), heartbeat with --session, idempotent resume of the original session, brief showing the identity block, state check 'Orchestration state is conflict-free.'",
+      "Both transports carry identical identity logic via orchestrator-core; REST script parses (node --check) but could not be live-tested without GITHUB_TOKEN; git transport proven live end-to-end"
     ],
-    "new_debt": "none yet"
+    "regression_protection": [
+      "Ordinary claim/heartbeat/advance/reject flows unchanged and dry-run proven",
+      "scripts/lib/orchestrator-core.test.mjs pins legacy refusal messages and lease acquired_at preservation for pre-identity flows",
+      "Refusals throw IdentityConflictError before mutation, so rejected duplicates cannot corrupt shared state"
+    ],
+    "new_debt": "sessions are disambiguation tokens, not auth credentials (documented in docs/agents/orchestrator-identity.md); scopesOverlap conservative prefix semantics pinned and recorded for a future Governor decision"
   }
 }

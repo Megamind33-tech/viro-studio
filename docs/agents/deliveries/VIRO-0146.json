@@ -1,0 +1,62 @@
+{
+  "id": "VIRO-0146",
+  "title": "Render layer effects (drop shadow) in vector PDF export or record them truthfully",
+  "priority": "P1",
+  "domain": "export",
+  "state": "ACTIVE",
+  "outcome": "A document whose layers carry a drop shadow exports to vector PDF with the shadow visibly rendered and matching the canvas within tolerance - or, if a truthful vector approximation is impossible for a given effect, the export report records a per-layer rasterFallback or note so the PDF never silently differs from the canvas. VIRO-0015's export corpus pins are updated to the new behavior and its effects parity test flips from documents-the-defect to proves-the-fix.",
+  "before": "VIRO-0015 export corpus finding (verified 2026-08-28, candidate 3cba4ab, verifier PASS): the effects-layer document's PDF census + report pins are byte-identical to the unshadowed control (corpus parity test), while its compositor PNG fingerprint differs - the canvas paints the drop shadow the vector PDF silently drops. src/document/types.ts claims effects are rendered 'by the exporter'; grep over src/export/ shows zero effects handling. No report note records the divergence. Behavior pinned as current by tests/export-corpus.* on merged main.",
+  "after": "Drop shadows render in vector PDF output (CanvasKit-consistent blur/offset within tolerance, proven by rendered-PDF pixel comparison against canvas captures), and any effect that cannot be truthfully vectorized produces an explicit report entry. The corpus effects pins are updated and the parity test asserts canvas/PDF shadow parity.",
+  "allowed_paths": [
+    "src/export/pdf.ts",
+    "tests/export-corpus-*",
+    "tests/pdf-effects-*",
+    "docs/agents/deliveries/VIRO-0146.json"
+  ],
+  "depends_on": [],
+  "acceptance": [
+    "A document with one drop-shadowed layer exports to vector PDF whose pdf.js render shows the shadow; rendered-PDF pixels compare against the canvas capture within a stated tolerance (artifact-level proof, not serialization success).",
+    "The effects corpus parity test flips: effects-layer PDF no longer byte-matches the unshadowed control; updated pins committed with the fix.",
+    "Any non-vectorizable effect path records an explicit rasterFallbacks entry or report note (never silent).",
+    "All other corpus pins unchanged or updated only where the shadow legitimately alters output; compound + text + font suites stay green.",
+    "npx tsc --noEmit, corpus + new tests, npm run test:chrome and npm run build pass."
+  ],
+  "evidence": [
+    "pdf.js rendered-PDF vs canvas pixel comparison (shadow present, tolerance stated)",
+    "Updated corpus pins + flipped parity test",
+    "Non-vectorizable-effect truthful-report proof (if applicable)",
+    "npx tsc --noEmit",
+    "npm run build"
+  ],
+  "builder": {
+    "status": "PASS",
+    "notes": "APPROACH: rasterised shadow underlay (not SMask). A PDF soft mask would still need blurred alpha pixels, so the honest choice was to produce those pixels with the SAME engine the canvas uses: each layer's enabled drop shadow is rasterised offscreen by CanvasKit's ImageFilter.MakeDropShadowOnly with the compositor's exact semantics (sigma = blur/2, colour alpha = colour.a x opacity, Gaussian kernel truncated at 3 sigma, content drawn inside the filtered layer with its real alphas so the blur sees what the canvas sees), encoded to a transparent PNG and embedded beneath the layer as an /XObject Do underlay. Only the shadow is raster; the layer content above it remains vector, and the vector body's operators (m/c/h/fill) are byte-identical to the unshadowed control. The silhouette mirrors compositor drawVector/drawTypeFrame/drawImageLayer exactly: contour precedence, fill gating (fill && anyClosed), even-odd rule for multi-contour paths, stroke cap/join/dash, image dest-inter-frame rect (shared visibleImageRect helper with emitImage), glyph SVG outlines at their HarfBuzz positions, group recursion with inherited alpha, and the lone pen-node copper dot. CanvasKit comes from the new optional opts.ck, else is lazily booted through engine/canvaskit.loadCanvasKit (browser path - the parity spec proves this end to end without an injected kit). No rasteriser or an over-4096px region => per-layer rasterFallbacks entry + report note, never silent. Other enabled effects (outer glow / stroke / gradient overlay) are recorded as rasterFallbacks entries plus a note; they are filed as new_debt. src/document/types.ts (outside this lease) claims effects are rendered 'by the exporter': after this packet that claim is TRUE for drop shadows and still false for glow/stroke/gradient-overlay, but the residual divergence is now stated by the file itself (rasterFallbacks + note) rather than silent. PORT NOTE: playwright.config.ts and tests/server.mjs pin 5173, which on this machine is another worktree's dev server (stock reuseExistingServer would run chrome tests against foreign code); tests/pdf-effects-playwright.config.ts (in-lease) runs the whole chrome suite on the assigned port 5203, and tests/export-corpus-png.mjs now honours VIRO_URL for the same reason. UNIT-COUNT NOTE: the brief pinned test:unit 316/316; the suite on this base counts 336 tests (grown by merged packets since registration; none of its 12 files are touched by this branch) - all 336 pass.",
+    "proof": [
+      "tests/export-corpus.test.mjs: 13/13 pass (PLAYWRIGHT_BROWSERS_PATH shared, VIRO_URL=http://127.0.0.1:5203) - all nine pdf-arm pins green incl. effects-layer (images 1, notes >=1, do 1, cm 3, m/c/h/fill equal to control), effects-control pins unchanged (images 0, notes []), flipped cross-case parity test green, PNG arm pixel fingerprints unchanged (canvas untouched), vacuity proof still bites",
+      "tests/pdf-effects-parity.spec.ts (pdf.js 3.11.174 legacy oracle, vendored): shadow variant - pdf.js page-1 render is pixel-IDENTICAL to the real compositor snapshot (firstDiff=-1 over 400x300x3 samples, nonWhite 33492 vs 33492), shadow-band ink right 55.44% canvas vs 55.44% pdf, bottom 44.38% vs 44.38%, body ink 100% both, report images=1 + method note, rasterFallbacks=[]; control variant - exactly 0% band ink on BOTH arms and 24000 nonWhite px (the bare rect), report images=0 - the falsifiable contrast proving the shadow assertions bite",
+      "Frozen tolerances in the spec (measured headroom): whole-page mean |delta| <= 6 (actual 0), p99 <= 96 (actual 0), channel-share >64 <= 1% (actual 0), body mean |delta| <= 6 (actual 0), band ink >=5% per arm and arm agreement <= 8 points (actual 0.00)",
+      "npx tsc --noEmit: exit 0 (covers the new spec; spec type errors were fixed to keep this gate honest)",
+      "npm run test:unit: 336/336 pass, 0 fail (see unit-count note)",
+      "pdf-compound + pdf-font node suites: 10/10 pass (node --experimental-strip-types --import ./tests/ts-register.mjs --test tests/pdf-font-embed.test.mjs tests/pdf-compound.test.mjs)",
+      "Full chrome suite on port 5203 (npx playwright test --config tests/pdf-effects-playwright.config.ts): 17 passed incl. pdf-compound.spec.ts 5/5 and pdf-effects-parity 2/2 (frozen thresholds); 1 flaky first attempt of the shadow test hit the documented SwiftShader cold-boot waitForFunction timeout and passed on retry #1 in 21s - the exact flake class playwright.config.ts documents and retries",
+      "node node_modules/vite/bin/vite.js build: exit 0, full client bundle emitted",
+      "Commits on agent/viro-0146/zcode-gov-audit-pc1: 690d410 (exporter + corpus flips), 4a568ed (parity suite + pdf.js oracle + 5203 config), 65b2b7d (oracle EOL stabilisation), delivery JSON commit follows"
+    ]
+  },
+  "verifier": { "status": "PENDING", "notes": "Independent verification required." },
+  "critic": { "status": "PENDING", "notes": "Exported output is user-visible; critic compares canvas vs PDF renders." },
+  "delta": {
+    "before": "Canvas paints drop shadows the vector PDF silently drops; report says nothing.",
+    "after": "Shadows render in PDF (or are truthfully reported), corpus pins prove parity.",
+    "proof": [
+      "Corpus effects-layer pin flipped: PDF gains exactly one `q cm Do Q` underlay + images 1 + note; path operators equal the control; effects-control pins byte-unchanged; PNG-arm canvas pins unchanged",
+      "pdf.js rendered-PDF vs canvas: pixel-identical for the shadow doc (firstDiff=-1); control shows 0% shadow-band ink on both arms",
+      "tests/pdf-effects-parity.spec.ts 2/2 with frozen tolerances"
+    ],
+    "regression_protection": [
+      "VIRO-0015 corpus: compound, text, raster pins unchanged",
+      "pdf-compound + pdf-font suites green"
+    ],
+    "new_debt": "Outer glow / stroke / gradient-overlay effects are still not represented in the PDF. They are no longer silent: every affected layer is recorded in report.rasterFallbacks with a one-per-document explanatory note (unrepresentedEffectsOf in src/export/pdf.ts). A later packet can follow the same underlay pattern (glow = zero-offset shadow of the glow colour; stroke = dilated silhouette tint via SrcIn, mirroring compositor withOuterGlow/withStrokeEffect). Residual nuances documented in the exporter's method note: underlays rasterise in the layer's parent space, so extreme ancestor scale/rotation can differ at the blur fringe; group shadows approximate overlapping-children unions with the children's own fill rules."
+  }
+}

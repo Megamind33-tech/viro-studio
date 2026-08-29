@@ -8,6 +8,7 @@ import type {
   Layer,
   OuterGlowEffect,
   Page,
+  PathNode,
   PressDocument,
   Rgba,
   StrokeEffect,
@@ -18,6 +19,7 @@ import type {
 import { replaceStoryRange } from "./text-model";
 import { applyPt, decompose, localMatrix, mul, worldBounds } from "./transform";
 import { activePage, cloneDoc, cloneStroke, findLayer, selectedLayers, uid } from "./factory";
+import { layerContours } from "./boolean-ops";
 
 export function setActiveLayers(doc: PressDocument, ids: string[]): PressDocument {
   const next = cloneDoc(doc);
@@ -411,12 +413,45 @@ export function ungroupSelected(doc: PressDocument): PressDocument {
   return next;
 }
 
+/**
+ * Every layer-id whose parent chain runs through `rootIds`, to unlimited depth.
+ *
+ * PSD imports (import/psd.ts) build group trees of arbitrary depth, so ONE
+ * level of children is not enough for delete or duplicate: delete would leave
+ * grandchildren with dangling parentIds (validateDocument then errors forever,
+ * and parentChain reads their local coords as page coords), and duplicate
+ * would shed the subtree entirely. The walk is by id with a seen-set, so an
+ * already-corrupt parentId cycle cannot loop it.
+ */
+function descendantIds(page: Page, rootIds: Iterable<string>): Set<string> {
+  const children = new Map<string, string[]>();
+  for (const layer of page.layers) {
+    if (!layer.parentId) continue;
+    const list = children.get(layer.parentId);
+    if (list) list.push(layer.id);
+    else children.set(layer.parentId, [layer.id]);
+  }
+  const out = new Set<string>();
+  const queue = [...rootIds];
+  while (queue.length) {
+    const id = queue.pop()!;
+    for (const child of children.get(id) ?? []) {
+      if (!out.has(child)) {
+        out.add(child);
+        queue.push(child);
+      }
+    }
+  }
+  return out;
+}
+
 export function deleteSelected(doc: PressDocument): PressDocument {
   const next = cloneDoc(doc);
   const page = activePage(next);
   const ids = new Set(next.activeLayerIds);
-  const extra = page.layers.filter((l) => l.parentId && ids.has(l.parentId)).map((l) => l.id);
-  for (const id of extra) ids.add(id);
+  // Close over the WHOLE subtree: removing a group of any depth must remove
+  // every descendant, or the survivors keep dangling parentIds.
+  for (const id of descendantIds(page, ids)) ids.add(id);
   page.layers = page.layers.filter((l) => !ids.has(l.id));
   next.activeLayerIds = [];
   return next;
@@ -425,24 +460,46 @@ export function deleteSelected(doc: PressDocument): PressDocument {
 export function duplicateSelected(doc: PressDocument): PressDocument {
   const next = cloneDoc(doc);
   const page = activePage(next);
+  const selected = selectedLayers(next);
+  if (!selected.length) return next;
+  const selectedIds = new Set(selected.map((l) => l.id));
+  // A selected layer that sits inside another selected layer travels with that
+  // subtree; it is not duplicated a second time as its own root. The check is
+  // transitive: a co-selected grandchild whose direct parent is unselected is
+  // still inside a selected subtree and must not become its own root.
+  const inSelectedSubtree = new Set();
+  for (const l of selected) for (const d of descendantIds(page, [l.id])) inSelectedSubtree.add(d);
+  const roots = selected.filter((l) => !inSelectedSubtree.has(l.id));
   const copies: string[] = [];
-  for (const layer of selectedLayers(next)) {
-    const copy = structuredClone(layer);
-    copy.id = uid("ly");
-    copy.name = `${layer.name} copy`;
-    copy.transform.x += 16;
-    copy.transform.y += 16;
-    if (copy.kind === "type-frame") {
-      const story = next.stories.find((s) => s.id === copy.storyId);
-      if (story) {
-        const ns = structuredClone(story);
-        ns.id = uid("st");
-        next.stories.push(ns);
-        copy.storyId = ns.id;
+  for (const root of roots) {
+    // Clone the WHOLE subtree with parentIds remapped to the new ids, so a
+    // duplicated group is a complete independent copy, not a childless shell.
+    const below = descendantIds(page, [root.id]);
+    const subtree = page.layers.filter((l) => l.id === root.id || below.has(l.id));
+    const idMap = new Map(subtree.map((l) => [l.id, uid("ly")]));
+    for (const layer of subtree) {
+      const copy = structuredClone(layer);
+      copy.id = idMap.get(layer.id)!;
+      copy.parentId = layer === root ? layer.parentId : (idMap.get(layer.parentId!) ?? null);
+      if (layer === root) {
+        copy.name = `${layer.name} copy`;
+        // The duplicate delta applies at the copied ROOT only. Descendants are
+        // LOCAL to their parent, so offsetting them too would double the move.
+        copy.transform.x += 16;
+        copy.transform.y += 16;
       }
+      if (copy.kind === "type-frame") {
+        const story = next.stories.find((s) => s.id === copy.storyId);
+        if (story) {
+          const ns = structuredClone(story);
+          ns.id = uid("st");
+          next.stories.push(ns);
+          copy.storyId = ns.id;
+        }
+      }
+      page.layers.push(copy);
+      if (layer === root) copies.push(copy.id);
     }
-    page.layers.push(copy);
-    copies.push(copy.id);
   }
   next.activeLayerIds = copies;
   return next;
@@ -506,6 +563,12 @@ export function appendPathNode(doc: PressDocument, layerId: string, pageX: numbe
   const next = cloneDoc(doc);
   const layer = findLayer(activePage(next), layerId);
   if (!layer || layer.kind !== "vector" || layer.locked) return next;
+  // CORRUPTION GUARD: on a contours-authoritative layer (a boolean result)
+  // `nodes` is EMPTY — the geometry lives in `contours`. Falling through would
+  // push into that inert list, recompute bounds from it (Infinity), and
+  // teleport the layer while the renderer keeps drawing untouched contours.
+  // The bus command refuses this with a routing hint; here it stays a no-op.
+  if (layer.contours && layer.contours.length) return next;
   const lx = pageX - layer.transform.x;
   const ly = pageY - layer.transform.y;
   layer.nodes.push({ x: lx, y: ly, inX: lx, inY: ly, outX: lx, outY: ly });
@@ -538,6 +601,126 @@ export function closePath(doc: PressDocument, layerId: string): PressDocument {
   const next = cloneDoc(doc);
   const layer = findLayer(activePage(next), layerId);
   if (layer && layer.kind === "vector") layer.closed = true;
+  return next;
+}
+
+// ── contour-addressed node editing (VIRO-0141) ───────────────────────────────
+//
+// Boolean results are contours-authoritative: their `contours` list is the
+// geometry the compositor draws and the legacy `nodes` list is empty, so the
+// pen-tool append/rewrite path must never touch them. These ops resolve their
+// target through `layerContours` — the SAME precedence the compositor draws —
+// so a legacy vector's single contour is addressed as index 0 (its
+// {nodes, closed} record) and a boolean result's subpath i as contours[i].
+//
+// Coordinates are LAYER-LOCAL, the space nodes are stored in; page-space
+// conversion belongs to the caller (the phase-2 anchor overlay), not the op.
+//
+// Like every op here they are silent no-ops on a missing/locked layer or an
+// out-of-range address; the bus commands in ui-commands.ts validate precisely
+// before applying and turn those cases into named CommandErrors.
+
+/**
+ * Move one node of the addressed contour. The anchor goes to (x, y) and BOTH
+ * its handles translate by the same delta, so the adjacent segment tangents —
+ * the shape's visual language — ride along instead of being re-derived. The
+ * layer transform is never rewritten: moving a node moves the drawn geometry,
+ * not the selection box.
+ */
+export function moveContourNode(
+  doc: PressDocument,
+  layerId: string,
+  contourIndex: number,
+  nodeIndex: number,
+  x: number,
+  y: number,
+): PressDocument {
+  const next = cloneDoc(doc);
+  const layer = findLayer(activePage(next), layerId);
+  if (!layer || layer.kind !== "vector" || layer.locked) return next;
+  const contour = layerContours(layer)[contourIndex];
+  const node = contour?.nodes[nodeIndex];
+  if (!node) return next;
+  const dx = x - node.x;
+  const dy = y - node.y;
+  node.x = x;
+  node.y = y;
+  node.inX += dx;
+  node.inY += dy;
+  node.outX += dx;
+  node.outY += dy;
+  return next;
+}
+
+/**
+ * Insert a node into the addressed contour AFTER `afterNodeIndex` (0-based).
+ * 0..n-1 splices between existing nodes on any contour; n appends, which only
+ * means something on a CLOSED contour — there the new node becomes the tail of
+ * the closing segment. An open contour has no segment past its last node, so
+ * appending to one would dangle a node no segment draws.
+ */
+export function insertContourNode(
+  doc: PressDocument,
+  layerId: string,
+  contourIndex: number,
+  afterNodeIndex: number,
+  node: PathNode,
+): PressDocument {
+  const next = cloneDoc(doc);
+  const layer = findLayer(activePage(next), layerId);
+  if (!layer || layer.kind !== "vector" || layer.locked) return next;
+  const contour = layerContours(layer)[contourIndex];
+  if (!contour) return next;
+  const max = contour.closed ? contour.nodes.length : contour.nodes.length - 1;
+  if (afterNodeIndex < 0 || afterNodeIndex > max) return next;
+  const at = Math.min(afterNodeIndex + 1, contour.nodes.length);
+  contour.nodes.splice(at, 0, { ...node });
+  return next;
+}
+
+/**
+ * Delete the addressed node. Refuses when the contour is already down to its
+ * minimum: `validateContours` (and the compositor) treat a contour below 2
+ * nodes as undrawable, so deleting into that state would silently deform the
+ * path into a non-shape instead of corrupting nothing.
+ */
+export function deleteContourNode(
+  doc: PressDocument,
+  layerId: string,
+  contourIndex: number,
+  nodeIndex: number,
+): PressDocument {
+  const next = cloneDoc(doc);
+  const layer = findLayer(activePage(next), layerId);
+  if (!layer || layer.kind !== "vector" || layer.locked) return next;
+  const contour = layerContours(layer)[contourIndex];
+  if (!contour || !contour.nodes[nodeIndex]) return next;
+  if (contour.nodes.length <= 2) return next;
+  contour.nodes.splice(nodeIndex, 1);
+  return next;
+}
+
+/**
+ * Open or close the addressed contour. On a contours-authoritative layer this
+ * is `contours[i].closed`. Index 0 on a legacy single-contour vector IS the
+ * {nodes, closed} record, so it edits `layer.closed` — a generalisation of
+ * `closePath`, which stays unchanged for compatibility.
+ */
+export function setContourClosed(
+  doc: PressDocument,
+  layerId: string,
+  contourIndex: number,
+  closed: boolean,
+): PressDocument {
+  const next = cloneDoc(doc);
+  const layer = findLayer(activePage(next), layerId);
+  if (!layer || layer.kind !== "vector" || layer.locked) return next;
+  if (layer.contours && layer.contours.length) {
+    const contour = layer.contours[contourIndex];
+    if (contour) contour.closed = closed;
+    return next;
+  }
+  if (contourIndex === 0) layer.closed = closed;
   return next;
 }
 

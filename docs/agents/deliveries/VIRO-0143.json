@@ -1,0 +1,55 @@
+{
+  "id": "VIRO-0143",
+  "title": "Consume TextFrameProperties: insets, vertical align, auto-size in the type engine",
+  "priority": "P2",
+  "domain": "canvas-rendering",
+  "state": "QUEUED",
+  "outcome": "Text frames honor their validated textFrame contract: insets shrink the measure, verticalAlign positions the composed block, autoSize grows the frame to fit content, and single-column zero-inset frames render pixel-identically to today.",
+  "before": "Gap audit 2026-08-27 (main 14e2812): every type frame carries textFrame (types.ts:172-181, defaults text-model.ts:23-32), migration stamps it (migrate.ts:157-160), validation enforces it (factory.ts:1090-1104) - and drawTypeFrame composes with raw layer w/h (type.ts:482): insets, verticalAlign, autoSize, columns/columnGutter and kind point/path are validated but consumed nowhere (pathLayerId validated at factory.ts:1101-1103, used nowhere). Defaults (inset 0, 1 column) mean implementing this moves no existing pixels.",
+  "after": "Insets/verticalAlign/autoSize visibly and truthfully affect rendering; autoSize feedback flows through a reversible bus command; the zero-inset default path is pixel-identical.",
+  "allowed_paths": [
+    "src/engine/type.ts",
+    "src/document/text-model.ts",
+    "docs/agents/deliveries/VIRO-0143.json",
+    "tests/text-frame-*"
+  ],
+  "depends_on": [
+    "VIRO-0142"
+  ],
+  "acceptance": [
+    "A frame with inset 24 composes against the reduced measure with the first baseline shifted; screenshot evidence.",
+    "verticalAlign center centers the composed block between frame top/bottom.",
+    "autoSize height grows the frame via a new reversible bus command to fit composeFrame height; undo restores.",
+    "Zero-inset single-column documents render pixel-identically (regression).",
+    "npx tsc --noEmit, targeted tests, npm run test:unit baseline, npm run build pass."
+  ],
+  "evidence": [
+    "Screenshot evidence for insets and vertical alignment",
+    "autoSize growth + undo proof",
+    "Zero-inset pixel-identical regression",
+    "npx tsc --noEmit",
+    "npm run build"
+  ],
+  "builder": {
+    "status": "PENDING",
+    "notes": "Serialized behind VIRO-0142 (shared type.ts)."
+  },
+  "verifier": {
+    "status": "PENDING",
+    "notes": "Independent verification required."
+  },
+  "critic": {
+    "status": "PENDING",
+    "notes": "User-visible layout behavior; critic judges professional semantics."
+  },
+  "delta": {
+    "before": "textFrame is validated metadata with zero rendering effect.",
+    "after": "Insets/verticalAlign/autoSize are real, reversible, and regression-safe.",
+    "proof": [],
+    "regression_protection": [
+      "Zero-inset pixel-identical regression",
+      "Existing text suites green"
+    ],
+    "new_debt": "Multi-column flow and path-kind frames remain future work."
+  }
+}

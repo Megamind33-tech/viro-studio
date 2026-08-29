@@ -229,11 +229,20 @@ function clearAgent(state, packet) {
   }
 }
 
-async function recordApproval(store, { packetId, agentId, evidence, pr }) {
+async function recordApproval(store, { packetId, agentId, evidence, pr, session = null }) {
   return store.mutate(`approve release ${packetId}`, (state) => {
     const packet = state.packets?.[packetId];
     const errors = validateReleasePacket(packet, { agentId, requireAssignment: true });
     if (errors.length) throw new Error(`release approval rejected: ${errors.join("; ")}`);
+    // VIRO-0019: when a session token is supplied it must match the stored live session.
+    // Omitting --session keeps legacy behavior for release managers on pre-identity state.
+    const record = state.agents?.[agentId];
+    if (session && record?.session && record.session !== session) {
+      throw new Error(
+        `identity conflict: worker '${agentId}' is live under session '${String(record.session).slice(0, 8)}…'; ` +
+        `the supplied --session token does not match, so release approval was refused`,
+      );
+    }
     if (!evidence.length) throw new Error("release approval requires concrete evidence");
 
     const now = new Date().toISOString();
@@ -242,6 +251,8 @@ async function recordApproval(store, { packetId, agentId, evidence, pr }) {
     packet.release_approval = {
       status: "APPROVED",
       by: agentId,
+      machine: record?.machine ?? packet.assigned_machine ?? null,
+      session: session ?? record?.session ?? null,
       at: now,
       pr_number: pr.number,
       pr_url: pr.html_url,
@@ -252,7 +263,7 @@ async function recordApproval(store, { packetId, agentId, evidence, pr }) {
     packet.status = "RELEASE";
     packet.last_handoff = { from: "release", to: "merge-gate", by: agentId, at: now, evidence };
     clearAgent(state, packet);
-    appendEvent(state, { type: "release.approved", packet: packetId, by: agentId, pr: pr.number, head_sha: pr.head.sha });
+    appendEvent(state, { type: "release.approved", packet: packetId, by: agentId, machine: record?.machine ?? null, session: session ?? record?.session ?? null, pr: pr.number, head_sha: pr.head.sha });
     return packet.release_approval;
   });
 }
@@ -342,13 +353,14 @@ async function approve(store, config, flags) {
   const packetId = required(flags, "packet");
   const agentId = required(flags, "agent");
   const evidence = evidenceList(flags.evidence);
+  const session = flags.session && flags.session !== true ? String(flags.session) : null;
   const { state } = await store.readState();
   const packet = state.packets?.[packetId];
   const errors = validateReleasePacket(packet, { agentId, requireAssignment: true });
   if (errors.length) throw new Error(errors.join("; "));
 
   const pr = await store.ensurePullRequest(packet);
-  await recordApproval(store, { packetId, agentId, evidence, pr });
+  await recordApproval(store, { packetId, agentId, evidence, pr, session });
   const result = await tryMergePacket(store, config, packetId);
   console.log(JSON.stringify(result, null, 2));
 }
@@ -372,7 +384,7 @@ async function sweep(store, config) {
 }
 
 function help() {
-  console.log(`VIRO automatic release worker\n\nCommands:\n  approve --agent ID --packet VIRO-0002 --evidence "proof one||proof two"\n  sweep\n\napprove records independent release-manager approval, ensures a PR to main exists, and merges immediately if required CI is green. If CI is pending, the packet remains APPROVED and the GitHub workflow later calls sweep automatically. A changed PR head invalidates approval.`);
+  console.log(`VIRO automatic release worker\n\nCommands:\n  approve --agent ID --packet VIRO-0002 --evidence "proof one||proof two" [--session TOKEN]\n  sweep\n\napprove records independent release-manager approval, ensures a PR to main exists, and merges immediately if required CI is green. If CI is pending, the packet remains APPROVED and the GitHub workflow later calls sweep automatically. A changed PR head invalidates approval. An optional --session token is verified against the stored live session when present (VIRO-0019).`);
 }
 
 async function main() {

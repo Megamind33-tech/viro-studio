@@ -1,0 +1,536 @@
+{
+  "corpusVersion": 1,
+  "seed": 20260827,
+  "description": "Import parser fuzz/negative corpus (VIRO-0013). Digest is SHA-256 over sorted per-case id/format/category/boundary/outcome/code plus the SHA-256 of each generated input. Regenerating must reproduce it byte-for-byte.",
+  "corpusDigest": "043a5084791654d0a2392698a46c26417b091aa50d35b35e7ee8ead8180f0c63",
+  "cases": [
+    {
+      "id": "press/deep-arrays-50k",
+      "format": "press-json",
+      "category": "deep-nesting",
+      "boundary": "openJsonDocument",
+      "outcome": "safe-doc",
+      "code": null
+    },
+    {
+      "id": "press/deep-objects-50k",
+      "format": "press-json",
+      "category": "deep-nesting",
+      "boundary": "openJsonDocument",
+      "outcome": "safe-doc",
+      "code": null
+    },
+    {
+      "id": "press/empty-text",
+      "format": "press-json",
+      "category": "zero-length",
+      "boundary": "openJsonDocument",
+      "outcome": "typed-error",
+      "code": "malformed-json"
+    },
+    {
+      "id": "press/malformed-0",
+      "format": "press-json",
+      "category": "malformed-json",
+      "boundary": "openJsonDocument",
+      "outcome": "typed-error",
+      "code": "malformed-json"
+    },
+    {
+      "id": "press/malformed-1",
+      "format": "press-json",
+      "category": "malformed-json",
+      "boundary": "openJsonDocument",
+      "outcome": "typed-error",
+      "code": "malformed-json"
+    },
+    {
+      "id": "press/malformed-2",
+      "format": "press-json",
+      "category": "malformed-json",
+      "boundary": "openJsonDocument",
+      "outcome": "typed-error",
+      "code": "malformed-json"
+    },
+    {
+      "id": "press/malformed-3",
+      "format": "press-json",
+      "category": "malformed-json",
+      "boundary": "openJsonDocument",
+      "outcome": "typed-error",
+      "code": "malformed-json"
+    },
+    {
+      "id": "press/malformed-4",
+      "format": "press-json",
+      "category": "malformed-json",
+      "boundary": "openJsonDocument",
+      "outcome": "typed-error",
+      "code": "malformed-json"
+    },
+    {
+      "id": "press/malformed-5",
+      "format": "press-json",
+      "category": "malformed-json",
+      "boundary": "openJsonDocument",
+      "outcome": "typed-error",
+      "code": "malformed-json"
+    },
+    {
+      "id": "press/oversized-count-via-vdj-fallback",
+      "format": "vdj",
+      "category": "oversized-counts",
+      "boundary": "openJsonDocument",
+      "outcome": "typed-error",
+      "code": "child-count-out-of-range"
+    },
+    {
+      "id": "press/proto-page",
+      "format": "press-json",
+      "category": "hostile-keys",
+      "boundary": "openJsonDocument",
+      "outcome": "safe-doc",
+      "code": null
+    },
+    {
+      "id": "press/proto-stories",
+      "format": "press-json",
+      "category": "hostile-keys",
+      "boundary": "openJsonDocument",
+      "outcome": "safe-doc",
+      "code": null
+    },
+    {
+      "id": "press/truncated-at-0_1",
+      "format": "press-json",
+      "category": "truncated",
+      "boundary": "openJsonDocument",
+      "outcome": "typed-error",
+      "code": "malformed-json"
+    },
+    {
+      "id": "press/truncated-at-0_35",
+      "format": "press-json",
+      "category": "truncated",
+      "boundary": "openJsonDocument",
+      "outcome": "typed-error",
+      "code": "malformed-json"
+    },
+    {
+      "id": "press/truncated-at-0_6",
+      "format": "press-json",
+      "category": "truncated",
+      "boundary": "openJsonDocument",
+      "outcome": "typed-error",
+      "code": "malformed-json"
+    },
+    {
+      "id": "press/truncated-at-0_85",
+      "format": "press-json",
+      "category": "truncated",
+      "boundary": "openJsonDocument",
+      "outcome": "typed-error",
+      "code": "malformed-json"
+    },
+    {
+      "id": "press/truncated-at-0_999",
+      "format": "press-json",
+      "category": "truncated",
+      "boundary": "openJsonDocument",
+      "outcome": "typed-error",
+      "code": "malformed-json"
+    },
+    {
+      "id": "press/truncated-deep-arrays-50k",
+      "format": "press-json",
+      "category": "deep-nesting",
+      "boundary": "openJsonDocument",
+      "outcome": "typed-error",
+      "code": "malformed-json"
+    },
+    {
+      "id": "press/v1-dangling-parent",
+      "format": "press-json",
+      "category": "hostile-keys",
+      "boundary": "openJsonDocument",
+      "outcome": "safe-doc",
+      "code": null
+    },
+    {
+      "id": "press/v1-null-layer-entry",
+      "format": "press-json",
+      "category": "hostile-keys",
+      "boundary": "openJsonDocument",
+      "outcome": "typed-error",
+      "code": "migration-failed"
+    },
+    {
+      "id": "press/valid-baseline",
+      "format": "press-json",
+      "category": "valid-baseline",
+      "boundary": "openJsonDocument",
+      "outcome": "safe-doc",
+      "code": null
+    },
+    {
+      "id": "press/vdj-fallback-valid",
+      "format": "press-json",
+      "category": "valid-baseline",
+      "boundary": "openJsonDocument",
+      "outcome": "safe-doc",
+      "code": null
+    },
+    {
+      "id": "psd/deep-groups-400",
+      "format": "psd",
+      "category": "deep-nesting",
+      "boundary": "documentFromPsd",
+      "outcome": "safe-doc",
+      "code": null
+    },
+    {
+      "id": "psd/four-byte-magic-only",
+      "format": "psd",
+      "category": "zero-length",
+      "boundary": "documentFromPsd",
+      "outcome": "typed-error",
+      "code": "unreadable"
+    },
+    {
+      "id": "psd/oversized-dims-40000x1",
+      "format": "psd",
+      "category": "oversized-dimensions",
+      "boundary": "documentFromPsd",
+      "outcome": "typed-error",
+      "code": "unreadable"
+    },
+    {
+      "id": "psd/oversized-dims-50000",
+      "format": "psd",
+      "category": "oversized-dimensions",
+      "boundary": "documentFromPsd",
+      "outcome": "typed-error",
+      "code": "unreadable"
+    },
+    {
+      "id": "psd/oversized-dims-max-int32",
+      "format": "psd",
+      "category": "oversized-dimensions",
+      "boundary": "documentFromPsd",
+      "outcome": "typed-error",
+      "code": "unreadable"
+    },
+    {
+      "id": "psd/oversized-layer-count",
+      "format": "psd",
+      "category": "oversized-counts",
+      "boundary": "documentFromPsd",
+      "outcome": "typed-error",
+      "code": "unreadable"
+    },
+    {
+      "id": "psd/truncated-at-12",
+      "format": "psd",
+      "category": "truncated",
+      "boundary": "documentFromPsd",
+      "outcome": "typed-error",
+      "code": "unreadable"
+    },
+    {
+      "id": "psd/truncated-at-130",
+      "format": "psd",
+      "category": "truncated",
+      "boundary": "documentFromPsd",
+      "outcome": "typed-error",
+      "code": "unreadable"
+    },
+    {
+      "id": "psd/truncated-at-26",
+      "format": "psd",
+      "category": "truncated",
+      "boundary": "documentFromPsd",
+      "outcome": "typed-error",
+      "code": "unreadable"
+    },
+    {
+      "id": "psd/truncated-at-30",
+      "format": "psd",
+      "category": "truncated",
+      "boundary": "documentFromPsd",
+      "outcome": "typed-error",
+      "code": "unreadable"
+    },
+    {
+      "id": "psd/truncated-at-300",
+      "format": "psd",
+      "category": "truncated",
+      "boundary": "documentFromPsd",
+      "outcome": "typed-error",
+      "code": "unreadable"
+    },
+    {
+      "id": "psd/truncated-at-34",
+      "format": "psd",
+      "category": "truncated",
+      "boundary": "documentFromPsd",
+      "outcome": "typed-error",
+      "code": "unreadable"
+    },
+    {
+      "id": "psd/truncated-at-4",
+      "format": "psd",
+      "category": "truncated",
+      "boundary": "documentFromPsd",
+      "outcome": "typed-error",
+      "code": "unreadable"
+    },
+    {
+      "id": "psd/truncated-at-500",
+      "format": "psd",
+      "category": "truncated",
+      "boundary": "documentFromPsd",
+      "outcome": "typed-error",
+      "code": "unreadable"
+    },
+    {
+      "id": "psd/truncated-at-60",
+      "format": "psd",
+      "category": "truncated",
+      "boundary": "documentFromPsd",
+      "outcome": "typed-error",
+      "code": "unreadable"
+    },
+    {
+      "id": "psd/truncated-at-667",
+      "format": "psd",
+      "category": "truncated",
+      "boundary": "documentFromPsd",
+      "outcome": "safe-doc",
+      "code": null
+    },
+    {
+      "id": "psd/valid-composite",
+      "format": "psd",
+      "category": "valid-baseline",
+      "boundary": "documentFromPsd",
+      "outcome": "safe-doc",
+      "code": null
+    },
+    {
+      "id": "psd/valid-layered",
+      "format": "psd",
+      "category": "valid-baseline",
+      "boundary": "documentFromPsd",
+      "outcome": "safe-doc",
+      "code": null
+    },
+    {
+      "id": "psd/wrong-magic-aaaa",
+      "format": "psd",
+      "category": "wrong-magic-bytes",
+      "boundary": "documentFromPsd",
+      "outcome": "typed-error",
+      "code": "unreadable"
+    },
+    {
+      "id": "psd/wrong-magic-jpeg",
+      "format": "psd",
+      "category": "wrong-magic-bytes",
+      "boundary": "documentFromPsd",
+      "outcome": "typed-error",
+      "code": "unreadable"
+    },
+    {
+      "id": "psd/wrong-magic-riff",
+      "format": "psd",
+      "category": "wrong-magic-bytes",
+      "boundary": "documentFromPsd",
+      "outcome": "typed-error",
+      "code": "unreadable"
+    },
+    {
+      "id": "psd/wrong-magic-zeros",
+      "format": "psd",
+      "category": "wrong-magic-bytes",
+      "boundary": "documentFromPsd",
+      "outcome": "typed-error",
+      "code": "unreadable"
+    },
+    {
+      "id": "psd/zero-dims",
+      "format": "psd",
+      "category": "oversized-dimensions",
+      "boundary": "documentFromPsd",
+      "outcome": "typed-error",
+      "code": "unreadable"
+    },
+    {
+      "id": "psd/zero-length",
+      "format": "psd",
+      "category": "zero-length",
+      "boundary": "documentFromPsd",
+      "outcome": "typed-error",
+      "code": "unreadable"
+    },
+    {
+      "id": "vdj/ctor-root",
+      "format": "vdj",
+      "category": "hostile-keys",
+      "boundary": "documentFromVdj",
+      "outcome": "safe-doc",
+      "code": null
+    },
+    {
+      "id": "vdj/fill-number",
+      "format": "vdj",
+      "category": "hostile-keys",
+      "boundary": "documentFromVdj",
+      "outcome": "safe-doc",
+      "code": null
+    },
+    {
+      "id": "vdj/infinite-canvas",
+      "format": "vdj",
+      "category": "oversized-dimensions",
+      "boundary": "documentFromVdj",
+      "outcome": "safe-doc",
+      "code": null
+    },
+    {
+      "id": "vdj/layer-null-entry",
+      "format": "vdj",
+      "category": "hostile-keys",
+      "boundary": "documentFromVdj",
+      "outcome": "safe-doc",
+      "code": null
+    },
+    {
+      "id": "vdj/layer-number-entry",
+      "format": "vdj",
+      "category": "hostile-keys",
+      "boundary": "documentFromVdj",
+      "outcome": "safe-doc",
+      "code": null
+    },
+    {
+      "id": "vdj/layers-pseudo-object",
+      "format": "vdj",
+      "category": "hostile-keys",
+      "boundary": "documentFromVdj",
+      "outcome": "safe-doc",
+      "code": null
+    },
+    {
+      "id": "vdj/negative-canvas",
+      "format": "vdj",
+      "category": "oversized-dimensions",
+      "boundary": "documentFromVdj",
+      "outcome": "safe-doc",
+      "code": null
+    },
+    {
+      "id": "vdj/oversized-canvas-h",
+      "format": "vdj",
+      "category": "oversized-dimensions",
+      "boundary": "documentFromVdj",
+      "outcome": "typed-error",
+      "code": "canvas-dimension-out-of-range"
+    },
+    {
+      "id": "vdj/oversized-canvas-w",
+      "format": "vdj",
+      "category": "oversized-dimensions",
+      "boundary": "documentFromVdj",
+      "outcome": "typed-error",
+      "code": "canvas-dimension-out-of-range"
+    },
+    {
+      "id": "vdj/oversized-layer-count",
+      "format": "vdj",
+      "category": "oversized-counts",
+      "boundary": "documentFromVdj",
+      "outcome": "typed-error",
+      "code": "child-count-out-of-range"
+    },
+    {
+      "id": "vdj/pages-pseudo-object",
+      "format": "vdj",
+      "category": "hostile-keys",
+      "boundary": "documentFromVdj",
+      "outcome": "safe-doc",
+      "code": null
+    },
+    {
+      "id": "vdj/proto-canvas",
+      "format": "vdj",
+      "category": "hostile-keys",
+      "boundary": "documentFromVdj",
+      "outcome": "safe-doc",
+      "code": null
+    },
+    {
+      "id": "vdj/proto-layer",
+      "format": "vdj",
+      "category": "hostile-keys",
+      "boundary": "documentFromVdj",
+      "outcome": "safe-doc",
+      "code": null
+    },
+    {
+      "id": "vdj/proto-root",
+      "format": "vdj",
+      "category": "hostile-keys",
+      "boundary": "documentFromVdj",
+      "outcome": "safe-doc",
+      "code": null
+    },
+    {
+      "id": "vdj/root-array",
+      "format": "vdj",
+      "category": "hostile-keys",
+      "boundary": "documentFromVdj",
+      "outcome": "safe-doc",
+      "code": null
+    },
+    {
+      "id": "vdj/root-null",
+      "format": "vdj",
+      "category": "hostile-keys",
+      "boundary": "documentFromVdj",
+      "outcome": "safe-doc",
+      "code": null
+    },
+    {
+      "id": "vdj/root-number",
+      "format": "vdj",
+      "category": "hostile-keys",
+      "boundary": "documentFromVdj",
+      "outcome": "safe-doc",
+      "code": null
+    },
+    {
+      "id": "vdj/root-string",
+      "format": "vdj",
+      "category": "hostile-keys",
+      "boundary": "documentFromVdj",
+      "outcome": "safe-doc",
+      "code": null
+    },
+    {
+      "id": "vdj/text-color-number",
+      "format": "vdj",
+      "category": "hostile-keys",
+      "boundary": "documentFromVdj",
+      "outcome": "safe-doc",
+      "code": null
+    },
+    {
+      "id": "vdj/valid-baseline",
+      "format": "vdj",
+      "category": "valid-baseline",
+      "boundary": "openJsonDocument",
+      "outcome": "safe-doc",
+      "code": null
+    }
+  ]
+}

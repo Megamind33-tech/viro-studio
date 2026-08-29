@@ -343,3 +343,13 @@
   opacity: 0.01;
   pointer-events: none;
 }
+
+/* VIRO-0016: the layer name is the row's real select control, so it is a
+   <button class="nm"> now. These three declarations keep the button painting
+   exactly where the old <span> painted — same box, same left-aligned,
+   ellipsed single line — so pointer pixels do not move. */
+.ly button.nm {
+  display: block;
+  width: 100%;
+  text-align: left;
+}

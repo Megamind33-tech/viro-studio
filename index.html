@@ -16,7 +16,7 @@
       <nav class="menubar" id="menubar" aria-label="Application menu">
         <div class="brand">Press</div>
         <div class="menu">
-          <button type="button" class="menu-btn" data-menu="file">File</button>
+          <button type="button" class="menu-btn" data-menu="file" aria-haspopup="true" aria-expanded="false">File</button>
           <div class="flyout" data-flyout="file" hidden>
             <button type="button" data-cmd="new">New…<span class="kbd">Ctrl+N</span></button>
             <button type="button" data-cmd="projects">Projects…<span class="kbd">Ctrl+O</span></button>
@@ -32,7 +32,7 @@
           </div>
         </div>
         <div class="menu">
-          <button type="button" class="menu-btn" data-menu="edit">Edit</button>
+          <button type="button" class="menu-btn" data-menu="edit" aria-haspopup="true" aria-expanded="false">Edit</button>
           <div class="flyout" data-flyout="edit" hidden>
             <button type="button" data-cmd="undo">Undo<span class="kbd">Ctrl+Z</span></button>
             <button type="button" data-cmd="redo">Redo<span class="kbd">Ctrl+Y</span></button>
@@ -42,7 +42,7 @@
           </div>
         </div>
         <div class="menu">
-          <button type="button" class="menu-btn" data-menu="image">Image</button>
+          <button type="button" class="menu-btn" data-menu="image" aria-haspopup="true" aria-expanded="false">Image</button>
           <div class="flyout" data-flyout="image" hidden>
             <button type="button" data-cmd="image-size">Image Size…<span class="kbd">Ctrl+Alt+I</span></button>
             <div class="sep"></div>
@@ -56,7 +56,7 @@
           </div>
         </div>
         <div class="menu">
-          <button type="button" class="menu-btn" data-menu="layer">Layer</button>
+          <button type="button" class="menu-btn" data-menu="layer" aria-haspopup="true" aria-expanded="false">Layer</button>
           <div class="flyout" data-flyout="layer" hidden>
             <button type="button" data-cmd="group">Group Layers<span class="kbd">Ctrl+G</span></button>
             <button type="button" data-cmd="ungroup">Ungroup<span class="kbd">Ctrl+Shift+G</span></button>
@@ -74,7 +74,7 @@
           </div>
         </div>
         <div class="menu">
-          <button type="button" class="menu-btn" data-menu="type">Type</button>
+          <button type="button" class="menu-btn" data-menu="type" aria-haspopup="true" aria-expanded="false">Type</button>
           <div class="flyout" data-flyout="type" hidden>
             <button type="button" data-cmd="type-left">Align Left</button>
             <button type="button" data-cmd="type-center">Align Center</button>
@@ -87,26 +87,26 @@
           </div>
         </div>
         <div class="menu">
-          <button type="button" class="menu-btn" data-menu="select">Select</button>
+          <button type="button" class="menu-btn" data-menu="select" aria-haspopup="true" aria-expanded="false">Select</button>
           <div class="flyout" data-flyout="select" hidden>
             <button type="button" data-cmd="select-all">All<span class="kbd">Ctrl+A</span></button>
             <button type="button" data-cmd="deselect">Deselect<span class="kbd">Ctrl+D</span></button>
           </div>
         </div>
         <div class="menu">
-          <button type="button" class="menu-btn" data-menu="filter">Filter</button>
+          <button type="button" class="menu-btn" data-menu="filter" aria-haspopup="true" aria-expanded="false">Filter</button>
           <div class="flyout" data-flyout="filter" hidden>
             <button type="button" data-cmd="adj-bc">Brightness/Contrast…</button>
             <button type="button" data-cmd="cutout" id="filter-cutout">Cutout background</button>
           </div>
         </div>
         <div class="menu">
-          <button type="button" class="menu-btn" data-menu="view">View</button>
+          <button type="button" class="menu-btn" data-menu="view" aria-haspopup="true" aria-expanded="false">View</button>
           <div class="flyout" data-flyout="view" hidden>
-            <button type="button" data-cmd="view-rulers"><span class="check" data-check="rulers">✓</span>Rulers<span class="kbd">Ctrl+R</span></button>
-            <button type="button" data-cmd="view-guides"><span class="check" data-check="guides">✓</span>Guides</button>
-            <button type="button" data-cmd="view-snap"><span class="check" data-check="snap">✓</span>Snap to Guides</button>
-            <button type="button" data-cmd="view-bleed"><span class="check" data-check="bleed">✓</span>Bleed</button>
+            <button type="button" data-cmd="view-rulers"><span class="check" data-check="rulers" aria-hidden="true">✓</span>Rulers<span class="kbd">Ctrl+R</span></button>
+            <button type="button" data-cmd="view-guides"><span class="check" data-check="guides" aria-hidden="true">✓</span>Guides</button>
+            <button type="button" data-cmd="view-snap"><span class="check" data-check="snap" aria-hidden="true">✓</span>Snap to Guides</button>
+            <button type="button" data-cmd="view-bleed"><span class="check" data-check="bleed" aria-hidden="true">✓</span>Bleed</button>
             <div class="sep"></div>
             <button type="button" data-cmd="zoom-in">Zoom In<span class="kbd">Ctrl+=</span></button>
             <button type="button" data-cmd="zoom-out">Zoom Out<span class="kbd">Ctrl+-</span></button>
@@ -115,18 +115,18 @@
           </div>
         </div>
         <div class="menu">
-          <button type="button" class="menu-btn" data-menu="window">Window</button>
+          <button type="button" class="menu-btn" data-menu="window" aria-haspopup="true" aria-expanded="false">Window</button>
           <div class="flyout" data-flyout="window" hidden>
-            <button type="button" data-cmd="win-color"><span class="check" data-check="g-color">✓</span>Color</button>
-            <button type="button" data-cmd="win-type"><span class="check" data-check="g-type">✓</span>Character / Paragraph</button>
-            <button type="button" data-cmd="win-transform"><span class="check" data-check="g-transform">✓</span>Transform</button>
-            <button type="button" data-cmd="win-effects"><span class="check" data-check="g-effects">✓</span>Effects</button>
-            <button type="button" data-cmd="win-layers"><span class="check" data-check="g-layers">✓</span>Layers</button>
-            <button type="button" data-cmd="win-pages"><span class="check" data-check="g-pages">✓</span>Pages</button>
-            <button type="button" data-cmd="win-nav"><span class="check" data-check="g-nav">✓</span>Navigator / History</button>
-            <button type="button" data-cmd="win-library"><span class="check" data-check="g-library"></span>Library</button>
+            <button type="button" data-cmd="win-color"><span class="check" data-check="g-color" aria-hidden="true">✓</span>Color</button>
+            <button type="button" data-cmd="win-type"><span class="check" data-check="g-type" aria-hidden="true">✓</span>Character / Paragraph</button>
+            <button type="button" data-cmd="win-transform"><span class="check" data-check="g-transform" aria-hidden="true">✓</span>Transform</button>
+            <button type="button" data-cmd="win-effects"><span class="check" data-check="g-effects" aria-hidden="true">✓</span>Effects</button>
+            <button type="button" data-cmd="win-layers"><span class="check" data-check="g-layers" aria-hidden="true">✓</span>Layers</button>
+            <button type="button" data-cmd="win-pages"><span class="check" data-check="g-pages" aria-hidden="true">✓</span>Pages</button>
+            <button type="button" data-cmd="win-nav"><span class="check" data-check="g-nav" aria-hidden="true">✓</span>Navigator / History</button>
+            <button type="button" data-cmd="win-library"><span class="check" data-check="g-library" aria-hidden="true"></span>Library</button>
             <div class="sep"></div>
-            <button type="button" data-cmd="win-anchor"><span class="check" data-check="g-anchor"></span>Anchor</button>
+            <button type="button" data-cmd="win-anchor"><span class="check" data-check="g-anchor" aria-hidden="true"></span>Anchor</button>
           </div>
         </div>
       </nav>
@@ -221,8 +221,8 @@
         <div class="swatch-well" title="Foreground / Background">
           <button type="button" class="bg" id="bg-swatch" aria-label="Background color"></button>
           <button type="button" class="fg" id="fg-swatch" aria-label="Foreground color"></button>
-          <button type="button" class="swap" id="swap-fgbg" title="Swap (X)">↔</button>
-          <button type="button" class="deflt" id="default-fgbg" title="Default (D)">■</button>
+          <button type="button" class="swap" id="swap-fgbg" title="Swap (X)" aria-label="Swap foreground and background colors">↔</button>
+          <button type="button" class="deflt" id="default-fgbg" title="Default (D)" aria-label="Default foreground and background colors">■</button>
         </div>
       </aside>
 
@@ -252,12 +252,12 @@
               <div class="hue-dot" id="hue-dot"></div>
             </div>
             <div class="color-controls">
-              <div class="rgb-row"><span>R</span><input type="range" id="rgb-r" min="0" max="255" /><input class="num w3" id="rgb-r-n" /></div>
-              <div class="rgb-row"><span>G</span><input type="range" id="rgb-g" min="0" max="255" /><input class="num w3" id="rgb-g-n" /></div>
-              <div class="rgb-row"><span>B</span><input type="range" id="rgb-b" min="0" max="255" /><input class="num w3" id="rgb-b-n" /></div>
+              <div class="rgb-row"><span>R</span><input type="range" id="rgb-r" min="0" max="255" aria-label="Red" /><input class="num w3" id="rgb-r-n" aria-label="Red value" /></div>
+              <div class="rgb-row"><span>G</span><input type="range" id="rgb-g" min="0" max="255" aria-label="Green" /><input class="num w3" id="rgb-g-n" aria-label="Green value" /></div>
+              <div class="rgb-row"><span>B</span><input type="range" id="rgb-b" min="0" max="255" aria-label="Blue" /><input class="num w3" id="rgb-b-n" aria-label="Blue value" /></div>
               <div class="row">
                 <span class="lbl">#</span>
-                <input class="num w4 ctrl grow" id="hex" maxlength="7" />
+                <input class="num w4 ctrl grow" id="hex" maxlength="7" aria-label="Hex color" />
                 <span class="well" id="fg-well"></span>
               </div>
             </div>
@@ -474,7 +474,7 @@
               <div class="nav-port" id="nav-port"></div>
             </div>
             <div class="row">
-              <input type="range" id="nav-zoom" min="5" max="400" value="35" />
+              <input type="range" id="nav-zoom" min="5" max="400" value="35" aria-label="Navigator zoom" />
               <span id="nav-zoom-lbl">35%</span>
             </div>
           </div>
@@ -542,7 +542,7 @@
         <span class="stat" id="stat-size">0 × 0 px</span>
         <span class="stat" id="stat-ppi">72 ppi</span>
         <span class="stat" id="stat-color">RGB/8</span>
-        <span class="stat grow" id="stat-engine">Booting engines…</span>
+        <span class="stat grow" id="stat-engine" aria-live="polite">Booting engines…</span>
       </footer>
     </div>
 
@@ -577,7 +577,7 @@
     </div>
 
     <div class="dialog-back" id="dlg-image" hidden>
-      <div class="dialog" role="dialog" aria-labelledby="dlg-image-title">
+      <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="dlg-image-title">
         <div class="dialog-title" id="dlg-image-title">Image Size</div>
         <div class="dialog-body">
           <div class="dialog-grid">
@@ -613,7 +613,7 @@
     </div>
 
     <div class="dialog-back" id="dlg-new" hidden>
-      <div class="dialog nd" role="dialog" aria-labelledby="dlg-new-title">
+      <div class="dialog nd" role="dialog" aria-modal="true" aria-labelledby="dlg-new-title">
         <div class="dialog-title" id="dlg-new-title">New Document</div>
 
         <div class="nd-tabs" id="nd-tabs" role="tablist" aria-label="Preset category"></div>
@@ -671,9 +671,9 @@
                   <span class="nd-suffix">pixels / inch</span>
                 </div>
 
-                <label class="nd-lbl" for="nd-cs">Color Mode</label>
+                <span class="nd-lbl" id="nd-cs-lbl">Color Mode</span>
                 <div class="nd-cell">
-                  <div class="ctrl nd-grow" id="nd-cs" role="status">RGB Color · 8 bit</div>
+                  <div class="ctrl nd-grow" id="nd-cs" role="status" aria-labelledby="nd-cs-lbl">RGB Color · 8 bit</div>
                 </div>
 
                 <label class="nd-lbl" for="nd-pages">Pages</label>
@@ -725,11 +725,11 @@
     </div>
 
     <div class="dialog-back" id="dlg-bc" hidden>
-      <div class="dialog" role="dialog" aria-labelledby="dlg-bc-title">
+      <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="dlg-bc-title">
         <div class="dialog-title" id="dlg-bc-title">Brightness/Contrast</div>
         <div class="dialog-body">
-          <div class="row"><span class="lbl">Brightness</span><input type="range" id="bc-b" min="-1" max="1" step="0.01" value="0" /><span id="bc-b-n">0</span></div>
-          <div class="row"><span class="lbl">Contrast</span><input type="range" id="bc-c" min="-1" max="1" step="0.01" value="0" /><span id="bc-c-n">0</span></div>
+          <div class="row"><span class="lbl">Brightness</span><input type="range" id="bc-b" min="-1" max="1" step="0.01" value="0" aria-label="Brightness" /><span id="bc-b-n">0</span></div>
+          <div class="row"><span class="lbl">Contrast</span><input type="range" id="bc-c" min="-1" max="1" step="0.01" value="0" aria-label="Contrast" /><span id="bc-c-n">0</span></div>
         </div>
         <div class="dialog-foot">
           <button type="button" class="btn" data-dlg="bc-cancel">Cancel</button>
