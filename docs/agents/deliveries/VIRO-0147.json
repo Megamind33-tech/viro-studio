@@ -28,16 +28,38 @@
     "npx tsc --noEmit",
     "npm run build"
   ],
-  "builder": { "status": "PENDING", "notes": "Serialized behind VIRO-0146 (shared pdf.ts + corpus pins)." },
+  "builder": {
+    "status": "PASS",
+    "agent": "zcode-styledtext-pc1",
+    "branch": "agent/viro-0147/zcode-gov-audit-pc1",
+    "candidate": "2803570 (on b1ad608 emitType core + 199ef28 node suite; base fc96f44)",
+    "approach": "emitType segments composed glyphs exactly as the engine composed them: one styled run per distinct (face, size, fill); each run emits its own gs/Tf/rg inside the line's single BT/Tm/ET text object and writes its glyph ids ONLY under its own embedded face, resolved through faceFor (cached per FacePack id, so each face is embedded once). Word-space re-insertion now tests the pen gap against the smaller of the following run's space and the story-level space, so a boundary between differently sized runs still extracts a word break. composeFrame is called with layer.textFrame - the exact drawTypeFrame call - so PDF type placement honors 0143 insets/vertical alignment; the 0146 type-shadow silhouette uses the same args. A legacy faceFor fast path that could return the wrong face once a second face was embedded was removed. Report: textRuns is one per styled TJ run; multi-face embeds name every face and disclose the total full-font byte cost in report.notes.",
+    "size_impact": "Per-range faces embed whole (0145 policy). Measured: Noto Sans Regular 2001 KB + Noto Serif Regular 1163 KB = ~3.1 MB of font data in the two-face fixture; the report states the per-document face count, names and KB total in notes whenever more than one face is embedded. Single-face documents are unchanged from 0145.",
+    "notes": "No silent divergence path remains: same-face ranges share one font resource; cross-face ranges get one font resource per face; an unresolvable range fontId falls back to the story face exactly as the canvas does (fontRegistry.resolve contract in engine/type.ts), so PDF and canvas cannot disagree.",
+    "gates": {
+      "tsc": "npx tsc --noEmit clean",
+      "styled_text_node": "tests/pdf-styled-text.test.mjs 6/6 pass (operator-level Tm/TJ replay vs composeFrame, per-range face embed, extraction, report truth, uniform-topology regression)",
+      "styled_text_browser": "tests/pdf-styled-text-parity.spec.ts pass on port 5208 via tests/pdf-styled-text-playwright.config.ts (pdf.js getTextContent 'VIRO corpus', item sizes 64/34 at canvas positions, hue-classified rendered pixels agree canvas vs pdf, report truthful)",
+      "corpus": "tests/export-corpus.test.mjs 14/14 pass incl. new export/styled-text-layer row (textRuns 2 / Tf 2 / TJ 2 under one Tm); PNG pins regenerated with CORPUS_PIN=1 - diff adds ONLY the new row, every existing fingerprint byte-identical",
+      "regressions": "pdf-font-embed 5/5, pdf-compound 5/5, rich-text-compose 8/8, rich-text-history pass (28/28 consolidated); effects underlay composes: pdf-effects-parity shadow + control pass on 5208 alongside the styled spec",
+      "test_unit": "npm run test:unit 336/336",
+      "build": "node node_modules/vite/bin/vite.js build - 264 modules, no errors"
+    }
+  },
   "verifier": { "status": "PENDING", "notes": "Independent verification required." },
   "critic": { "status": "PENDING", "notes": "Exported text output user-visible; critic re-runs the styled-text reproduction." },
   "delta": {
     "before": "Styled ranges position correctly on canvas but export as uniform broken text with a false-success report.",
     "after": "Per-range styles export faithfully; report truthful.",
-    "proof": [],
+    "proof": [
+      "Node operator replay: tests/pdf-styled-text.test.mjs replays the emitted Tm/TJ with the viewer pen model and lands every glyph on the composeFrame x (gid-exact, 0.05px) - no scatter; before the fix the same replay of the old stream showed every glyph at story size/fill",
+      "pdf.js artifact: tests/pdf-styled-text-parity.spec.ts - getTextContent 'VIRO corpus', item sizes 64/34 at canvas origins, hue-classified ink populations (copper left of blue) agree canvas vs pdf.js",
+      "Corpus: export/styled-text-layer pins two styled runs (Tf 2 / TJ 2 / textRuns 2); all other rows and PNG fingerprints unchanged",
+      "Per-range fontId: FontFile2 byte-identical to NotoSerifRegular source; range glyph ids decode 'corpus' under the serif resource and land at canvas x; report notes disclose both faces + ~3.1 MB font cost"
+    ],
     "regression_protection": [
-      "Plain single-style text export topology unchanged",
-      "VIRO-0015 corpus non-text pins unchanged"
+      "Plain single-style text export topology unchanged (BT/Tf/Tm/TJ = 1, pinned in corpus + suite)",
+      "VIRO-0015 corpus non-text pins unchanged (only the new styled-text row added; PNG fingerprint diff shows exactly one added row)"
     ],
     "new_debt": "app.ts exportPdf: stale 'subset Noto Sans' JSDoc + dynamic import outside try/catch (dev-server 504 makes Export click no-op silently) - app.ts off-lease, recorded for the next app-leased packet."
   }
