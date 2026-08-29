@@ -90,6 +90,40 @@ export async function textLayerDoc() {
   return doc;
 }
 
+/**
+ * The VIRO-0147 critic repro, corpus-sized: one line, two character ranges
+ * ("VIRO" 64px copper, "corpus" 34px blue) over a 12px black story style.
+ * Both ranges must compose as ONE line inside the 320px frame (≈154px + ≈100px
+ * + the story-sized word space) so the topology pins exactly two styled runs
+ * (two Tf / two TJ) under one Tm deterministically.
+ *
+ * Ranges are applied with the same pure document-model call the
+ * `type.characterRange` bus command applies (src/document/text-model.ts), so
+ * the builder stays factory/ops-only like every other row.
+ */
+export async function styledTextLayerDoc() {
+  const { applyCharacterRange } = await import("../src/document/text-model.ts");
+  let doc = newDoc("Corpus Styled Text");
+  doc = addTypeFrame(doc, "noto-sans", 32, 32, { w: 320, h: 120 });
+  const id = doc.activeLayerIds[0];
+  doc = setStoryText(doc, id, "VIRO corpus");
+  doc = setCharacter(doc, id, { size: 12, leading: 14.4, tracking: 0, fill: { r: 0, g: 0, b: 0, a: 1 } });
+  const layer = doc.pages[0].layers[doc.pages[0].layers.length - 1];
+  const story = doc.stories.find((s) => s.id === layer.storyId);
+  let styled = applyCharacterRange(story, 0, 4, {
+    size: 64,
+    leading: 76.8,
+    fill: { r: 0.878, g: 0.478, b: 0.184, a: 1 },
+  });
+  styled = applyCharacterRange(styled, 5, 11, {
+    size: 34,
+    leading: 40.8,
+    fill: { r: 0.1, g: 0.3, b: 0.9, a: 1 },
+  });
+  doc.stories[doc.stories.findIndex((s) => s.id === story.id)] = styled;
+  return doc;
+}
+
 export async function rasterLayerDoc() {
   let doc = newDoc("Corpus Raster");
   doc = addImageFrame(doc, { name: "Tile", mime: "image/png", dataUrl: tinyPngDataUrl(), width: 2, height: 2 }, 24, 24);
@@ -229,6 +263,19 @@ export function corpusManifest() {
       build: textLayerDoc,
       expectReport: { pagePt: { w: 400, h: 300 }, vectorPaths: 0, textRuns: 1, glyphs: ">=10", images: 0, rasterFallbacks: [], notes: ">=1" },
       expectTopology: { m: 0, BT: 1, ET: 1, Tf: 1, Tm: 1, TJ: 1, do: 0, fill: 0, evenOddFill: 0 },
+    },
+    {
+      id: "export/styled-text-layer",
+      status: "READY",
+      build: styledTextLayerDoc,
+      // VIRO-0147 FIX (extends the VIRO-0015 text pin to character runs): the
+      // exporter now emits one styled run per distinct (face, size, fill) —
+      // here exactly two: 64px copper "VIRO" and 34px blue "corpus", each with
+      // its own Tf + rg under the line's single Tm. Before the fix every glyph
+      // was painted at the story's 12px black across the mixed advances and
+      // the report claimed success.
+      expectReport: { pagePt: { w: 400, h: 300 }, vectorPaths: 0, textRuns: 2, glyphs: ">=10", images: 0, rasterFallbacks: [], notes: ">=1" },
+      expectTopology: { m: 0, BT: 1, ET: 1, Tf: 2, Tm: 1, TJ: 2, do: 0, fill: 0, evenOddFill: 0 },
     },
     {
       id: "export/raster-layer",

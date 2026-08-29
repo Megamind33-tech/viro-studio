@@ -92,12 +92,12 @@ test("corpus manifest: every row is READY — the VIRO-0005 rebase landed, nothi
 for (const c of manifest) {
   test(`pdf arm: ${c.id}`, async () => {
     const doc = await c.build(ck);
-    // The text case exports with the real face it was set in (the exact
+    // The text cases export with the real face they were set in (the exact
     // argument shape src/app.ts exportPdf() resolves to for bundled faces).
     // `ck` is passed so drop-shadow underlays rasterise in Node exactly as
     // they do in the browser (pixel parity is proven separately by
     // tests/pdf-effects-parity.spec.ts).
-    const isText = c.id === "export/text-layer";
+    const isText = c.id === "export/text-layer" || c.id === "export/styled-text-layer";
     const { bytes, report } = await exportPagePdf({ doc, face: isText ? face : null, ck });
     const contentText = await pageContentText(bytes);
     const census = topologyOf(contentText);
