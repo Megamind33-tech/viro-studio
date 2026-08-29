@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 459,
-  "updated_at": "2026-08-29T00:57:09.349Z",
+  "revision": 460,
+  "updated_at": "2026-08-29T00:57:16.082Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -2240,15 +2240,17 @@
       ],
       "critic_needed": true,
       "stage": "audit",
-      "status": "QUEUED",
-      "assigned_agent": null,
-      "assigned_role": null,
-      "work_branch": null,
-      "heartbeat_at": null,
+      "status": "ACTIVE",
+      "assigned_agent": "zcode-gov-audit-pc1",
+      "assigned_role": "gap-auditor",
+      "work_branch": "agent/viro-0148/zcode-gov-audit-pc1",
+      "heartbeat_at": "2026-08-29T00:57:16.082Z",
       "attempts": 0,
       "evidence": [],
       "last_handoff": null,
-      "rejection": null
+      "rejection": null,
+      "assigned_machine": "pc-cloud1",
+      "assigned_session": "e00adc85-67e6-40ec-b4d6-751d90624d1a"
     }
   },
   "agents": {
@@ -2265,6 +2267,13 @@
       "session": "4a87f438-fb98-4d6c-8f83-535860d6f49b",
       "packet": "VIRO-0147",
       "heartbeat_at": "2026-08-29T00:57:09.349Z"
+    },
+    "zcode-gov-audit-pc1": {
+      "role": "gap-auditor",
+      "machine": "pc-cloud1",
+      "session": "e00adc85-67e6-40ec-b4d6-751d90624d1a",
+      "packet": "VIRO-0148",
+      "heartbeat_at": "2026-08-29T00:57:16.082Z"
     }
   },
   "leases": {
@@ -2293,17 +2302,22 @@
       "current_agent": "zcode-verify-pc17",
       "current_stage": "verify",
       "current_session": "4a87f438-fb98-4d6c-8f83-535860d6f49b"
+    },
+    "VIRO-0148": {
+      "packet": "VIRO-0148",
+      "scope": [
+        "index.html",
+        "src/chrome/**",
+        "tests/a11y-status-*",
+        "docs/agents/deliveries/VIRO-0148.json"
+      ],
+      "acquired_at": "2026-08-29T00:57:16.082Z",
+      "current_agent": "zcode-gov-audit-pc1",
+      "current_stage": "audit",
+      "current_session": "e00adc85-67e6-40ec-b4d6-751d90624d1a"
     }
   },
   "events": [
-    {
-      "at": "2026-08-28T10:28:27.809Z",
-      "type": "packet.claimed",
-      "packet": "VIRO-0145",
-      "agent": "zcode-pdffont-pc1",
-      "role": "builder",
-      "machine": "pc-cloud1"
-    },
     {
       "at": "2026-08-28T10:29:58.945Z",
       "type": "agent.heartbeat",
@@ -4514,6 +4528,15 @@
       "role": "verifier",
       "machine": "pc-cloud1",
       "session": "4a87f438-fb98-4d6c-8f83-535860d6f49b"
+    },
+    {
+      "at": "2026-08-29T00:57:16.082Z",
+      "type": "packet.claimed",
+      "packet": "VIRO-0148",
+      "agent": "zcode-gov-audit-pc1",
+      "role": "gap-auditor",
+      "machine": "pc-cloud1",
+      "session": "e00adc85-67e6-40ec-b4d6-751d90624d1a"
     }
   ]
 }
