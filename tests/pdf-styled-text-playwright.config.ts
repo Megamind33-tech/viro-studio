@@ -15,9 +15,12 @@ import { fileURLToPath } from "node:url";
 process.env.PLAYWRIGHT_BROWSERS_PATH ||= join(dirname(fileURLToPath(import.meta.url)), "..", ".pw-browsers");
 
 export default defineConfig({
-  // This config lives inside tests/, so "." IS the tests directory.
+  // This config lives inside tests/, so "." IS the tests directory. The
+  // match covers this packet's spec AND the VIRO-0146 effects-parity spec:
+  // the styled-text emitter must compose with the shadow underlay, and this
+  // way both prove out on this packet's own port.
   testDir: ".",
-  testMatch: "pdf-styled-text-parity.spec.ts",
+  testMatch: /pdf-(styled-text|effects)-parity\.spec\.ts$/,
   timeout: 240_000,
   fullyParallel: false,
   retries: 2,
