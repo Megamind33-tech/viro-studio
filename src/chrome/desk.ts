@@ -1847,10 +1847,27 @@ export function mountDesk(_root: HTMLElement, app: PressApp): HTMLCanvasElement 
     // Report what the compositor actually edits and exports. Older documents
     // can carry aspirational `cmyk` metadata, but this build is RGB-only.
     el("stat-color").textContent = `${SUPPORTED_DOCUMENT_COLOR_SPACE.toUpperCase()}/8`;
-    // Photoshop ships a document readout here, not build telemetry. While the
-    // engines are still loading there is no document to measure, so the boot
-    // status stands in until they are up.
-    el("stat-engine").textContent = app.engines ? docSizeLabel(page, page.layers, 4) : app.status;
+    // VIRO-0148: #stat-engine is the statusbar's polite live region — the ONE
+    // status channel. Boot progress and save/export/recovery messages all
+    // surface through app.status and must update THIS node's text in place;
+    // replacing the element or letting another readout clobber it hides the
+    // message from sighted users and silences assistive tech alike. The change
+    // guard keeps unrelated re-renders from rewriting identical text into the
+    // live node (DOM churn there can re-trigger announcements).
+    const liveStatus = el("stat-engine");
+    if (liveStatus.textContent !== app.status) liveStatus.textContent = app.status;
+    // Photoshop's `Doc:` size readout is a measurement, not an announcement,
+    // so it renders in its own non-live slot beside the other document stats.
+    // While the engines are still loading there is no document to measure,
+    // so the slot stays hidden instead of guessing.
+    const docsize = el("stat-docsize");
+    if (app.engines) {
+      docsize.hidden = false;
+      docsize.textContent = docSizeLabel(page, page.layers, 4);
+    } else {
+      docsize.hidden = true;
+      docsize.textContent = "";
+    }
     el("nav-zoom-lbl").textContent = pct;
     el<HTMLInputElement>("nav-zoom").value = String(Math.round(z * 100));
     syncZoomSelect(z);

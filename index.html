@@ -543,6 +543,10 @@
         <span class="stat" id="stat-size">0 × 0 px</span>
         <span class="stat" id="stat-ppi">72 ppi</span>
         <span class="stat" id="stat-color">RGB/8</span>
+        <!-- VIRO-0148: the Doc: size readout is a measurement, not an
+             announcement, so it gets its own non-live slot; #stat-engine stays
+             the statusbar's single polite live region for status messages. -->
+        <span class="stat" id="stat-docsize" hidden></span>
         <span class="stat grow" id="stat-engine" aria-live="polite">Booting engines…</span>
       </footer>
     </div>
