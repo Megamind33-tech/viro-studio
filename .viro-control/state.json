@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 456,
-  "updated_at": "2026-08-29T00:54:39.285Z",
+  "revision": 457,
+  "updated_at": "2026-08-29T00:55:15.611Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -2168,12 +2168,12 @@
         "VIRO-0146"
       ],
       "critic_needed": true,
-      "stage": "build",
-      "status": "ACTIVE",
-      "assigned_agent": "zcode-styledtext-pc1",
-      "assigned_role": "builder",
+      "stage": "verify",
+      "status": "QUEUED",
+      "assigned_agent": null,
+      "assigned_role": null,
       "work_branch": "agent/viro-0147/zcode-gov-audit-pc1",
-      "heartbeat_at": "2026-08-29T00:51:24.312Z",
+      "heartbeat_at": null,
       "attempts": 0,
       "evidence": [
         {
@@ -2181,15 +2181,42 @@
           "by": "zcode-gov-audit-pc1",
           "item": "before-state confirmed 2026-08-28: emitType story-level styles vs composeFrame per-run advances (critic repro: mixed-size ranges export scattered ~12pt black glyphs, report false-success); 0146 reconciled so src/export + corpus-pins lease is free",
           "at": "2026-08-29T00:03:58.695Z"
+        },
+        {
+          "stage": "build",
+          "by": "zcode-styledtext-pc1",
+          "item": "candidate 3bcc204 on agent/viro-0147/zcode-gov-audit-pc1 (base fc96f44): emitType segments composed glyphs per (face,size,fill), per-run gs/Tf/rg under one Tm, range glyph ids written only under their own embedded face",
+          "at": "2026-08-29T00:55:15.608Z"
+        },
+        {
+          "stage": "build",
+          "by": "zcode-styledtext-pc1",
+          "item": "tests/pdf-styled-text.test.mjs 6/6: sequential Tm/TJ replay (fontkit advances) lands every glyph on composeFrame x gid-exact no-scatter; serif fontId range embeds FontFile2 byte-identical to source, decodes 'corpus' under serif resource at canvas x; extraction 'VIRO corpus'; report counts + multi-face KB disclosure; uniform topology BT/Tf/Tm/TJ=1 regression green",
+          "at": "2026-08-29T00:55:15.611Z"
+        },
+        {
+          "stage": "build",
+          "by": "zcode-styledtext-pc1",
+          "item": "pdf.js artifact on 5208: tests/pdf-styled-text-parity.spec.ts getTextContent 'VIRO corpus', item sizes 64/34 at canvas origins, hue-classified rendered pixels agree canvas-vs-pdf within tolerance; effects-parity shadow+control pass alongside (0146 composes)",
+          "at": "2026-08-29T00:55:15.611Z"
+        },
+        {
+          "stage": "build",
+          "by": "zcode-styledtext-pc1",
+          "item": "corpus 14/14 incl new export/styled-text-layer (textRuns 2/Tf 2/TJ 2); CORPUS_PIN=1 regen diff adds ONLY the new row, all other fingerprints byte-identical; tsc clean; test:unit 336/336; vite build 264 modules ok",
+          "at": "2026-08-29T00:55:15.611Z"
         }
       ],
       "last_handoff": {
-        "from": "audit",
-        "to": "build",
-        "by": "zcode-gov-audit-pc1",
-        "at": "2026-08-29T00:03:58.697Z",
+        "from": "build",
+        "to": "verify",
+        "by": "zcode-styledtext-pc1",
+        "at": "2026-08-29T00:55:15.611Z",
         "evidence": [
-          "before-state confirmed 2026-08-28: emitType story-level styles vs composeFrame per-run advances (critic repro: mixed-size ranges export scattered ~12pt black glyphs, report false-success); 0146 reconciled so src/export + corpus-pins lease is free"
+          "candidate 3bcc204 on agent/viro-0147/zcode-gov-audit-pc1 (base fc96f44): emitType segments composed glyphs per (face,size,fill), per-run gs/Tf/rg under one Tm, range glyph ids written only under their own embedded face",
+          "tests/pdf-styled-text.test.mjs 6/6: sequential Tm/TJ replay (fontkit advances) lands every glyph on composeFrame x gid-exact no-scatter; serif fontId range embeds FontFile2 byte-identical to source, decodes 'corpus' under serif resource at canvas x; extraction 'VIRO corpus'; report counts + multi-face KB disclosure; uniform topology BT/Tf/Tm/TJ=1 regression green",
+          "pdf.js artifact on 5208: tests/pdf-styled-text-parity.spec.ts getTextContent 'VIRO corpus', item sizes 64/34 at canvas origins, hue-classified rendered pixels agree canvas-vs-pdf within tolerance; effects-parity shadow+control pass alongside (0146 composes)",
+          "corpus 14/14 incl new export/styled-text-layer (textRuns 2/Tf 2/TJ 2); CORPUS_PIN=1 regen diff adds ONLY the new row, all other fingerprints byte-identical; tsc clean; test:unit 336/336; vite build 264 modules ok"
         ]
       },
       "rejection": null,
@@ -2225,13 +2252,6 @@
     }
   },
   "agents": {
-    "zcode-styledtext-pc1": {
-      "role": "builder",
-      "machine": "pc-cloud1",
-      "session": "0b3e1d7c-5b42-41c5-a8f3-9d0a5810e056",
-      "packet": "VIRO-0147",
-      "heartbeat_at": "2026-08-29T00:51:24.312Z"
-    },
     "zcode-verify-pc16": {
       "role": "verifier",
       "machine": "pc-cloud1",
@@ -2263,21 +2283,13 @@
         "docs/agents/deliveries/VIRO-0147.json"
       ],
       "acquired_at": "2026-08-29T00:03:52.025Z",
-      "current_agent": "zcode-styledtext-pc1",
-      "current_stage": "build",
+      "current_agent": null,
+      "current_stage": "verify",
       "current_session": "0b3e1d7c-5b42-41c5-a8f3-9d0a5810e056",
       "heartbeat_at": "2026-08-29T00:51:24.312Z"
     }
   },
   "events": [
-    {
-      "at": "2026-08-28T10:27:02.693Z",
-      "type": "packet.claimed",
-      "packet": "VIRO-0140",
-      "agent": "zcode-layers-pc1",
-      "role": "builder",
-      "machine": "pc-cloud1"
-    },
     {
       "at": "2026-08-28T10:27:23.057Z",
       "type": "agent.heartbeat",
@@ -4484,6 +4496,16 @@
       "packet": "VIRO-0144",
       "session": "6f16c4bb-6ddd-486b-ab04-5248ba496c52",
       "machine": "pc-cloud1"
+    },
+    {
+      "at": "2026-08-29T00:55:15.611Z",
+      "type": "packet.advanced",
+      "packet": "VIRO-0147",
+      "from": "build",
+      "to": "verify",
+      "by": "zcode-styledtext-pc1",
+      "machine": "pc-cloud1",
+      "session": "0b3e1d7c-5b42-41c5-a8f3-9d0a5810e056"
     }
   ]
 }
