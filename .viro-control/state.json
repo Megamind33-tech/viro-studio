@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 438,
-  "updated_at": "2026-08-29T00:03:13.636Z",
+  "revision": 439,
+  "updated_at": "2026-08-29T00:03:41.691Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -1998,8 +1998,8 @@
       ],
       "dependencies": [],
       "critic_needed": true,
-      "stage": "release",
-      "status": "RELEASE",
+      "stage": "done",
+      "status": "RECONCILED",
       "assigned_agent": null,
       "assigned_role": null,
       "work_branch": "agent/viro-0146/zcode-gov-audit-pc1",
@@ -2095,17 +2095,21 @@
           "by": "zcode-release-pc1",
           "item": "critic zcode-critic-pc3 PASS: professional shadow fidelity, honest self-describing file",
           "at": "2026-08-29T00:03:13.633Z"
+        },
+        {
+          "stage": "reconcile",
+          "by": "governor",
+          "item": "landed via LOCAL merge under owner order 2026-08-28 (candidate 06015c3; verifier + critic PASS); corpus 13/13 green on merged main",
+          "at": "2026-08-29T00:03:41.688Z"
         }
       ],
       "last_handoff": {
-        "from": "release",
-        "to": "merge-gate",
-        "by": "zcode-release-pc1",
-        "at": "2026-08-29T00:03:13.633Z",
+        "from": "historical",
+        "to": "done",
+        "by": "governor",
+        "at": "2026-08-29T00:03:41.688Z",
         "evidence": [
-          "PR binds approval to head SHA 06015c3",
-          "independent verifier zcode-verify-pc15: vector purity proven (regional XObject, body stays vector), parity pixel-identical, fallbacks truthful, 18/18 chrome, gates green",
-          "critic zcode-critic-pc3 PASS: professional shadow fidelity, honest self-describing file"
+          "landed via LOCAL merge under owner order 2026-08-28 (candidate 06015c3; verifier + critic PASS); corpus 13/13 green on merged main"
         ]
       },
       "rejection": null,
@@ -2193,19 +2197,6 @@
     }
   },
   "leases": {
-    "VIRO-0146": {
-      "packet": "VIRO-0146",
-      "scope": [
-        "src/export/pdf.ts",
-        "tests/export-corpus-*",
-        "tests/pdf-effects-*",
-        "docs/agents/deliveries/VIRO-0146.json"
-      ],
-      "acquired_at": "2026-08-28T21:32:32.991Z",
-      "current_agent": null,
-      "current_stage": "release",
-      "current_session": "2c2e86e1-8cf0-4ea5-892e-0d47d213ab28"
-    },
     "VIRO-0144": {
       "packet": "VIRO-0144",
       "scope": [
@@ -2221,11 +2212,6 @@
     }
   },
   "events": [
-    {
-      "at": "2026-08-28T10:21:27.103Z",
-      "type": "packet.reconciled_from_manifest",
-      "packet": "VIRO-0002"
-    },
     {
       "at": "2026-08-28T10:21:38.619Z",
       "type": "packet.claimed",
@@ -4421,6 +4407,15 @@
       "session": "2c2e86e1-8cf0-4ea5-892e-0d47d213ab28",
       "pr": 29,
       "head_sha": "06015c31841b396da793b840cb337a2cb36fe360"
+    },
+    {
+      "at": "2026-08-29T00:03:41.691Z",
+      "type": "packet.reconciled",
+      "packet": "VIRO-0146",
+      "by": "governor",
+      "evidence": [
+        "landed via LOCAL merge under owner order 2026-08-28 (candidate 06015c3; verifier + critic PASS); corpus 13/13 green on merged main"
+      ]
     }
   ]
 }
