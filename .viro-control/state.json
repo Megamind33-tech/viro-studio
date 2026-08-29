@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 439,
-  "updated_at": "2026-08-29T00:03:41.691Z",
+  "revision": 440,
+  "updated_at": "2026-08-29T00:03:52.025Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -2149,15 +2149,17 @@
       ],
       "critic_needed": true,
       "stage": "audit",
-      "status": "QUEUED",
-      "assigned_agent": null,
-      "assigned_role": null,
-      "work_branch": null,
-      "heartbeat_at": null,
+      "status": "ACTIVE",
+      "assigned_agent": "zcode-gov-audit-pc1",
+      "assigned_role": "gap-auditor",
+      "work_branch": "agent/viro-0147/zcode-gov-audit-pc1",
+      "heartbeat_at": "2026-08-29T00:03:52.025Z",
       "attempts": 0,
       "evidence": [],
       "last_handoff": null,
-      "rejection": null
+      "rejection": null,
+      "assigned_machine": "pc-cloud1",
+      "assigned_session": "b7582f61-4e29-4f6a-9ff9-cc718909b1cb"
     },
     "VIRO-0148": {
       "id": "VIRO-0148",
@@ -2194,6 +2196,13 @@
       "session": "51efe904-f1a0-4f6d-9378-10f113c068fc",
       "packet": "VIRO-0144",
       "heartbeat_at": "2026-08-28T23:44:43.324Z"
+    },
+    "zcode-gov-audit-pc1": {
+      "role": "gap-auditor",
+      "machine": "pc-cloud1",
+      "session": "b7582f61-4e29-4f6a-9ff9-cc718909b1cb",
+      "packet": "VIRO-0147",
+      "heartbeat_at": "2026-08-29T00:03:52.025Z"
     }
   },
   "leases": {
@@ -2209,17 +2218,22 @@
       "current_stage": "build",
       "current_session": "51efe904-f1a0-4f6d-9378-10f113c068fc",
       "heartbeat_at": "2026-08-28T23:44:43.324Z"
+    },
+    "VIRO-0147": {
+      "packet": "VIRO-0147",
+      "scope": [
+        "src/export/pdf.ts",
+        "tests/export-corpus-*",
+        "tests/pdf-styled-text-*",
+        "docs/agents/deliveries/VIRO-0147.json"
+      ],
+      "acquired_at": "2026-08-29T00:03:52.025Z",
+      "current_agent": "zcode-gov-audit-pc1",
+      "current_stage": "audit",
+      "current_session": "b7582f61-4e29-4f6a-9ff9-cc718909b1cb"
     }
   },
   "events": [
-    {
-      "at": "2026-08-28T10:21:38.619Z",
-      "type": "packet.claimed",
-      "packet": "VIRO-0013",
-      "agent": "zcode-gov-audit-pc1",
-      "role": "gap-auditor",
-      "machine": "pc-cloud1"
-    },
     {
       "at": "2026-08-28T10:21:51.075Z",
       "type": "packet.advanced",
@@ -4416,6 +4430,15 @@
       "evidence": [
         "landed via LOCAL merge under owner order 2026-08-28 (candidate 06015c3; verifier + critic PASS); corpus 13/13 green on merged main"
       ]
+    },
+    {
+      "at": "2026-08-29T00:03:52.025Z",
+      "type": "packet.claimed",
+      "packet": "VIRO-0147",
+      "agent": "zcode-gov-audit-pc1",
+      "role": "gap-auditor",
+      "machine": "pc-cloud1",
+      "session": "b7582f61-4e29-4f6a-9ff9-cc718909b1cb"
     }
   ]
 }
