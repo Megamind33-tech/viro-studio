@@ -5,8 +5,9 @@
  * emitted as PDF content-stream operators:
  *
  *   vector   → path operators (`m`/`c`/`h`) with `f` / `S` / `B`
- *   type     → `Tf` + `TJ` against an embedded full TrueType face
- *              (not a subset — see the note at `faceFor`)
+ *   type     → per-run `Tf` + `TJ` against embedded full TrueType faces
+ *              (not subsets — see the note at `faceFor`); each character run's
+ *              size, fill and face are emitted as its own text state
  *   image    → an `/XObject Do` (raster is correct here; pixels are pixels)
  *   group    → nested `q … Q` with the group's alpha folded into its children
  *
@@ -37,6 +38,14 @@
  * displacement chosen so the PDF pen lands on exactly the x HarfBuzz computed.
  * The glyph id, not the character, is what goes on the page — ligatures,
  * kerning, tracking and justified word gaps therefore survive verbatim.
+ *
+ * Since VIRO-0142 the engine styles text per character range (`CharacterRun`):
+ * `composeFrame` shapes each span with its own face and returns per-glyph
+ * scale and fill. `emitType` mirrors that segmentation exactly — consecutive
+ * glyphs sharing (face, size, fill) form one styled run, and each run is
+ * painted with its own `Tf`, colour and embedded face inside the line's text
+ * object. A run's glyph ids are only ever written under that run's own font,
+ * so a range set in another face cannot alias another face's glyph ids.
  *
  * ## Coordinate frame
  *
@@ -87,6 +96,7 @@ import type {
   LayerEffect,
   Page,
   PressDocument,
+  Rgba,
   Story,
   Transform,
   TypeFrameLayer,
@@ -113,7 +123,7 @@ export interface PdfExportReport {
   /** Page size in PDF points. */
   pagePt: { w: number; h: number };
   vectorPaths: number;
-  /** One per set line — a `BT … TJ … ET` run. */
+  /** One per styled run — a `TJ` array inside a `BT … ET` text object. */
   textRuns: number;
   glyphs: number;
   images: number;
@@ -471,7 +481,10 @@ function imageShadowDraws(ck: CanvasKit, layer: Layer, asset: { width: number; h
  * units are y-up, the frame is y-down), composed onto the layer chain.
  */
 function typeShadowDraws(ck: CanvasKit, layer: TypeFrameLayer, story: Story, face: FacePack, chain: Mat, alpha: number, out: ShadowDraw[]): void {
-  const composed = composeFrame(face, story, layer.transform.w, layer.transform.h);
+  // Same compose arguments as drawTypeFrame and emitType — text-frame insets
+  // and vertical alignment included — so the shadow silhouette is the exact
+  // set of glyph boxes the canvas blurs.
+  const composed = composeFrame(face, story, layer.transform.w, layer.transform.h, layer.textFrame);
   for (const g of composed.glyphs) {
     if (!g.path) continue;
     const p = ck.Path.MakeFromSVGString(g.path);
@@ -568,13 +581,16 @@ export async function exportPagePdf(
     return name;
   };
 
-  let embedded: EmbeddedFace | null = null;
   const embeddedById = new Map<string, EmbeddedFace>();
+  /** packId → the face's display name and full-font byte size, for the report. */
+  const embeddedMeta = new Map<string, { name: string; bytes: number }>();
   const faceFor = async (pack: FacePack | null): Promise<EmbeddedFace | null> => {
     if (!pack) return null;
+    // One EmbeddedFace per distinct FacePack id — the story face and any
+    // range-resolved faces share this cache, so a face is embedded at most once.
     const cached = embeddedById.get(pack.id);
     if (cached) return cached;
-    if (embedded && pack.id === face?.id) return embedded;
+    embeddedMeta.set(pack.id, { name: pack.name, bytes: pack.bytes.byteLength });
     // The package ships a UMD bundle; depending on the bundler's CJS interop the
     // module object is either the fontkit instance itself or hangs off `default`.
     const mod = (await import("@pdf-lib/fontkit")) as unknown as {
@@ -600,7 +616,6 @@ export async function exportPagePdf(
     const resource = pdfPage.node.newFontDictionary("F", pdfFont.ref);
     const next = new EmbeddedFace(emb, resource, pack.upem);
     embeddedById.set(pack.id, next);
-    if (!embedded) embedded = next;
     return next;
   };
 
@@ -968,7 +983,9 @@ export async function exportPagePdf(
       const pack = story ? (fonts?.resolve(story.character.fontId) ?? face) : null;
       const ef = pack ? await faceFor(pack) : null;
       if (story && ef && pack) {
-        emitType(ops, layer, story, pack, ef, inheritedAlpha, gsName, report);
+        // resolveFace embeds any additional face a character range's fontId
+        // resolved to, so per-range glyph ids land under their own font.
+        await emitType(ops, layer, story, pack, ef, faceFor, inheritedAlpha, gsName, report);
       } else if (story && !pack) {
         report.notes.push(`Type frame "${layer.name}" was skipped: no face was loaded.`);
       }
@@ -1006,13 +1023,29 @@ export async function exportPagePdf(
     `${report.textRuns} text run(s) / ${report.glyphs} glyph(s)`,
     `${report.images} embedded raster(s)`,
   ];
-  if (face && report.glyphs > 0) {
-    parts.push(`${face.name} embedded as a full TrueType font`);
+  if (embeddedById.size > 0 && report.glyphs > 0) {
+    // Every embedded face is named — the story face and any face a character
+    // range's fontId resolved to — so the file states its own type contents.
+    const faces = Array.from(embeddedMeta.values());
+    const names = faces.map((f) => f.name).join(", ");
+    parts.push(
+      `${names} embedded as a full TrueType font${faces.length === 1 ? "" : "s"}`,
+    );
     report.notes.push(
       "Faces are embedded whole, not subset: pdf-lib's font subsetter produces TrueType " +
         "output that third-party parsers reject (glyph offsets outside the glyf table), so " +
         "the file carries every glyph of each face it sets and is larger as a result.",
     );
+    if (faces.length > 1) {
+      // Size impact, disclosed: per-range faces each arrive as a complete font.
+      const kb = Math.round(faces.reduce((sum, f) => sum + f.bytes, 0) / 102.4) / 10;
+      report.notes.push(
+        `Styled character ranges embed one full face per distinct range face (${faces.length} ` +
+          `faces, ${names} — ${kb} KB of font data in this file). Each range's glyph ids are ` +
+          "emitted under that range's own embedded font, so mixed-font stories render exactly " +
+          "as the canvas composes them.",
+      );
+    }
   }
   const caveats = report.notes.join(" ");
 
@@ -1211,33 +1244,110 @@ function emitImage(
  */
 const POSITION_EPSILON_PX = 0.002;
 
-function emitType(
+/**
+ * One styled run's PDF-side text state: the embedded face its glyph ids are
+ * valid under, the point size to set (`Tf`), the run's font-units→px scale and
+ * fill, and its own word-space glyph for the gap re-insertion below.
+ */
+interface StyleSegment {
+  ef: EmbeddedFace;
+  face: FacePack;
+  /** Point size for `Tf`, in document pixels (ppi 72 → 1 px = 1 pt). */
+  size: number;
+  /** Font unit → px for this run (composeFrame's `ShapedGlyph.scale`). */
+  scale: number;
+  fill: Rgba;
+  spaceCode: number;
+  spaceAdvPx: number;
+}
+
+async function emitType(
   ops: PDFOperator[],
   layer: TypeFrameLayer,
   story: Story,
   face: FacePack,
-  ef: EmbeddedFace,
+  storyFace: EmbeddedFace,
+  resolveFace: (pack: FacePack) => Promise<EmbeddedFace | null>,
   inheritedAlpha: number,
   gsName: GsFn,
   report: PdfExportReport,
-): void {
+): Promise<void> {
   // The exact call the compositor makes — same breaker, same tracking, same
-  // justification, same HarfBuzz positions.
-  const composed = composeFrame(face, story, layer.transform.w, layer.transform.h);
+  // justification, same HarfBuzz positions, same text-frame insets.
+  const composed = composeFrame(face, story, layer.transform.w, layer.transform.h, layer.textFrame);
   const alpha = inheritedAlpha * layer.opacity;
 
   if (composed.glyphs.length) {
-    const size = story.character.size > 0 ? story.character.size : 1;
-    const unitsToPx = size / ef.upem;
-    const fill = story.character.fill;
-    const spaceAdvPx =
-      face.spaceGid >= 0 ? ef.glyph(face.spaceGid).advance * unitsToPx : 0;
-    const spaceCode = face.spaceGid >= 0 ? ef.glyph(face.spaceGid).code : -1;
+    // ── per-run segmentation ─────────────────────────────────────────────
+    // One segment per distinct (face, size, fill) the composed glyphs carry.
+    // A glyph's segment is authoritative — it is what composeFrame shaped and
+    // outlined the glyph with — so a range's glyph ids are only ever written
+    // under that range's own embedded font.
+    const segments = new Map<string, StyleSegment>();
+    const segmentFor = async (g: ShapedGlyph): Promise<StyleSegment> => {
+      const size = g.scale * g.face.upem;
+      const fill = g.fill;
+      const key = `${g.face.id}|${round(size, 4)}|${fill.r},${fill.g},${fill.b},${fill.a}`;
+      let seg = segments.get(key);
+      if (seg) return seg;
+      const ef = (await resolveFace(g.face)) ?? storyFace;
+      const space = g.face.spaceGid >= 0 ? ef.glyph(g.face.spaceGid) : null;
+      seg = {
+        ef,
+        face: g.face,
+        size,
+        scale: g.scale,
+        fill,
+        spaceCode: space ? space.code : -1,
+        spaceAdvPx: space ? space.advance * g.scale : 0,
+      };
+      segments.set(key, seg);
+      return seg;
+    };
 
-    ops.push(setGraphicsState(gsName(fill.a * alpha, fill.a * alpha, layer.blend)));
+    // Warm every segment's face BEFORE any operator is written: a face embed
+    // is a page-resource mutation and must not happen mid-text-object.
+    for (const g of composed.glyphs) await segmentFor(g);
+
+    // The word space a dropped empty-outline glyph leaves behind was shaped in
+    // the span it belongs to — usually the story-level style, which contributes
+    // no glyphs of its own when that span is only a space. Its advance is
+    // therefore tested against the SMALLER of the following run's space and the
+    // story-level space, so a boundary between differently sized runs still
+    // reads as a word break in the extracted text.
+    const storySize = story.character.size > 0 ? story.character.size : 1;
+    const storySpaceAdvPx =
+      face.spaceGid >= 0 ? storyFace.glyph(face.spaceGid).advance * (storySize / face.upem) : 0;
+
+    const put = (
+      seg: StyleSegment,
+      gid: number,
+      target: number | null,
+      items: Array<string | number>,
+      state: { pen: number; hexRun: string },
+    ): void => {
+      const { code, advance } = seg.ef.glyph(gid);
+      const advPx = advance * seg.scale;
+      if (target !== null) {
+        const errPx = state.pen - target;
+        const adj = round((errPx * 1000) / seg.size, 4);
+        if (Math.abs(errPx) > POSITION_EPSILON_PX && adj !== 0) {
+          if (state.hexRun) {
+            items.push(state.hexRun);
+            state.hexRun = "";
+          }
+          items.push(adj);
+          // Track the pen from the *emitted* number, not the ideal one, so the
+          // 4-decimal rounding cannot accumulate down the line.
+          state.pen -= (adj / 1000) * seg.size;
+        }
+      }
+      state.hexRun += hex4(code);
+      state.pen += advPx;
+      report.glyphs += 1;
+    };
+
     ops.push(beginText());
-    ops.push(setFontAndSize(ef.resource, round(size, 4)));
-    ops.push(setFillingRgbColor(clamp01(fill.r), clamp01(fill.g), clamp01(fill.b)));
 
     for (const line of groupLines(composed.glyphs)) {
       const originX = line[0]!.x;
@@ -1246,46 +1356,47 @@ function emitType(
       ops.push(setTextMatrix(1, 0, 0, -1, round(originX, 4), round(originY, 4)));
 
       const items: Array<string | number> = [];
-      let pen = 0; // text-space x, relative to originX
-      let hexRun = "";
+      const state = { pen: 0, hexRun: "" }; // text-space x relative to originX
+      let cur: StyleSegment | null = null;
 
-      const put = (gid: number, target: number | null): void => {
-        const { code, advance } = ef.glyph(gid);
-        const advPx = advance * unitsToPx;
-        if (target !== null) {
-          const errPx = pen - target;
-          const adj = round((errPx * 1000) / size, 4);
-          if (Math.abs(errPx) > POSITION_EPSILON_PX && adj !== 0) {
-            if (hexRun) {
-              items.push(hexRun);
-              hexRun = "";
-            }
-            items.push(adj);
-            // Track the pen from the *emitted* number, not the ideal one, so the
-            // 4-decimal rounding cannot accumulate down the line.
-            pen -= (adj / 1000) * size;
-          }
+      const flushRun = (): void => {
+        if (state.hexRun) {
+          items.push(state.hexRun);
+          state.hexRun = "";
         }
-        hexRun += hex4(code);
-        pen += advPx;
-        report.glyphs += 1;
+        if (items.length) {
+          ops.push(showTextAdjusted(items));
+          items.length = 0;
+          report.textRuns += 1;
+        }
+      };
+      const use = (seg: StyleSegment): void => {
+        if (seg === cur) return;
+        flushRun();
+        ops.push(setGraphicsState(gsName(seg.fill.a * alpha, seg.fill.a * alpha, layer.blend)));
+        ops.push(setFontAndSize(seg.ef.resource, round(seg.size, 4)));
+        ops.push(setFillingRgbColor(clamp01(seg.fill.r), clamp01(seg.fill.g), clamp01(seg.fill.b)));
+        cur = seg;
       };
 
       for (let i = 0; i < line.length; i++) {
         const g = line[i]!;
+        const seg = await segmentFor(g);
         const target = g.x - originX;
         // composeFrame drops glyphs with empty outlines — the word space among
         // them. The gap it leaves is real, so put the space glyph back: it paints
-        // nothing, and without it the extracted text has no word breaks.
-        if (i > 0 && spaceCode >= 0 && spaceAdvPx > 0 && target - pen > spaceAdvPx * 0.5) {
-          put(face.spaceGid, null);
+        // nothing, and without it the extracted text has no word breaks. The
+        // space belongs to the run it precedes, so its glyph id is taken from
+        // THAT run's face and its advance bridges the gap at the run's size.
+        const spaceAdvPx = Math.min(seg.spaceAdvPx, storySpaceAdvPx || seg.spaceAdvPx);
+        if (i > 0 && seg.spaceCode >= 0 && spaceAdvPx > 0 && target - state.pen > spaceAdvPx * 0.4) {
+          use(seg);
+          put(seg, seg.face.spaceGid, null, items, state);
         }
-        put(g.gid, target);
+        use(seg);
+        put(seg, g.gid, target, items, state);
       }
-      if (hexRun) items.push(hexRun);
-
-      ops.push(showTextAdjusted(items));
-      report.textRuns += 1;
+      flushRun();
     }
 
     ops.push(endText());
