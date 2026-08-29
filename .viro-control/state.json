@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 435,
-  "updated_at": "2026-08-29T00:01:05.235Z",
+  "revision": 436,
+  "updated_at": "2026-08-29T00:01:34.242Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -1998,12 +1998,12 @@
       ],
       "dependencies": [],
       "critic_needed": true,
-      "stage": "critic",
-      "status": "CRITIC",
-      "assigned_agent": "zcode-critic-pc3",
-      "assigned_role": "critic",
+      "stage": "release",
+      "status": "QUEUED",
+      "assigned_agent": null,
+      "assigned_role": null,
       "work_branch": "agent/viro-0146/zcode-gov-audit-pc1",
-      "heartbeat_at": "2026-08-29T00:01:05.235Z",
+      "heartbeat_at": null,
       "attempts": 0,
       "evidence": [
         {
@@ -2065,19 +2065,28 @@
           "by": "zcode-verify-pc15",
           "item": "Scope: diff 1b30734..06015c3 = 11 files, all inside lease (pdf.ts, export-corpus-*, pdf-effects-*, VIRO-0146.json); export-corpus-png.json byte-unchanged (all non-effects pins intact); vendored oracle LICENSE Apache-2.0 (Mozilla 2023, pdfjs 3.11.174) with byte-stable .gitattributes; corpus effects pin flipped from silent-drop to prove-the-fix",
           "at": "2026-08-28T23:37:48.013Z"
+        },
+        {
+          "stage": "critic",
+          "by": "zcode-critic-pc3",
+          "item": "Drove candidate 06015c3 in the live app (review worktree, port 5219): typed layer + real Effects-studio drop shadow (#0a0a0a, offset 8/10, blur 12) exported via File>Export PDF; pdf.js render compared to the canvas at matched scale - shadow matches in softness, offset direction/magnitude and opacity, reads as a professional directional Gaussian, not a gray blob; PDF text crisper than canvas (vector body over raster underlay, exactly the promised architecture). Report truthfulness verified live: shadow doc -> images:1 (regional underlay), rasterFallbacks empty, plain-language note (same Skia filter sigma=blur/2 3-sigma kernel, transparent-PNG underlay beneath vector content, honest parent-space blur-fringe caveat), carried into the PDF Subject. Glow doc -> rasterFallbacks [Type (outer-glow)] with images:0 and the note that only drop shadows render, so the divergence is stated by the file itself - no silent drop, no fake raster. Consistent with verifier parity (firstDiff=-1). Non-blocking observation for the Governor (out of this packet's lease, chrome pre-existing): fx opacity field stored 0.45 for a typed 0.55; canvas and PDF agree on the stored value so parity is unaffected. ADVANCE.",
+          "at": "2026-08-29T00:01:34.239Z"
+        },
+        {
+          "stage": "critic",
+          "by": "zcode-critic-pc3",
+          "item": "Critic shots: Temp/viro-critic-pc3/shots/fx2-04-compare.png (canvas 195pct vs pdf.js, content-matched), fx2-06-closeup2.png (matched-scale pair), fx-01/fx-03 canvas states, probe JSON in probes/polish-full.json + probe8/9 logs",
+          "at": "2026-08-29T00:01:34.241Z"
         }
       ],
       "last_handoff": {
-        "from": "verify",
-        "to": "critic",
-        "by": "zcode-verify-pc15",
-        "at": "2026-08-28T23:37:48.013Z",
+        "from": "critic",
+        "to": "release",
+        "by": "zcode-critic-pc3",
+        "at": "2026-08-29T00:01:34.241Z",
         "evidence": [
-          "Independent decode of shadowed PDF: vector body preserved (m=1 c=4 h=1 fill=1 byte-equal to control), exactly one regional underlay Do drawn before content (256x176 vs 400x300pt page, DeviceRGB + DeviceGray SMask, not full-page), text+shadow keeps BT/Tf/Tm/TJ with hex CID run — no page rasterisation",
-          "Independent pdf.js 3.11.174 parity run (own harness/math, worktree server 5209): shadow doc mean=0.00 p99=0 share>64=0.000%, band ink right 77.72/77.72% bottom 66.57/66.57% canvas-vs-pdf, agreement 0.00pts; unshadowed control 0% band ink both arms, images=0, notes=[] — falsifiable contrast reproduced",
-          "Fallback truthfulness: outer-glow/stroke/gradient-overlay each recorded in rasterFallbacks ('Rectangle (outer-glow)' etc.) + notes; mixed shadow+glow renders (images=1) AND records glow; disabled effects record nothing",
-          "Gates on clean 06015c3 worktree: tsc exit 0; test:unit 336/336; corpus 13/13 twice (VIRO_URL to own-worktree server, PNG fingerprints green); pdf-compound 5/5 + pdf-font 5/5 node; parity spec 2/2 via in-lease 5203 config; full chrome suite on external 5207 config 18/18 incl pdf-compound 5/5 + parity 2/2 + a11y 6 + chrome 5; vite build exit 0",
-          "Scope: diff 1b30734..06015c3 = 11 files, all inside lease (pdf.ts, export-corpus-*, pdf-effects-*, VIRO-0146.json); export-corpus-png.json byte-unchanged (all non-effects pins intact); vendored oracle LICENSE Apache-2.0 (Mozilla 2023, pdfjs 3.11.174) with byte-stable .gitattributes; corpus effects pin flipped from silent-drop to prove-the-fix"
+          "Drove candidate 06015c3 in the live app (review worktree, port 5219): typed layer + real Effects-studio drop shadow (#0a0a0a, offset 8/10, blur 12) exported via File>Export PDF; pdf.js render compared to the canvas at matched scale - shadow matches in softness, offset direction/magnitude and opacity, reads as a professional directional Gaussian, not a gray blob; PDF text crisper than canvas (vector body over raster underlay, exactly the promised architecture). Report truthfulness verified live: shadow doc -> images:1 (regional underlay), rasterFallbacks empty, plain-language note (same Skia filter sigma=blur/2 3-sigma kernel, transparent-PNG underlay beneath vector content, honest parent-space blur-fringe caveat), carried into the PDF Subject. Glow doc -> rasterFallbacks [Type (outer-glow)] with images:0 and the note that only drop shadows render, so the divergence is stated by the file itself - no silent drop, no fake raster. Consistent with verifier parity (firstDiff=-1). Non-blocking observation for the Governor (out of this packet's lease, chrome pre-existing): fx opacity field stored 0.45 for a typed 0.55; canvas and PDF agree on the stored value so parity is unaffected. ADVANCE.",
+          "Critic shots: Temp/viro-critic-pc3/shots/fx2-04-compare.png (canvas 195pct vs pdf.js, content-matched), fx2-06-closeup2.png (matched-scale pair), fx-01/fx-03 canvas states, probe JSON in probes/polish-full.json + probe8/9 logs"
         ]
       },
       "rejection": null,
@@ -2146,13 +2155,6 @@
       "session": "51efe904-f1a0-4f6d-9378-10f113c068fc",
       "packet": "VIRO-0144",
       "heartbeat_at": "2026-08-28T23:44:43.324Z"
-    },
-    "zcode-critic-pc3": {
-      "role": "critic",
-      "machine": "pc-cloud1",
-      "session": "facb1be4-ac98-4bf1-bc4c-ab2151f2211a",
-      "packet": "VIRO-0146",
-      "heartbeat_at": "2026-08-29T00:01:05.235Z"
     }
   },
   "leases": {
@@ -2165,8 +2167,8 @@
         "docs/agents/deliveries/VIRO-0146.json"
       ],
       "acquired_at": "2026-08-28T21:32:32.991Z",
-      "current_agent": "zcode-critic-pc3",
-      "current_stage": "critic",
+      "current_agent": null,
+      "current_stage": "release",
       "current_session": "facb1be4-ac98-4bf1-bc4c-ab2151f2211a",
       "heartbeat_at": "2026-08-29T00:01:05.235Z"
     },
@@ -2185,14 +2187,6 @@
     }
   },
   "events": [
-    {
-      "at": "2026-08-28T10:18:43.973Z",
-      "type": "packet.advanced",
-      "packet": "VIRO-0010",
-      "from": "audit",
-      "to": "build",
-      "by": "zcode-gov-audit-pc1"
-    },
     {
       "at": "2026-08-28T10:21:11.504Z",
       "type": "packet.blocked",
@@ -4377,6 +4371,16 @@
       "packet": "VIRO-0146",
       "session": "facb1be4-ac98-4bf1-bc4c-ab2151f2211a",
       "machine": "pc-cloud1"
+    },
+    {
+      "at": "2026-08-29T00:01:34.242Z",
+      "type": "packet.advanced",
+      "packet": "VIRO-0146",
+      "from": "critic",
+      "to": "release",
+      "by": "zcode-critic-pc3",
+      "machine": "pc-cloud1",
+      "session": "facb1be4-ac98-4bf1-bc4c-ab2151f2211a"
     }
   ]
 }
