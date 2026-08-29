@@ -94,8 +94,11 @@ for (const c of manifest) {
     const doc = await c.build(ck);
     // The text case exports with the real face it was set in (the exact
     // argument shape src/app.ts exportPdf() resolves to for bundled faces).
+    // `ck` is passed so drop-shadow underlays rasterise in Node exactly as
+    // they do in the browser (pixel parity is proven separately by
+    // tests/pdf-effects-parity.spec.ts).
     const isText = c.id === "export/text-layer";
-    const { bytes, report } = await exportPagePdf({ doc, face: isText ? face : null });
+    const { bytes, report } = await exportPagePdf({ doc, face: isText ? face : null, ck });
     const contentText = await pageContentText(bytes);
     const census = topologyOf(contentText);
 
@@ -123,13 +126,25 @@ for (const c of manifest) {
  * Cross-case parity pins
  * ------------------------------------------------------------------ */
 
-test("effects layer vs control: the vector PDF is identical — effects are dropped silently (pinned current behaviour)", async () => {
+test("effects layer vs control: the PDF now carries the shadow as an underlay — vector body unchanged", async () => {
   const withFx = actuals.get("export/effects-layer");
   const control = actuals.get("export/effects-control");
   assert.ok(withFx && control, "effects cases must export before the parity pin");
-  assert.equal(withFx.hash, control.hash, "effect layers must not alter the content stream");
-  assert.deepEqual(withFx.census, control.census);
-  assert.deepEqual(withFx.report, control.report, "no report note is recorded for dropped effects either");
+  // VIRO-0146: the shadow is no longer dropped silently. The content stream
+  // gains exactly one underlay draw (`q cm Do Q`), so it is no longer
+  // byte-identical to the unshadowed control.
+  assert.notEqual(withFx.hash, control.hash, "the shadow underlay must appear in the content stream");
+  assert.equal(withFx.census.do, 1, "exactly one shadow underlay XObject draw");
+  assert.equal(control.census.do, 0, "the unshadowed control must not grow an underlay");
+  // …but the vector body is untouched: the same path operators as the control.
+  for (const op of ["m", "c", "h", "fill"]) {
+    assert.equal(withFx.census[op], control.census[op], `vector operator '${op}' must be unchanged by the shadow`);
+  }
+  // The report states what happened: one embedded shadow raster plus a note,
+  // and a rendered shadow is not a raster fallback.
+  assert.equal(withFx.report.images, control.report.images + 1, "the shadow underlay is one embedded raster");
+  assert.ok(withFx.report.notes.length > control.report.notes.length, "the rendered shadow is documented in the report");
+  assert.deepEqual(withFx.report.rasterFallbacks, control.report.rasterFallbacks, "a rendered shadow must not be a rasterFallback");
 });
 
 /* ------------------------------------------------------------------ *

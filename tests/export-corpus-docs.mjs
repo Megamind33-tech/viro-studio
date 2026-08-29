@@ -101,13 +101,13 @@ export async function rasterLayerDoc() {
 /**
  * A drop-shadowed vector, plus `false` for its control.
  *
- * FIDELITY DECISION (recorded at claim, per packet acceptance): the CURRENT
- * exporter ignores layer.effects entirely — the shadow exists only on canvas
- * (the PNG arm proves the canvas draws it) and the PDF arm proves the vector
- * stream is byte-identical to the unshadowed control. VIRO-0015 is a QA
- * corpus packet, so the corpus PINS this current behaviour and the silent
- * drop (no report.note either) is reported as a separate exporter finding —
- * it is not fixed here.
+ * FIDELITY DECISION (VIRO-0146, updating the VIRO-0015 pin): the exporter
+ * RENDERS drop shadows — each shadow is rasterised with the same Skia
+ * MakeDropShadowOnly filter the compositor uses (sigma = blur/2, colour alpha
+ * = colour.a × opacity) and embedded beneath its layer as a transparent-PNG
+ * XObject underlay. Only the shadow is raster; the vector body stays vector,
+ * so this case's path operators still equal the control's and the delta is
+ * exactly one `q … cm … Do … Q` group plus one report image and note.
  */
 export async function effectsLayerDoc(withShadow = true) {
   let doc = await singleContourVectorDoc();
@@ -241,15 +241,17 @@ export function corpusManifest() {
       id: "export/effects-layer",
       status: "READY",
       build: effectsLayerDoc,
-      expectReport: { sameReportAs: "export/effects-control" },
-      expectTopology: { sameContentAs: "export/effects-control" },
+      expectReport: { pagePt: { w: 400, h: 300 }, vectorPaths: 1, textRuns: 0, glyphs: 0, images: 1, rasterFallbacks: [], notes: ">=1" },
+      expectTopology: { m: 1, c: 4, h: 1, fill: 1, do: 1, BT: 0, cm: 3, stroke: 0 },
       fidelityNote:
-        "PINNED CURRENT BEHAVIOUR (decision at claim): the exporter ignores layer.effects entirely " +
-        "(src/export/pdf.ts has zero effect references) and records no note about it, so this case's " +
-        "PDF report and operator census must equal the unshadowed control. The canvas DOES draw the " +
-        "shadow — the PNG arm proves it by pinning a DIFFERENT fingerprint from the control. The " +
-        "canvas/PDF parity gap and the missing report note are exporter findings reported under " +
-        "VIRO-0015, not fixed in this QA-corpus packet.",
+        "VIRO-0146 FIX (updates the VIRO-0015 silent-drop pin): the exporter renders the drop " +
+        "shadow as a Skia-rasterised transparent-PNG underlay beneath the vector body — the same " +
+        "MakeDropShadowOnly semantics as the compositor (sigma = blur/2, colour alpha = colour.a " +
+        "× opacity). The delta from the unshadowed control is exactly one embedded raster " +
+        "(report.images 1 vs 0, a report note) plus one `q cm Do Q` group in the stream; the path " +
+        "operators (m/c/h/fill) stay identical. The canvas/PDF pixel parity of this shadow is " +
+        "proven by tests/pdf-effects-parity.spec.ts; other enabled effects (glow/stroke/gradient " +
+        "overlay) are recorded as rasterFallbacks entries, never dropped silently.",
     },
     {
       id: "export/effects-control",

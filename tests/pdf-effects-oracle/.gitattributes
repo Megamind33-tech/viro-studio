@@ -1,0 +1,3 @@
+# Vendored third-party oracle (pdfjs-dist 3.11.174 legacy build).
+# Keep byte-stable: no EOL normalisation on these files.
+* -text

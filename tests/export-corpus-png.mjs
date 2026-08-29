@@ -90,7 +90,7 @@ export async function pagePngFingerprints(docs) {
     page.on("console", (m) => {
       if (m.type() === "error") pageErrors.push(m.text());
     });
-    await page.goto("http://127.0.0.1:5173", { waitUntil: "domcontentloaded" });
+    await page.goto(process.env.VIRO_URL || "http://127.0.0.1:5173", { waitUntil: "domcontentloaded" });
     await page.waitForFunction(
       () =>
         document.getElementById("boot")?.classList.contains("gone") === true &&
