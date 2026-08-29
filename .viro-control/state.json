@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 441,
-  "updated_at": "2026-08-29T00:03:58.697Z",
+  "revision": 442,
+  "updated_at": "2026-08-29T00:04:45.846Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -2243,14 +2243,6 @@
   },
   "events": [
     {
-      "at": "2026-08-28T10:21:58.084Z",
-      "type": "packet.claimed",
-      "packet": "VIRO-0016",
-      "agent": "zcode-gov-audit-pc1",
-      "role": "gap-auditor",
-      "machine": "pc-cloud1"
-    },
-    {
       "at": "2026-08-28T10:22:09.466Z",
       "type": "packet.advanced",
       "packet": "VIRO-0016",
@@ -4449,6 +4441,11 @@
       "by": "zcode-gov-audit-pc1",
       "machine": "pc-cloud1",
       "session": "b7582f61-4e29-4f6a-9ff9-cc718909b1cb"
+    },
+    {
+      "at": "2026-08-29T00:04:45.846Z",
+      "type": "packet.reconciled_from_manifest",
+      "packet": "VIRO-0002"
     }
   ]
 }
