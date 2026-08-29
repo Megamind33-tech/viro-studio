@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 437,
-  "updated_at": "2026-08-29T00:03:03.635Z",
+  "revision": 438,
+  "updated_at": "2026-08-29T00:03:13.636Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -2000,10 +2000,10 @@
       "critic_needed": true,
       "stage": "release",
       "status": "RELEASE",
-      "assigned_agent": "zcode-release-pc1",
-      "assigned_role": "release-manager",
+      "assigned_agent": null,
+      "assigned_role": null,
       "work_branch": "agent/viro-0146/zcode-gov-audit-pc1",
-      "heartbeat_at": "2026-08-29T00:03:03.635Z",
+      "heartbeat_at": null,
       "attempts": 0,
       "evidence": [
         {
@@ -2077,21 +2077,56 @@
           "by": "zcode-critic-pc3",
           "item": "Critic shots: Temp/viro-critic-pc3/shots/fx2-04-compare.png (canvas 195pct vs pdf.js, content-matched), fx2-06-closeup2.png (matched-scale pair), fx-01/fx-03 canvas states, probe JSON in probes/polish-full.json + probe8/9 logs",
           "at": "2026-08-29T00:01:34.241Z"
+        },
+        {
+          "stage": "release",
+          "by": "zcode-release-pc1",
+          "item": "PR binds approval to head SHA 06015c3",
+          "at": "2026-08-29T00:03:13.633Z"
+        },
+        {
+          "stage": "release",
+          "by": "zcode-release-pc1",
+          "item": "independent verifier zcode-verify-pc15: vector purity proven (regional XObject, body stays vector), parity pixel-identical, fallbacks truthful, 18/18 chrome, gates green",
+          "at": "2026-08-29T00:03:13.633Z"
+        },
+        {
+          "stage": "release",
+          "by": "zcode-release-pc1",
+          "item": "critic zcode-critic-pc3 PASS: professional shadow fidelity, honest self-describing file",
+          "at": "2026-08-29T00:03:13.633Z"
         }
       ],
       "last_handoff": {
-        "from": "critic",
-        "to": "release",
-        "by": "zcode-critic-pc3",
-        "at": "2026-08-29T00:01:34.241Z",
+        "from": "release",
+        "to": "merge-gate",
+        "by": "zcode-release-pc1",
+        "at": "2026-08-29T00:03:13.633Z",
         "evidence": [
-          "Drove candidate 06015c3 in the live app (review worktree, port 5219): typed layer + real Effects-studio drop shadow (#0a0a0a, offset 8/10, blur 12) exported via File>Export PDF; pdf.js render compared to the canvas at matched scale - shadow matches in softness, offset direction/magnitude and opacity, reads as a professional directional Gaussian, not a gray blob; PDF text crisper than canvas (vector body over raster underlay, exactly the promised architecture). Report truthfulness verified live: shadow doc -> images:1 (regional underlay), rasterFallbacks empty, plain-language note (same Skia filter sigma=blur/2 3-sigma kernel, transparent-PNG underlay beneath vector content, honest parent-space blur-fringe caveat), carried into the PDF Subject. Glow doc -> rasterFallbacks [Type (outer-glow)] with images:0 and the note that only drop shadows render, so the divergence is stated by the file itself - no silent drop, no fake raster. Consistent with verifier parity (firstDiff=-1). Non-blocking observation for the Governor (out of this packet's lease, chrome pre-existing): fx opacity field stored 0.45 for a typed 0.55; canvas and PDF agree on the stored value so parity is unaffected. ADVANCE.",
-          "Critic shots: Temp/viro-critic-pc3/shots/fx2-04-compare.png (canvas 195pct vs pdf.js, content-matched), fx2-06-closeup2.png (matched-scale pair), fx-01/fx-03 canvas states, probe JSON in probes/polish-full.json + probe8/9 logs"
+          "PR binds approval to head SHA 06015c3",
+          "independent verifier zcode-verify-pc15: vector purity proven (regional XObject, body stays vector), parity pixel-identical, fallbacks truthful, 18/18 chrome, gates green",
+          "critic zcode-critic-pc3 PASS: professional shadow fidelity, honest self-describing file"
         ]
       },
       "rejection": null,
       "assigned_machine": "pc-cloud1",
-      "assigned_session": "2c2e86e1-8cf0-4ea5-892e-0d47d213ab28"
+      "assigned_session": "2c2e86e1-8cf0-4ea5-892e-0d47d213ab28",
+      "release_approval": {
+        "status": "APPROVED",
+        "by": "zcode-release-pc1",
+        "machine": "pc-cloud1",
+        "session": "2c2e86e1-8cf0-4ea5-892e-0d47d213ab28",
+        "at": "2026-08-29T00:03:13.633Z",
+        "pr_number": 29,
+        "pr_url": "https://github.com/Megamind33-tech/viro-studio/pull/29",
+        "head_sha": "06015c31841b396da793b840cb337a2cb36fe360",
+        "base": "main",
+        "evidence": [
+          "PR binds approval to head SHA 06015c3",
+          "independent verifier zcode-verify-pc15: vector purity proven (regional XObject, body stays vector), parity pixel-identical, fallbacks truthful, 18/18 chrome, gates green",
+          "critic zcode-critic-pc3 PASS: professional shadow fidelity, honest self-describing file"
+        ]
+      }
     },
     "VIRO-0147": {
       "id": "VIRO-0147",
@@ -2155,13 +2190,6 @@
       "session": "51efe904-f1a0-4f6d-9378-10f113c068fc",
       "packet": "VIRO-0144",
       "heartbeat_at": "2026-08-28T23:44:43.324Z"
-    },
-    "zcode-release-pc1": {
-      "role": "release-manager",
-      "machine": "pc-cloud1",
-      "session": "2c2e86e1-8cf0-4ea5-892e-0d47d213ab28",
-      "packet": "VIRO-0146",
-      "heartbeat_at": "2026-08-29T00:03:03.635Z"
     }
   },
   "leases": {
@@ -2174,7 +2202,7 @@
         "docs/agents/deliveries/VIRO-0146.json"
       ],
       "acquired_at": "2026-08-28T21:32:32.991Z",
-      "current_agent": "zcode-release-pc1",
+      "current_agent": null,
       "current_stage": "release",
       "current_session": "2c2e86e1-8cf0-4ea5-892e-0d47d213ab28"
     },
@@ -2193,12 +2221,6 @@
     }
   },
   "events": [
-    {
-      "at": "2026-08-28T10:21:19.421Z",
-      "type": "packet.unblocked",
-      "packet": "VIRO-0010",
-      "by": "governor"
-    },
     {
       "at": "2026-08-28T10:21:27.103Z",
       "type": "packet.reconciled_from_manifest",
@@ -4389,6 +4411,16 @@
       "role": "release-manager",
       "machine": "pc-cloud1",
       "session": "2c2e86e1-8cf0-4ea5-892e-0d47d213ab28"
+    },
+    {
+      "at": "2026-08-29T00:03:13.636Z",
+      "type": "release.approved",
+      "packet": "VIRO-0146",
+      "by": "zcode-release-pc1",
+      "machine": "pc-cloud1",
+      "session": "2c2e86e1-8cf0-4ea5-892e-0d47d213ab28",
+      "pr": 29,
+      "head_sha": "06015c31841b396da793b840cb337a2cb36fe360"
     }
   ]
 }
