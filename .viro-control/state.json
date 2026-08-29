@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 457,
-  "updated_at": "2026-08-29T00:55:15.611Z",
+  "revision": 458,
+  "updated_at": "2026-08-29T00:57:01.844Z",
   "packets": {
     "VIRO-0002": {
       "id": "VIRO-0002",
@@ -2291,12 +2291,6 @@
   },
   "events": [
     {
-      "at": "2026-08-28T10:27:23.057Z",
-      "type": "agent.heartbeat",
-      "agent": "zcode-persist-pc1",
-      "packet": "VIRO-0010"
-    },
-    {
       "at": "2026-08-28T10:27:53.852Z",
       "type": "agent.heartbeat",
       "agent": "zcode-import-pc1",
@@ -4506,6 +4500,11 @@
       "by": "zcode-styledtext-pc1",
       "machine": "pc-cloud1",
       "session": "0b3e1d7c-5b42-41c5-a8f3-9d0a5810e056"
+    },
+    {
+      "at": "2026-08-29T00:57:01.844Z",
+      "type": "packet.reconciled_from_manifest",
+      "packet": "VIRO-0002"
     }
   ]
 }
